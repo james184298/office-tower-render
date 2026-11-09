@@ -6,9 +6,13 @@ on:
         description: "URL of bundle.tar"
         required: true
       mode:
-        description: "probe or full"
+        description: "probe, part or full"
         default: "probe"
         required: true
+      args:
+        description: "extra args, e.g. --start 1 --end 1000"
+        default: ""
+        required: false
 jobs:
   render:
     runs-on: ubuntu-latest
@@ -30,7 +34,7 @@ jobs:
         working-directory: ot
         run: |
           pip install -q modal
-          modal run modal_render.py::${{ inputs.mode }}
+          modal run modal_render.py::${{ inputs.mode }} ${{ inputs.args }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -38,4 +42,5 @@ jobs:
           path: |
             ot/probe_*.png
             ot/office-tower-render.mp4
+            ot/seg_*.mp4
           if-no-files-found: ignore
