@@ -35,11 +35,9 @@ for o in bpy.data.objects:
             if fc.data_path in ("hide_render", "hide_viewport"):
                 for k in fc.keyframe_points: k.interpolation = "CONSTANT"; nfix += 1
 print("stepped vis keys", nfix)
-for o in bpy.data.collections["Coast"].all_objects:
-    ad = o.animation_data
-    if ad and ad.action:
-        for fc in list(ad.action.fcurves):
-            if fc.data_path == "hide_render": ad.action.fcurves.remove(fc)
+for name in [o.name for o in bpy.data.collections["Coast"].all_objects]:
+    o = bpy.data.objects[name]
+    if o.animation_data: o.animation_data.action = None
     o.hide_render = True
 bpy.data.collections["Coast"].hide_render = True
 # world: camera sees flat backdrop, scene lit by soft neutral sky
