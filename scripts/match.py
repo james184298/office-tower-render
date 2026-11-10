@@ -10,10 +10,10 @@ tgt = bpy.data.objects["CamTarget"]
 el, az = math.radians(P["EL"]), math.radians(P["AZ"])
 dirv = Vector((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)))
 # shot start frame -> (distance scale, target z offset)
-SHOTS = [(1, float(os.environ.get("M_OV", 1.6)), 0), (151, float(os.environ.get("M_EX", 1.05)), 0),
-         (646, float(os.environ.get("M_IN", 2.6)), -3), (1741, float(os.environ.get("M_EX", 1.05)), 0),
-         (2041, float(os.environ.get("M_IN", 2.6)), -3), (2461, float(os.environ.get("M_UG", 1.5)), 0),
-         (3616, float(os.environ.get("M_OV", 1.6)), 0)]
+SHOTS = [(1, float(os.environ.get("M_OV", 1.25)), 0), (151, float(os.environ.get("M_EX", 0.8)), 0),
+         (646, float(os.environ.get("M_IN", 1.7)), -3), (1741, float(os.environ.get("M_EX", 0.8)), 0),
+         (2041, float(os.environ.get("M_IN", 1.7)), -3), (2461, float(os.environ.get("M_UG", 1.2)), 0),
+         (3616, float(os.environ.get("M_OV", 1.25)), 0)]
 def shot(f):
     r = SHOTS[0]
     for x in SHOTS:
@@ -55,7 +55,7 @@ for name in [o.name for o in bpy.data.collections["Coast"].all_objects]:
 bpy.data.collections["Coast"].hide_render = True
 # world: camera sees flat backdrop, scene lit by soft neutral sky
 w = sc.world; nt = w.node_tree; N = nt.nodes
-bg = N["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = float(os.environ.get("M_SKY", 0.3))
+bg = N["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = float(os.environ.get("M_SKY", 0.2))
 cb = N.new("ShaderNodeBackground"); lp = N.new("ShaderNodeLightPath"); mx = N.new("ShaderNodeMixShader")
 cb.inputs[1].default_value = 1.0
 nt.links.new(lp.outputs["Is Camera Ray"], mx.inputs[0]); nt.links.new(bg.outputs[0], mx.inputs[1]); nt.links.new(cb.outputs[0], mx.inputs[2])
@@ -68,7 +68,7 @@ for fc in nt.animation_data.action.fcurves:
 sc.view_settings.view_transform = os.environ.get("M_VT", "Standard")
 sc.view_settings.look = "None"
 sc.view_settings.exposure = float(os.environ.get("M_EXP", 0.0))
-sun = bpy.data.objects["Sun"].data; sun.energy = float(os.environ.get("M_SUN", 3.0)); sun.angle = math.radians(8)
+sun = bpy.data.objects["Sun"].data; sun.energy = float(os.environ.get("M_SUN", 4.0)); sun.angle = math.radians(8)
 print("match.py applied", P)
 
 # 3. explode floors at liftoff (up) and basements in overview (down)
@@ -89,6 +89,13 @@ BG = float(os.environ.get("M_BGAP", 2.5))
 for i, c in enumerate(["B1", "B2", "B3"]):
     z = -BG * (i + 1)
     rig(c, [(1, z), (120, z), (160, 0), (3600, 0), (3660, z)])
+# elevator shaft out of the way in basement shots
+e = bpy.data.objects.new("Rig_Elevator", None); sc.collection.objects.link(e)
+for o in bpy.data.collections["Elevator"].all_objects:
+    if o.parent is None: o.parent = e; o.matrix_parent_inverse.identity()
+for f, z in [(1, 0), (2461, 500), (3616, 0)]:
+    e.location.z = z; e.keyframe_insert("location", index=2, frame=f)
+for k in e.animation_data.action.fcurves[0].keyframe_points: k.interpolation = "CONSTANT"
 # hide the camera-facing void walls so the stacked basements show
 for n in ("VoidWallFront", "VoidWallRight"):
     o = bpy.data.objects[n]
