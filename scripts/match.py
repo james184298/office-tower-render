@@ -97,7 +97,7 @@ for n in ("VoidWallFront", "VoidWallRight"):
 # lighting / colour
 sc.eevee.use_shadows = True
 try:
-    sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_options.method = "SCREEN"
+    sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_method = "SCREEN"
     sc.eevee.fast_gi_method = "GLOBAL_ILLUMINATION"
 except Exception as ex: print("rt", ex)
 print("match v3 done")
