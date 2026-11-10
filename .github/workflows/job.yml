@@ -35,7 +35,9 @@ jobs:
           pip install -q modal
           mkdir -p work out && cd work && cp ../assets/* . && unzip -o -q tex.zip
       - name: Run
-        run: bash -c "${{ inputs.cmd }}"
+        env:
+          CMD: ${{ inputs.cmd }}
+        run: bash -c "$CMD"
       - name: Publish out/ to branch
         if: always()
         run: |
