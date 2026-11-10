@@ -6,23 +6,36 @@ P = dict(EL=float(os.environ.get("M_EL", 30)), AZ=float(os.environ.get("M_AZ", -
          DIST=float(os.environ.get("M_DIST", 1.6)), LENS=float(os.environ.get("M_LENS", 56)))
 cam = sc.camera
 tgt = bpy.data.objects["CamTarget"]
-# 1. camera: fixed iso-like direction, keep each key's distance (scaled)
+# 1. camera: fixed iso-like direction, per-shot distance scale and target drop
 el, az = math.radians(P["EL"]), math.radians(P["AZ"])
 dirv = Vector((math.cos(el) * math.cos(az), math.cos(el) * math.sin(az), math.sin(el)))
+# shot start frame -> (distance scale, target z offset)
+SHOTS = [(1, float(os.environ.get("M_OV", 1.6)), 0), (151, float(os.environ.get("M_EX", 1.05)), 0),
+         (646, float(os.environ.get("M_IN", 2.6)), -3), (1741, float(os.environ.get("M_EX", 1.05)), 0),
+         (2041, float(os.environ.get("M_IN", 2.6)), -3), (2461, float(os.environ.get("M_UG", 1.5)), 0),
+         (3616, float(os.environ.get("M_OV", 1.6)), 0)]
+def shot(f):
+    r = SHOTS[0]
+    for x in SHOTS:
+        if f >= x[0]: r = x
+    return r
 fc_c = {fc.array_index: fc for fc in cam.animation_data.action.fcurves if fc.data_path == "location"}
 fc_t = {fc.array_index: fc for fc in tgt.animation_data.action.fcurves if fc.data_path == "location"}
 keys = sorted({round(k.co[0]) for fc in fc_c.values() for k in fc.keyframe_points})
-new = {}
-for f in keys:
-    c = Vector([fc_c[i].evaluate(f) for i in range(3)])
-    t = Vector([fc_t[i].evaluate(f) for i in range(3)])
-    new[f] = t + dirv * (c - t).length * P["DIST"]
-for f, v in new.items():
+tkeys = sorted({round(k.co[0]) for fc in fc_t.values() for k in fc.keyframe_points})
+orig_t = {f: Vector([fc_t[i].evaluate(f) for i in range(3)]) for f in sorted(set(keys) | set(tkeys))}
+orig_c = {f: Vector([fc_c[i].evaluate(f) for i in range(3)]) for f in keys}
+def setkey(fcs, f, v):
     for i in range(3):
-        for k in fc_c[i].keyframe_points:
+        for k in fcs[i].keyframe_points:
             if round(k.co[0]) == f:
-                k.co[1] = v[i]; k.handle_left[1] = v[i]; k.handle_right[1] = v[i]
-for fc in fc_c.values(): fc.update()
+                d = v[i] - k.co[1]; k.co[1] = v[i]; k.handle_left[1] += d; k.handle_right[1] += d
+for f in tkeys:
+    setkey(fc_t, f, orig_t[f] + Vector((0, 0, shot(f)[2])))
+for f in keys:
+    t = orig_t[f]; m, dz = shot(f)[1], shot(f)[2]
+    setkey(fc_c, f, t + Vector((0, 0, dz)) + dirv * (orig_c[f] - t).length * m)
+for fc in list(fc_c.values()) + list(fc_t.values()): fc.update()
 cam.data.lens = P["LENS"]
 cam.data.clip_end = 2000
 # 2. no ocean; bright neutral world like the web app
@@ -42,7 +55,7 @@ for name in [o.name for o in bpy.data.collections["Coast"].all_objects]:
 bpy.data.collections["Coast"].hide_render = True
 # world: camera sees flat backdrop, scene lit by soft neutral sky
 w = sc.world; nt = w.node_tree; N = nt.nodes
-bg = N["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = float(os.environ.get("M_SKY", 0.5))
+bg = N["Background"]; bg.inputs[0].default_value = (1, 1, 1, 1); bg.inputs[1].default_value = float(os.environ.get("M_SKY", 0.3))
 cb = N.new("ShaderNodeBackground"); lp = N.new("ShaderNodeLightPath"); mx = N.new("ShaderNodeMixShader")
 cb.inputs[1].default_value = 1.0
 nt.links.new(lp.outputs["Is Camera Ray"], mx.inputs[0]); nt.links.new(bg.outputs[0], mx.inputs[1]); nt.links.new(cb.outputs[0], mx.inputs[2])
@@ -57,3 +70,34 @@ sc.view_settings.look = "None"
 sc.view_settings.exposure = float(os.environ.get("M_EXP", 0.0))
 sun = bpy.data.objects["Sun"].data; sun.energy = float(os.environ.get("M_SUN", 3.0)); sun.angle = math.radians(8)
 print("match.py applied", P)
+
+# 3. explode floors at liftoff (up) and basements in overview (down)
+def rig(colname, keys):
+    e = bpy.data.objects.new("Rig_" + colname, None); sc.collection.objects.link(e)
+    for o in bpy.data.collections[colname].all_objects:
+        if o.parent is None:
+            o.parent = e; o.matrix_parent_inverse.identity()
+    for f, z in keys:
+        e.location.z = z; e.keyframe_insert("location", index=2, frame=f)
+    for fc in e.animation_data.action.fcurves:
+        for k in fc.keyframe_points: k.interpolation = "BEZIER"; k.easing = "EASE_IN_OUT"
+G = float(os.environ.get("M_GAP", 1.6))
+for i, c in enumerate(["F2", "F3", "F4", "Roof"]):
+    z = G * (i + 1)
+    rig(c, [(372, 0), (430, z), (540, z), (590, 0)])
+BG = float(os.environ.get("M_BGAP", 2.5))
+for i, c in enumerate(["B1", "B2", "B3"]):
+    z = -BG * (i + 1)
+    rig(c, [(1, z), (120, z), (160, 0), (3600, 0), (3660, z)])
+# hide the camera-facing void walls so the stacked basements show
+for n in ("VoidWallFront", "VoidWallRight"):
+    o = bpy.data.objects[n]
+    if o.animation_data: o.animation_data.action = None
+    o.hide_render = True
+# lighting / colour
+sc.eevee.use_shadows = True
+try:
+    sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_options.method = "SCREEN"
+    sc.eevee.fast_gi_method = "GLOBAL_ILLUMINATION"
+except Exception as ex: print("rt", ex)
+print("match v3 done")
