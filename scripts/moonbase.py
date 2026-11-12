@@ -603,7 +603,7 @@ for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2)
 M_efr = mat("efr",(0.04,0.04,0.045),0.4)
 eh_top = Z0
 ES = 0.8; eh = ES/2
-box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (ES, ES, eh_top-FZ_BOT), M_glass)
+box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (ES, ES, eh_top-FZ_BOT), mat("eglass",(0.8,0.85,0.9),0.05, emit=(0.55,0.62,0.7), estr=0.12, alpha=0.28))
 for dx in (-eh, eh):
     for dy in (-eh, eh):
         box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.045, 0.045, eh_top-FZ_BOT), M_efr)
@@ -646,6 +646,15 @@ box("kdoor", (4.95, 2.47, 0.33), (0.28, 0.02, 0.55), M_dark)
 cyl("kpost", (5.1, 2.8, 0.95), 0.025, 0.3, M_metal, 6)
 c_ = sph("kdish", (5.1, 2.8, 1.1), 0.2, M_white, (1, 1, 0.35), 16); c_.rotation_euler = (math.radians(50), 0, math.radians(-45))
 
+# thin railing along the cutaway rim on the surface
+xx = XC + 0.1
+while xx < EX - 0.7:
+    cyl("rpost", (xx, YC+0.12, 0.17), 0.012, 0.34, M_metal, 6, smooth=False); xx += 0.45
+box("rrail", ((XC+EX-0.7)/2, YC+0.12, 0.34), (EX-0.7-XC, 0.02, 0.02), M_metal)
+yy = -B + 0.15
+while yy < YC:
+    cyl("rpost", (XC-0.12, yy, 0.17), 0.012, 0.34, M_metal, 6, smooth=False); yy += 0.45
+box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC, 0.02), M_metal)
 # dark structural rim around the top of the cutaway
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
@@ -763,8 +772,9 @@ text("TRANQUILITY BASE", (-4.6, -5.632, 0.6), 0.085, M_dark, rot=(math.radians(9
 text("DO NOT TOUCH", (-4.6, -5.645, 0.42), 0.07, M_white, rot=(math.radians(90), 0, 0), extrude=0.0)
 M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
-for k in range(6):
-    box("crate", (-2.4+0.42*(k%2), 4.2+0.42*((k//2)%2), 0.2+0.38*(k//4)), (0.4, 0.4, 0.36), M_white, 0.01)
+M_crate = mat("crate",(0.9,0.9,0.92),0.4)
+for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0,0.34,0),(0.34,0.34,0),(0.17,0.17,1),(0.5,-0.3,0)]):
+    box("crate", (-2.6+cx_, 4.2+cy_, 0.15+0.3*cz_), (0.32, 0.32, 0.28), M_crate, 0.01)
 RVX, RVY = 4.6, 0.75
 bm = bmesh.new()
 prof = [(-0.55,0.1),(0.55,0.1),(0.55,0.3),(0.05,0.5),(-0.55,0.32)]
@@ -852,7 +862,7 @@ def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.15; fill.angle = math.radians(20)
+fill = C.lights.new("fill", 'SUN'); fill.energy = 0.5; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
