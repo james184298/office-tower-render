@@ -99,6 +99,7 @@ M_screenG = emis("screenG", (0.1,0.7,0.25), 1.0)
 M_screenP = emis("screenP", (0.35,0.15,0.9), 1.0)
 M_red = emis("redposter", (1.0,0.25,0.1), 1.5)
 M_lamp = emis("lamp", (1.0,0.8,0.55), 6.0)
+M_wlamp = emis("wlamp", (1.0,0.55,0.2), 3.0)
 M_leaf = mat("leaf", (0.04,0.3,0.06), 0.55)
 M_leaf2 = mat("leaf2", (0.08,0.42,0.1), 0.55)
 M_pot = mat("pot", (0.9,0.9,0.9), 0.35)
@@ -106,8 +107,8 @@ M_purple = mat("carpet", (0.16,0.06,0.36), 0.9)
 M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
-BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", c, 0.18, emit=c, estr=0.55, spec=0.6) for i,c in enumerate(BOT_COLS)]
+BOT_COLS = [(0.02,0.75,0.08),(1.0,0.32,0.0),(0.03,0.18,1.0),(0.42,0.04,1.0),(1.0,0.04,0.32),(0.0,0.62,0.75),(1.0,0.7,0.0),(0.95,0.95,0.97)]
+M_bots = [mat(f"bot{i}", tuple(v*0.8 for v in c), 0.22, emit=c, estr=0.12, spec=0.7) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
 # ---- rock: broad soft strata bands + faint fine striations ----
@@ -336,7 +337,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 1.3)
+M_conimg = imgmat("conscr", console_img(), 0.6)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -348,7 +349,7 @@ XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
 ZB, ZT = -18.5, -10.8        # rock bottom tip / start of taper
 FZ_BOT = -10.2               # recess floor
 NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
-EX, EY = A - 0.8, YC + 1.25  # elevator centre (in a slot on the +x face)
+EX, EY = A - 0.6, YC + 1.65  # elevator centre (in a slot on the +x face; measured: shaft centre at ref u~556)
 CRATERS = [(-4.6,1.8,1.0),(-1.5,3.0,0.7),(-5.0,4.6,0.5),(2.0,0.6,0.45),(-0.6,0.9,0.35),(4.6,-0.0,0.3),(-3.2,5.3,0.4)]
 
 # ================= rock block =================
@@ -398,7 +399,8 @@ def cutter(name, x0, x1, y0, y1, z0, z1):
     c.data.materials.append(M_wall); c.hide_render = True; c.hide_viewport = True
     return c
 for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
-                 ("slot", cutter("slotbox", EX-0.75, A+4, YC-0.1, EY+0.75, FZ_BOT, 6))]:
+                 ("slot", cutter("slotbox", EX-0.6, A+4, YC-0.1, EY+0.6, FZ_BOT, 6)),
+                 ("notch", cutter("notchbox", EX-0.5, A+4, YC-0.1, EY+2.2, Z0-0.16, 6))]:
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
@@ -406,7 +408,7 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
 M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
 for k in range(26):
-    z = rb.uniform(ZB+0.6, ZT+1.5)
+    z = rb.uniform(ZB+0.6, ZT-1.0)
     f = (z - ZB)/(ZT - ZB); sc_ = 0.3 + 0.7*smooth(min(1, f))**0.85
     if rb.random() < 0.55: x = rb.uniform(-A, A)*sc_; y = -B*sc_ - rb.uniform(0.0, 0.25)
     else: x = A*sc_ + rb.uniform(0.0, 0.25); y = rb.uniform(-B, B)*sc_
@@ -419,7 +421,7 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wl", (XC-0.36, -B-0.47, zz), (0.12, 0.05, 0.18), M_lamp)
+    box("wl", (XC-0.36, -B-0.47, zz), (0.12, 0.05, 0.18), M_wlamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -597,47 +599,60 @@ for k in range(3): box("frame", (-0.85+k*0.16, -5.3, FZ_BOT+0.55), (0.04, 0.8, 1
 for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
 for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white)
 
-# glass elevator in its slot (white frame grid)
-eh_top = 1.4
-box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (0.95, 0.95, eh_top-FZ_BOT), M_glass)
-for dx in (-0.475, 0.475):
-    for dy in (-0.475, 0.475):
-        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.06, 0.06, eh_top-FZ_BOT), M_white)
-zz = FZ_BOT + 0.1
+# glass elevator shaft in its slot (thin dark frame, white light bars inside)
+M_efr = mat("efr",(0.04,0.04,0.045),0.4)
+eh_top = Z0
+ES = 0.8; eh = ES/2
+box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (ES, ES, eh_top-FZ_BOT), M_glass)
+for dx in (-eh, eh):
+    for dy in (-eh, eh):
+        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.045, 0.045, eh_top-FZ_BOT), M_efr)
+zz = FZ_BOT + 0.05
 while zz < eh_top:
-    box("eh1", (EX, EY-0.475, zz), (0.95, 0.04, 0.04), M_white); box("eh2", (EX+0.475, EY, zz), (0.04, 0.95, 0.04), M_white)
-    box("ev1", (EX, EY-0.475, zz+0.5), (0.03, 0.03, 1.0), M_white); box("ev2", (EX+0.475, EY, zz+0.5), (0.03, 0.03, 1.0), M_white)
+    box("eh1", (EX, EY-eh, zz), (ES, 0.035, 0.035), M_efr); box("eh2", (EX+eh, EY, zz), (0.035, ES, 0.035), M_efr)
     zz += 1.05
+for k in range(NF):
+    box("ebar", (EX+eh-0.08, EY+eh-0.05, Z0-k*FH-0.9), (0.03, 0.03, 0.7), M_lamp)
 # cab: glass with white frame, pink glow and a bot inside
 cz = Z0 - 2*FH
-box("ecab", (EX, EY, cz+0.55), (0.82, 0.82, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
-for dx in (-0.41, 0.41):
-    for dy in (-0.41, 0.41):
-        box("cabf", (EX+dx, EY+dy, cz+0.55), (0.04, 0.04, 1.0), M_white)
-box("cabfl", (EX, EY, cz+0.04), (0.85, 0.85, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.85, 0.85, 0.06), M_white)
+box("ecab", (EX, EY, cz+0.55), (0.7, 0.7, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
+for dx in (-0.35, 0.35):
+    for dy in (-0.35, 0.35):
+        box("cabf", (EX+dx, EY+dy, cz+0.55), (0.035, 0.035, 1.0), M_white)
+box("cabfl", (EX, EY, cz+0.04), (0.72, 0.72, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.72, 0.72, 0.06), M_white)
 pl = C.lights.new("cabl", 'POINT'); pl.energy = 25; pl.color = (1, 0.4, 0.7); pl.shadow_soft_size = 0.3
 plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location = (EX, EY, cz+0.85)
-box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
-for zz in range(NF):
-    box("estrip", (EX+0.5, EY+0.5, Z0-zz*FH+1.2), (0.04, 0.04, 0.5), M_lamp)
-bot(EX, EY, cz+0.07, M_bots[4], 0.22, glow=False)
-# top glass box on the surface
-box("etop", (EX-0.2, EY-0.2, 0.75), (1.7, 1.7, 1.5), M_glass)
-for dx in (-0.85, 0.85):
-    for dy in (-0.85, 0.85):
-        box("etf", (EX-0.2+dx, EY-0.2+dy, 0.75), (0.05, 0.05, 1.5), M_white)
-for zz in (0.02, 0.75):
-    box("eth1", (EX-0.2, EY-1.05, zz), (1.7, 0.04, 0.04), M_white); box("eth2", (EX+0.65, EY-0.2, zz), (0.04, 1.7, 0.04), M_white)
-box("etroof", (EX-0.2, EY-0.2, 1.52), (1.75, 1.75, 0.05), M_white)
-bot(EX-0.2, EY-0.2, 0.0, M_bots[1], 0.25, glow=False)
+box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.1,0.1,0.11),0.6))
+bot(EX, EY, cz+0.07, M_bots[4], 0.2, glow=False)
+# top station: glass box recessed into a notch at mission-floor level (ref: ~1.1 x 2.6, top flush with the surface)
+TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, -0.15
+box("tfloor", ((TX0+TX1)/2, (TY0+TY1)/2, TZ0-0.05), (TX1-TX0, TY1-TY0, 0.1), M_white)
+box("tglass", ((TX0+TX1)/2, (TY0+TY1)/2, (TZ0+TZ1)/2), (TX1-TX0, TY1-TY0, TZ1-TZ0), M_glass)
+for xx in (TX0, TX1):
+    for yy in (TY0, TY1):
+        box("tf", (xx, yy, (TZ0+TZ1)/2), (0.04, 0.04, TZ1-TZ0), M_efr)
+for zz in (TZ0, TZ1):
+    box("tfx", ((TX0+TX1)/2, TY0, zz), (TX1-TX0, 0.04, 0.04), M_efr); box("tfx", ((TX0+TX1)/2, TY1, zz), (TX1-TX0, 0.04, 0.04), M_efr)
+    box("tfy", (TX0, (TY0+TY1)/2, zz), (0.04, TY1-TY0, 0.04), M_efr); box("tfy", (TX1, (TY0+TY1)/2, zz), (0.04, TY1-TY0, 0.04), M_efr)
+box("tfm", (TX1, (TY0+TY1)/2, (TZ0+TZ1)/2), (0.03, 0.03, TZ1-TZ0), M_efr)
+box("tfm2", ((TX0+TX1)/2, TY0, (TZ0+TZ1)/2), (0.03, 0.03, TZ1-TZ0), M_efr)
+box("tpart", (TX0+0.5, EY+0.9, (TZ0+TZ1)/2), (0.03, 0.9, TZ1-TZ0), M_glass)
+bot(EX-0.1, EY+0.9, TZ0, M_bots[1], 0.24, glow=False); bot(EX-0.05, EY+1.7, TZ0, M_bots[0], 0.22, glow=False)
+pl2 = C.lights.new("topl", 'POINT'); pl2.energy = 20; pl2.color = (1, 0.85, 0.7)
+plo2 = C.objects.new("topl", pl2); sc.collection.objects.link(plo2); plo2.location = (EX, EY+1.0, TZ1-0.25)
+# white kiosk with a small dish behind the station
+box("kiosk", (4.95, 2.75, 0.4), (0.7, 0.55, 0.8), M_white, 0.02)
+box("kdoor", (4.95, 2.47, 0.33), (0.28, 0.02, 0.55), M_dark)
+cyl("kpost", (5.1, 2.8, 0.95), 0.025, 0.3, M_metal, 6)
+c_ = sph("kdish", (5.1, 2.8, 1.1), 0.2, M_white, (1, 1, 0.35), 16); c_.rotation_euler = (math.radians(50), 0, math.radians(-45))
 
 # dark structural rim around the top of the cutaway
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
-box("colR", (A+0.1, EY+1.05, (FZ_BOT-0.2)/2), (0.75, 0.6, -FZ_BOT-0.2), mat("colr",(0.07,0.07,0.075),0.5))
-for k in range(9):
-    box("wlr", (A+0.49, EY+1.05, -0.9 - k*1.05), (0.05, 0.12, 0.18), M_lamp)
+box("colR", (A+0.1, EY+0.85, (FZ_BOT+Z0-0.2)/2), (0.75, 0.5, Z0-0.2-FZ_BOT), mat("colr",(0.07,0.07,0.075),0.5))
+for k in range(8):
+    box("wlr", (A+0.49, EY+0.85, -2.2 - k*0.95), (0.05, 0.1, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
 box("colL", (XC-0.32, -B-0.075, (FZ_BOT)/2), (0.64, 0.75, -FZ_BOT), mat("col",(0.09,0.09,0.095),0.5))
 box("colLs", (XC-0.12, -B-0.47, (FZ_BOT)/2), (0.05, 0.04, -FZ_BOT), M_metal)
@@ -703,9 +718,9 @@ t.scale = (1.15, 1, 1); t.matrix_world = FR @ Matrix.Diagonal((1.15, 1, 1, 1))
 t.data.align_y = 'CENTER'
 swoosh("rswoosh", (2.0, -0.32), (3.4, 0.55), 0.22, 0.09, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
 # giant SPACEX sign on the back edge: chunky extruded letters + swoosh on the X
-sgn = text("SPACEX", (-0.9, B-0.6, 0.55), 1.55, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.15)
+sgn = text("SPACEX", (-0.45, B-0.6, 0.55), 1.55, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.15)
 sgn.data.bevel_depth = 0.03; sgn.data.bevel_resolution = 2
-sgn.scale = (1.5, 1.0, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
+sgn.scale = (1.45, 0.8, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
 bpy.context.view_layer.update()
 SF = sgn.matrix_world.copy()
 # swoosh in the sign's local frame (text units before scale): from inside the X out to the right
@@ -731,7 +746,7 @@ for i in range(6):
         box("pframe", (x, y-0.215, 0.34), (0.58, 0.02, 0.02), M_metal)
         cyl("post", (x, y, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
-for dx, dy in [(5.7, 3.3), (6.0, 4.4), (5.2, 5.3)]:
+for dx, dy in [(5.8, 3.75), (6.0, 4.7), (5.2, 5.4)]:
     cyl("dpost", (dx, dy, 0.45), 0.04, 0.9, M_metal, 8)
     c = sph("dish", (dx, dy, 1.05), 0.55, M_white, (1, 1, 0.3), 24); c.rotation_euler = (math.radians(55), 0, math.radians(-45))
 # gold lander + sign
@@ -744,19 +759,28 @@ for k in range(4):
 box("tboard", (-4.6, -5.6, 0.55), (1.0, 0.05, 0.45), M_white)
 box("tred", (-4.6, -5.63, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
 for xx in (-5.05, -4.15): box("tpost", (xx, -5.6, 0.2), (0.04, 0.04, 0.4), M_metal)
+M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 for k in range(6):
     box("crate", (-2.4+0.42*(k%2), 4.2+0.42*((k//2)%2), 0.2+0.38*(k//4)), (0.4, 0.4, 0.36), M_white, 0.01)
-box("rover", (3.9, 1.0, 0.3), (1.0, 0.55, 0.28), M_white, 0.05)
-box("roverwin", (4.0, 1.0, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
+RVX, RVY = 4.6, 0.75
+bm = bmesh.new()
+prof = [(-0.55,0.1),(0.55,0.1),(0.55,0.3),(0.05,0.5),(-0.55,0.32)]
+vs = [[bm.verts.new((px_, sy, pz_)) for px_, pz_ in prof] for sy in (-0.27, 0.27)]
+bm.faces.new(vs[0][::-1]); bm.faces.new(vs[1])
+for k_ in range(len(prof)):
+    k2 = (k_+1) % len(prof); bm.faces.new((vs[0][k_], vs[0][k2], vs[1][k2], vs[1][k_]))
+me_ = C.meshes.new("rover"); bm.to_mesh(me_); bm.free()
+rv = C.objects.new("rover", me_); sc.collection.objects.link(rv); rv.location = (RVX, RVY, 0); rv.data.materials.append(mat("roverw",(0.85,0.86,0.88),0.25,0.3))
+box("roverwin", (RVX+0.05, RVY, 0.42), (0.5, 0.56, 0.08), M_dark)
 for dx in (-0.35, 0.35):
-    for dy in (-0.3, 0.3):
-        cyl("wheel", (3.9+dx, 1.0+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
+    for dy in (-0.26, 0.26):
+        cyl("wheel", (RVX+dx, RVY+dy, 0.12), 0.12, 0.08, M_dark, 12, rot=(math.pi/2, 0, 0))
 bot(1.3, 1.25, 0.0, M_bots[6], 0.27); bot(1.85, 1.05, 0.0, M_bots[4], 0.27)
-for k in range(40):
+for k in range(140):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
-    if (x > XC-0.3 and y < YC+0.3) or math.hypot(x-PX, y-PY) < 2.4: continue
-    o = ico("rock", (x, y, 0.02), random.uniform(0.06, 0.18), mat("srock",(0.2,0.2,0.21),0.9), 1)
+    if (x > XC-0.3 and y < YC+0.3) or (x > EX-0.8 and y < EY+2.5) or math.hypot(x-PX, y-PY) < 2.4: continue
+    o = ico("rock", (x, y, 0.02), random.uniform(0.04, 0.16), M_srock, 1)
     o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.5,0.8))
 
 # ================= camera =================
