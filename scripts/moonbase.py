@@ -158,7 +158,7 @@ L.new(sn.outputs["Fac"], smr.inputs["Value"])
 gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 28; gn.inputs["Detail"].default_value = 8; gn.inputs["Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], gn.inputs["Vector"])
 gmr = N.new("ShaderNodeMapRange"); gmr.inputs["From Min"].default_value = 0.3; gmr.inputs["From Max"].default_value = 0.7
-gmr.inputs["To Min"].default_value = 0.62; gmr.inputs["To Max"].default_value = 1.35
+gmr.inputs["To Min"].default_value = 0.55; gmr.inputs["To Max"].default_value = 1.45
 L.new(gn.outputs["Fac"], gmr.inputs["Value"])
 # broad patches
 pn = N.new("ShaderNodeTexNoise"); pn.inputs["Scale"].default_value = 0.35; pn.inputs["Detail"].default_value = 3
@@ -205,7 +205,7 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.35; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.32; er[0].color = (0.1,0.1,0.105,1); er[1].position = 0.68; er[1].color = (0.34,0.34,0.35,1)
+er[0].position = 0.32; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.68; er[1].color = (0.27,0.27,0.28,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -385,7 +385,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 0.6)
+M_conimg = imgmat("conscr", console_img(), 1.3)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -548,8 +548,8 @@ def console_row(cx, cy, z, n, R=7.0, seg=0.5):
         o = box("cdesk", (*P(0, 0), z+0.36), (seg-0.03, 0.3, 0.04), M_desk); o.rotation_euler.z = rot
         o = box("cbody", (*P(0, 0.05), z+0.18), (seg-0.08, 0.18, 0.34), M_dark); o.rotation_euler.z = rot
         for dx in (-0.12, 0.12):
-            o = box("cmonb", (*P(dx, 0.11), z+0.5), (0.17, 0.02, 0.115), M_dark); o.rotation_euler.z = rot
-            o = plane("cmon", (*P(dx, 0.098), z+0.5), 0.155, 0.1, M_conimg); o.rotation_euler.z = rot
+            o = box("cmonb", (*P(dx, 0.11), z+0.52), (0.2, 0.02, 0.135), M_dark); o.rotation_euler.z = rot
+            o = plane("cmon", (*P(dx, 0.098), z+0.52), 0.185, 0.12, M_conimg); o.rotation_euler.z = rot
         cx_, cy_ = P(0, -0.3); chair(cx_, cy_, z, 1, s=0.8)
 
 slabs = []
@@ -569,7 +569,7 @@ for i in range(NF):
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_panel)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 150 if i else 90; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 115 if i else 70; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
