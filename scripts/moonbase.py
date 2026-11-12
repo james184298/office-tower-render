@@ -107,7 +107,7 @@ M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
 BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", c, 0.22, emit=c, estr=0.25) for i,c in enumerate(BOT_COLS)]
+M_bots = [mat(f"bot{i}", c, 0.3, emit=c, estr=0.35, spec=0.25) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
 # ---- rock with soft horizontal strata ----
@@ -123,9 +123,9 @@ wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inp
 L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
 mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.55
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].position = 0.0; r.elements[0].color = (0.07,0.07,0.075,1)
+r.elements[0].position = 0.0; r.elements[0].color = (0.045,0.045,0.05,1)
 r.elements[1].position = 1.0; r.elements[1].color = (0.22,0.22,0.23,1)
-for p, v in [(0.22,0.16),(0.38,0.32),(0.5,0.11),(0.66,0.4),(0.82,0.19)]:
+for p, v in [(0.22,0.14),(0.36,0.3),(0.47,0.055),(0.62,0.36),(0.8,0.1),(0.9,0.26)]:
     e = r.elements.new(p); e.color = (v,v,v*1.02,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
@@ -274,6 +274,7 @@ for i in range(NF):
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.92, 0.82)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + FH - 0.35)
     zt = zf
+    _before = set(C.objects.keys())
     if i == 0:   # ---- mission control ----
         # big wall screen (several panels)
         for k, (xa, xb, m) in enumerate([(0.6, 2.5, M_screen), (2.6, 4.4, M_screen), (4.5, 5.6, M_screen)]):
@@ -357,6 +358,13 @@ for i in range(NF):
         for k in range(2): box("server2", (XC+0.4, -3.4-k*0.65, zt+0.85), (0.5, 0.6, 1.7), M_dark)
         for k in range(3): box("bench2", (4.6, -1.0-k*0.0, zt+0.3), (0.9, 0.5, 0.6), M_desk)
         bots = [(0.9,-2.5),(2.2,-5.3),(3.0,-2.2),(0.2,-5.0)]
+    if i > 0:
+        bots = [(bx, -B+0.55+(by+B-0.55)*0.55) for bx, by in bots]
+        for nm in set(C.objects.keys()) - _before:
+            o = C.objects[nm]
+            if o.location.y < YC - 0.75 and o.location.x > XC + 0.1:
+                o.location.y = -B + 0.55 + (o.location.y + B - 0.55)*0.55
+                if o.type == 'MESH' and o.dimensions.y > 1.2 and not o.name.startswith("groom"): o.scale.y *= 0.55
     for k, (bx, by) in enumerate(bots):
         if bx < x1 - 0.3 and by > y0 + 0.3:
             bot(bx, by, zt, M_bots[(i*5+k) % len(M_bots)])
@@ -379,7 +387,7 @@ for dx in (-0.575, 0.575):
 for k in range(7):
     zz = FZ_BOT + 0.2 + k*FH
     box("eh1", (EX, EY-0.575, zz), (1.15, 0.05, 0.05), M_metal); box("eh2", (EX+0.575, EY, zz), (0.05, 1.15, 0.05), M_metal)
-box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.1,emit=(1,0.3,0.6),estr=0.4, alpha=0.3))
+box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.1,emit=(1,0.3,0.6),estr=0.25, alpha=0.18))
 box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
 for zz in range(5):
     box("estrip", (EX+0.5, EY+0.5, Z0-zz*FH+1.2), (0.04, 0.04, 0.5), M_lamp)
@@ -412,8 +420,7 @@ bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, loca
 n = bpy.context.object; n.scale.z = 2.7; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
 for k in range(4):
     a = k*math.pi/2 + math.pi/4
-    f = box("flap", (PX+math.cos(a)*(RR+0.12), PY+math.sin(a)*(RR+0.12), RB+0.9), (0.25, 0.05, 0.9), M_white)
-    f.rotation_euler.z = a
+    pass
 for k in range(6):
     a = k*math.pi/3 + 0.3
     p0 = Vector((PX+math.cos(a)*RR*0.9, PY+math.sin(a)*RR*0.9, RB+1.4)); p1 = Vector((PX+math.cos(a)*1.75, PY+math.sin(a)*1.75, 0.12))
@@ -524,7 +531,7 @@ wd.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0
 
 # ================= render =================
 sc.render.engine = "BLENDER_EEVEE_NEXT"
-sc.eevee.taa_render_samples = int(os.environ.get("PS", 32))
+sc.eevee.taa_render_samples = int(os.environ.get("PS", 24))
 try:
     sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_method = 'SCREEN'
     sc.eevee.use_shadows = True; sc.eevee.shadow_ray_count = 2; sc.eevee.shadow_step_count = 8
