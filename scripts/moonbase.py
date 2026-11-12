@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.56,0.57,0.59), 0.35)
+M_slab = mat("slab", (0.4,0.41,0.43), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -464,7 +464,7 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
 # rubble / boulders around the tapered bottom of the rock
 M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
-for k in range(26):
+for k in range(int(os.environ.get("NBOUL", 0))):
     z = rb.uniform(ZB+0.8, ZT-1.0)
     sc_ = taper_s(z)
     if rb.random() < 0.55: xr = rb.uniform(-A, A); yr = -B - rb.uniform(0.0, 0.25)/max(sc_, 0.3)
@@ -592,11 +592,12 @@ for i in range(NF):
             chair(xx+0.1, -5.05, zt, -1, M_white); chair(xx-0.05, -4.05, zt, 1, M_white)
         for k in range(6):
             chair(4.5+ (k % 2)*0.7, -3.4 - (k//2)*0.7, zt, 1, M_white)
-        cyl("rug", (5.0, -2.9, zt+0.008), 0.95, 0.012, mat("rug",(0.18,0.18,0.19),0.9), 48)
-        cyl("rtable", (5.0, -2.9, zt+0.42), 0.38, 0.04, M_dark, 32); cyl("rtleg", (5.0, -2.9, zt+0.21), 0.04, 0.42, M_dark, 8)
+        cyl("rug", (5.0, -2.9, zt+0.01), 0.85, 0.02, M_dark, 48)
+        cyl("podium", (5.0, -2.9, zt+0.55), 0.16, 1.1, M_white, 24); cyl("podb", (5.0, -2.9, zt+0.04), 0.32, 0.05, M_white, 24)
+        for a_ in range(6): stool(5.0+0.62*math.cos(a_*1.047), -2.9+0.62*math.sin(a_*1.047), zt, M_white)
         for k in range(5): box("tmon", (0.15+k*1.06, -4.38, zt+0.66), (0.3, 0.02, 0.2), M_dark); plane("tmons", (0.15+k*1.06, -4.395, zt+0.66), 0.27, 0.17, M_conimg)
         box("gpart", (4.1, -2.4, zt+0.5), (0.02, 1.6, 1.0), M_glass)
-        box("lounge", (5.5, -1.7, zt+0.18), (0.8, 0.5, 0.36), M_dark)
+        for dx_ in (5.2, 5.75): box("pouf", (dx_, -1.75, zt+0.15), (0.34, 0.34, 0.3), M_dark, 0.03)
         cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_dark, 32)
         plant(XC+0.3, -5.5, zt, 0.7); plant(6.0, -5.5, zt, 0.7)
         bots = [(1.1,-3.85,0),(2.7,-3.9,4),(5.2,-4.6,7),(4.4,-3.4,1),(0.2,-5.45,2)]
@@ -618,7 +619,7 @@ for i in range(NF):
         for a in range(5): chair(5.4+0.5*math.cos(a*1.25), -2.6+0.5*math.sin(a*1.25), zt, 1, M_white)
         box("sofa2", (4.6, -5.4, zt+0.17), (0.6, 0.35, 0.3), M_sofa)
         M_bdesk = mat("bdesk",(0.03,0.06,0.2),0.35)
-        for k in range(3): box("bdesk", (1.9, -3.6-k*0.55, zt+0.3), (0.5, 0.4, 0.6), M_bdesk, 0.01)
+        for k in range(4): chair(1.9, -3.5-k*0.5, zt, 1, M_white)
         for p in [(2.4,-5.4),(5.6,-4.4)]:
             cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
@@ -657,8 +658,11 @@ for k in range(8):
     o = box("fanblade", (1.42, -5.3+0.22*math.cos(a), FZ_BOT+0.47+0.22*math.sin(a)), (0.02, 0.06, 0.38), M_metal); o.rotation_euler.x = a - math.pi/2
 cyl("tankband", (-0.2, -5.3, FZ_BOT+0.47), 0.455, 0.16, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
 for k in range(3): box("frame", (-1.2+k*0.16, -5.3, FZ_BOT+0.45), (0.04, 0.7, 0.9), M_metal)
-for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
-for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white)
+for j in range(2):
+    for k in range(4): box("crate", (4.6+k*0.42, -5.35+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
+    for k in range(3): box("crate", (4.8+k*0.42, -5.35+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
+Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 160; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
+lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
 # glass elevator shaft in its slot (thin dark frame, white light bars inside)
 M_efr = mat("efr",(0.04,0.04,0.045),0.4)
