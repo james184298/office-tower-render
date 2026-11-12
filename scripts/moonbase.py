@@ -116,21 +116,21 @@ nt = M_rock.node_tree; N = nt.nodes; L = nt.links
 bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
 tc = N.new("ShaderNodeTexCoord")
 # broad bands: noise stretched along x/y so it varies mostly with z
-mpB = N.new("ShaderNodeMapping"); mpB.inputs["Scale"].default_value = (0.09, 0.09, 0.75)
+mpB = N.new("ShaderNodeMapping"); mpB.inputs["Scale"].default_value = (0.035, 0.035, 0.45)
 nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.0; nB.inputs["Detail"].default_value = 3; nB.inputs["Roughness"].default_value = 0.45
 L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
 # fine striations
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.55; wav.inputs["Distortion"].default_value = 3.0
-wav.inputs["Detail"].default_value = 4; wav.inputs["Detail Scale"].default_value = 0.6
+wav.inputs["Scale"].default_value = 0.42; wav.inputs["Distortion"].default_value = 5.0
+wav.inputs["Detail"].default_value = 6; wav.inputs["Detail Scale"].default_value = 0.35; wav.inputs["Detail Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
-r.elements[0].position = 0.3; r.elements[0].color = (0.035,0.035,0.04,1)
-r.elements[1].position = 0.72; r.elements[1].color = (0.34,0.34,0.35,1)
-e = r.elements.new(0.48); e.color = (0.11,0.11,0.115,1)
-e = r.elements.new(0.58); e.color = (0.24,0.24,0.25,1)
+r.elements[0].position = 0.28; r.elements[0].color = (0.05,0.05,0.055,1)
+r.elements[1].position = 0.75; r.elements[1].color = (0.3,0.3,0.31,1)
+e = r.elements.new(0.45); e.color = (0.12,0.12,0.125,1)
+e = r.elements.new(0.6); e.color = (0.2,0.2,0.21,1)
 L.new(nB.outputs["Fac"], rB.inputs["Fac"])
-fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.72; fineR.inputs["To Max"].default_value = 1.18
+fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.45; fineR.inputs["To Max"].default_value = 1.45
 L.new(wav.outputs["Fac"], fineR.inputs["Value"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
 L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Result"], mulc.inputs["Color2"])
@@ -359,10 +359,11 @@ for v in bm.verts:
     ontop = z > -0.001
     edge = max(abs(x)/A, abs(y)/B) > 0.999
     if edge:
-        n = noise.fractal(Vector((x*0.14+3, y*0.14, z*0.35)), 0.6, 2.0, 4)
-        n2 = noise.noise(Vector((x*0.5, y*0.5, z*1.4)))
-        led = 0.16*math.sin(z*1.5 + 2.5*noise.noise(Vector((x*0.2, y*0.2, z*0.15))))
-        off = 0.42*n + 0.1*n2 + led + 0.15
+        n = noise.noise(Vector((x*0.18+3, y*0.18, z*0.45)))
+        n2 = noise.noise(Vector((x*0.6, y*0.6, z*1.2)))
+        layer = math.floor(z/0.85 + 0.5*noise.noise(Vector((x*0.12, y*0.12, 7.0))))
+        led = 0.13*noise.noise(Vector((layer*1.73, 0.5, 2.0)))
+        off = 0.2*n + 0.05*n2 + led + 0.1
         if z > -0.6: off *= max(0.0, -z/0.6)
         if abs(x)/A >= abs(y)/B: v.co.x += math.copysign(off, x)
         else: v.co.y += math.copysign(off, y)
@@ -398,14 +399,14 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
 # rubble / boulders around the tapered bottom of the rock
-M_boul = mat("boulder",(0.13,0.13,0.135),0.95)
+M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
-for k in range(46):
+for k in range(26):
     z = rb.uniform(ZB+0.6, ZT+1.5)
     f = (z - ZB)/(ZT - ZB); sc_ = 0.28 + 0.72*smooth(min(1, f))**0.6
     if rb.random() < 0.55: x = rb.uniform(-A, A)*sc_; y = -B*sc_ - rb.uniform(0.0, 0.25)
     else: x = A*sc_ + rb.uniform(0.0, 0.25); y = rb.uniform(-B, B)*sc_
-    o = ico("boulder", (x, y, z), rb.uniform(0.25, 0.75), M_boul, 2)
+    o = ico("boulder", (x*0.97, y*0.97, z), rb.uniform(0.18, 0.5), M_boul, 2)
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
@@ -414,7 +415,7 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wl", (XC-0.45, -B-0.47, zz), (0.14, 0.05, 0.2), M_lamp)
+    box("wl", (XC-0.36, -B-0.47, zz), (0.12, 0.05, 0.18), M_lamp)
     box("wl", (A+0.12, EY+0.95, zz), (0.05, 0.16, 0.22), M_lamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
@@ -458,10 +459,10 @@ def plant(x, y, z, s=1.0, tall=False):
 
 def chair(x, y, z, face=1, m=None):
     m = m or M_chair
-    box("seat", (x, y, z+0.3), (0.26, 0.26, 0.04), m)
-    box("back", (x, y-face*0.12, z+0.46), (0.26, 0.03, 0.3), m)
-    cyl("cpost", (x, y, z+0.15), 0.02, 0.3, M_dark, 6, smooth=False)
-    cyl("cbase", (x, y, z+0.015), 0.1, 0.03, M_dark, 8)
+    box("seat", (x, y, z+0.28), (0.22, 0.22, 0.04), m)
+    box("back", (x, y-face*0.1, z+0.4), (0.22, 0.03, 0.22), m)
+    cyl("cpost", (x, y, z+0.15), 0.02, 0.3, m if m is not M_chair else M_dark, 6, smooth=False)
+    cyl("cbase", (x, y, z+0.015), 0.1, 0.03, m if m is not M_chair else M_dark, 8)
 
 def stool(x, y, z, m=M_white):
     cyl("stool", (x, y, z+0.36), 0.1, 0.04, m, 12); cyl("sl", (x, y, z+0.18), 0.018, 0.36, M_metal, 6, smooth=False)
@@ -549,7 +550,7 @@ for i in range(NF):
         cyl("groomt", (5.4, -2.6, zt+0.4), 0.3, 0.04, M_white, 24)
         for a in range(5): chair(5.4+0.5*math.cos(a*1.25), -2.6+0.5*math.sin(a*1.25), zt, 1, M_white)
         box("sofa2", (4.6, -5.4, zt+0.17), (0.6, 0.35, 0.3), M_sofa)
-        plant(6.0, -4.9, zt, 0.7, True)
+        plant(6.0, -5.3, zt, 0.7, True)
         bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3)]
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
@@ -560,7 +561,7 @@ for i in range(NF):
         for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
             box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
         box("totem", (2.0, -4.4, zt+0.4), (0.16, 0.16, 0.8), M_dark)
-        cyl("rbench", (1.2, -4.9, zt+0.12), 0.45, 0.24, M_wood, 32)
+        cyl("rbench", (1.2, -5.3, zt+0.12), 0.45, 0.24, M_wood, 32)
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
         cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
         for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
@@ -573,13 +574,13 @@ zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-cyl("tank", (0.5, -4.9, FZ_BOT+0.62), 0.58, 2.0, M_tank, 40, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.55, -4.9, FZ_BOT+0.62), 0.6, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+cyl("tank", (0.5, -5.3, FZ_BOT+0.62), 0.58, 2.0, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.55, -5.3, FZ_BOT+0.62), 0.6, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.62, -4.9+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a
-cyl("tankband", (0.2, -4.9, FZ_BOT+0.62), 0.6, 0.18, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
-for k in range(3): box("frame", (-0.85+k*0.16, -4.9, FZ_BOT+0.55), (0.04, 0.8, 1.1), M_metal)
+    o = box("fanblade", (1.62, -5.3+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a
+cyl("tankband", (0.2, -5.3, FZ_BOT+0.62), 0.6, 0.18, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
+for k in range(3): box("frame", (-0.85+k*0.16, -5.3, FZ_BOT+0.55), (0.04, 0.8, 1.1), M_metal)
 for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
 for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white)
 
@@ -622,7 +623,7 @@ M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
 # dark structural column on the rock face left of the cutaway
-box("colL", (XC-0.45, -B-0.075, (FZ_BOT)/2), (0.9, 0.75, -FZ_BOT), M_rim)
+box("colL", (XC-0.32, -B-0.075, (FZ_BOT)/2), (0.64, 0.75, -FZ_BOT), mat("col",(0.09,0.09,0.095),0.5))
 box("colLs", (XC-0.12, -B-0.47, (FZ_BOT)/2), (0.05, 0.04, -FZ_BOT), M_metal)
 
 # ================= surface =================
@@ -646,15 +647,12 @@ bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, loca
 n = bpy.context.object; n.scale.z = 2.6; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
 # delete lower hemisphere of the nose (inside body anyway)
 # forward + aft flaps on the left/right sides of the silhouette
-M_flap = mat("flap",(0.08,0.08,0.09),0.4)
+M_flap = mat("flap",(0.45,0.46,0.48),0.4)
 for sgn in (-1, 1):
     base = Vector((PX, PY, 0)) + sd*(sgn*(RR+0.12))
-    o = box("fflap", (base.x, base.y, RB+BH+0.5), (0.42, 0.05, 1.0), M_flap); o.rotation_euler.z = math.radians(45)
+    o = box("fflap", (base.x, base.y, RB+BH+0.6), (0.3, 0.04, 0.7), M_flap); o.rotation_euler.z = math.radians(45)
     o.scale = (1, 1, 1); o.rotation_euler.x = 0
-    o2 = box("aflap", (base.x + sd.x*sgn*0.05, base.y + sd.y*sgn*0.05, RB+0.9), (0.6, 0.06, 1.5), M_flap); o2.rotation_euler.z = math.radians(45)
-    for z_ in (RB+BH-0.25,):
-        for dz in (0.0,):
-            gf = box("gridfin", (base.x, base.y, z_+dz), (0.36, 0.04, 0.3), M_metal); gf.rotation_euler.z = math.radians(45)
+    o2 = box("aflap", (base.x - sd.x*sgn*0.02, base.y - sd.y*sgn*0.02, RB+1.0), (0.34, 0.05, 1.1), M_flap); o2.rotation_euler.z = math.radians(45)
 # small dark hatches under the band (visible in ref)
 for k in (-0.35, 0.35):
     p = Vector((PX, PY, RB+BH-1.55)) + cd*(RR+0.005) + sd*k
@@ -697,7 +695,7 @@ sgn.scale = (1.5, 1.0, 1); sgn.rotation_euler = (math.radians(90), 0, math.radia
 bpy.context.view_layer.update()
 SF = sgn.matrix_world.copy()
 # swoosh in the sign's local frame (text units before scale): from inside the X out to the right
-sw = swoosh("sswoosh", (2.6, 0.1), (5.0, 0.9), -0.2, 0.22, M_white, 0.12, SF @ Matrix.Translation((0, 0, 0.05)))
+sw = swoosh("sswoosh", (2.7, 0.05), (4.5, 0.75), -0.15, 0.2, M_white, 0.12, SF @ Matrix.Translation((0, 0, 0.05)))
 for xx in (-4.6, -1.5, 1.5, 4.0):
     box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
 box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
@@ -767,11 +765,11 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*0.85 + up*0.35 + back*0.55).normalized()
+ldir = (-right*1.0 + up*0.3 + back*0.2).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.12; tm.inputs["From Max"].default_value = 0.3
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.08; tm.inputs["From Max"].default_value = 0.22
 tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
@@ -827,6 +825,11 @@ sc.render.resolution_percentage = int(os.environ.get("PCT", 100))
 sc.render.image_settings.file_format = "PNG"
 out = os.environ.get("OUT", "../out/moon_hero.png")
 os.makedirs(os.path.dirname(out), exist_ok=True)
+bpy.context.view_layer.update()
+for o in C.objects:
+    if o.type in ('MESH','FONT') and o.name not in ('earth',) and not o.name.startswith('Plane'):
+        p = o.matrix_world.translation
+        if abs(p.x) > 9 or abs(p.y) > 9 or p.z > 13 or p.z < -21: print("FAR", o.name, tuple(round(v,2) for v in p), tuple(round(v,2) for v in o.dimensions))
 print("BUILD_SECONDS %.1f objects %d" % (time.time()-T0, len(C.objects)))
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(out), "moonbase.blend"))
 sc.render.filepath = out
