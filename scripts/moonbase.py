@@ -92,6 +92,9 @@ nt.links.new(_t.outputs["Object"], _w.inputs["Vector"]); nt.links.new(_t.outputs
 nt.links.new(_w.outputs["Fac"], _m.inputs[0]); nt.links.new(_n.outputs["Fac"], _m.inputs[1])
 nt.links.new(_m.outputs[0], _r.inputs["Fac"]); nt.links.new(_r.outputs["Color"], _e.inputs["Color"])
 _e.inputs["Strength"].default_value = 1.6; nt.links.new(_e.outputs[0], _o.inputs[0])
+M_navy = emis("navy", (0.02,0.07,0.3), 1.6)
+M_cyan = emis("cyan", (0.4,0.85,1.0), 4.0)
+M_orange = emis("orange", (1.0,0.5,0.1), 3.0)
 M_screenG = emis("screenG", (0.1,0.7,0.25), 1.0)
 M_screenP = emis("screenP", (0.35,0.15,0.9), 1.0)
 M_red = emis("redposter", (1.0,0.25,0.1), 1.5)
@@ -120,9 +123,9 @@ wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inp
 L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
 mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.55
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].position = 0.0; r.elements[0].color = (0.05,0.05,0.055,1)
-r.elements[1].position = 1.0; r.elements[1].color = (0.16,0.16,0.17,1)
-for p, v in [(0.22,0.12),(0.38,0.24),(0.5,0.08),(0.66,0.3),(0.82,0.14)]:
+r.elements[0].position = 0.0; r.elements[0].color = (0.07,0.07,0.075,1)
+r.elements[1].position = 1.0; r.elements[1].color = (0.22,0.22,0.23,1)
+for p, v in [(0.22,0.16),(0.38,0.32),(0.5,0.11),(0.66,0.4),(0.82,0.19)]:
     e = r.elements.new(p); e.color = (v,v,v*1.02,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
@@ -147,7 +150,7 @@ L.new(n3.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
-ZB, ZT = -18.0, -12.4        # rock bottom tip / start of taper
+ZB, ZT = -19.0, -13.6        # rock bottom tip / start of taper
 FZ_BOT = -11.7               # recess floor
 NF = 5; Z0 = -1.6; FH = 2.2  # top slab level and floor pitch
 EX, EY = A - 0.8, YC + 1.25  # elevator centre (in a slot on the +x face)
@@ -267,7 +270,7 @@ for i in range(NF):
     box("rtA", (cx, y0+0.04, zf+0.5), (W, 0.04, 0.03), M_metal)
     box("rtB", (x1-0.04, cy, zf+0.5), (0.04, D, 0.03), M_metal)
     # light for the floor
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 120 if i else 70; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 170 if i else 80; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.92, 0.82)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + FH - 0.35)
     zt = zf
@@ -275,7 +278,11 @@ for i in range(NF):
         # big wall screen (several panels)
         for k, (xa, xb, m) in enumerate([(0.6, 2.5, M_screen), (2.6, 4.4, M_screen), (4.5, 5.6, M_screen)]):
             box("bezel", ((xa+xb)/2, YC+0.03, zt+1.0), (xb-xa+0.08, 0.04, 1.28), M_dark)
-            box("big", ((xa+xb)/2, YC-0.0, zt+1.0), (xb-xa, 0.03, 1.2), M_big)
+            box("big", ((xa+xb)/2, YC-0.0, zt+1.0), (xb-xa, 0.03, 1.2), M_navy)
+            for q in range(3):
+                box("chart", (xa+0.3+q*(xb-xa-0.6)/2.0, YC-0.03, zt+0.75+0.35*(q%2)), ((xb-xa)*0.22, 0.01, 0.05), M_cyan)
+            box("graph", ((xa+xb)/2, YC-0.03, zt+1.3), ((xb-xa)*0.7, 0.01, 0.03), M_cyan)
+            box("bar", (xa+0.25, YC-0.03, zt+1.0), (0.08, 0.01, 0.7), M_orange)
         box("bigtrim", (3.1, YC-0.02, zt+0.36), (5.0, 0.02, 0.04), M_lamp)
         for k in range(3):
             box("smallscr", (XC+0.45+k*0.45, YC-0.01, zt+1.1), (0.4, 0.03, 0.9), M_big if k != 1 else M_screenG)
@@ -405,7 +412,7 @@ bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, loca
 n = bpy.context.object; n.scale.z = 2.7; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
 for k in range(4):
     a = k*math.pi/2 + math.pi/4
-    f = box("fin", (PX+math.cos(a)*(RR+0.25), PY+math.sin(a)*(RR+0.25), RB+0.9), (0.55, 0.06, 1.6), M_white)
+    f = box("flap", (PX+math.cos(a)*(RR+0.12), PY+math.sin(a)*(RR+0.12), RB+0.9), (0.25, 0.05, 0.9), M_white)
     f.rotation_euler.z = a
 for k in range(6):
     a = k*math.pi/3 + 0.3
@@ -420,8 +427,8 @@ t = text("SPACEX", (0,0,0), 0.55, M_dark, extrude=0.005)
 t.matrix_world = Matrix.Translation(Vector((PX, PY, RB+4.6)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
 t.data.align_y = 'CENTER'
 # giant SPACEX sign on the back edge
-sgn = text("SPACEX", (-0.9, B-0.6, 0.6), 2.0, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.25)
-sgn.scale = (1.35, 0.6, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
+sgn = text("SPACEX", (-0.9, B-0.6, 0.55), 1.7, M_white, rot=(math.radians(90), 0, 0), extrude=0.07, spacing=1.2)
+sgn.scale = (1.55, 0.8, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
 for xx in (-4.6, -1.5, 1.5, 4.0):
     box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
 box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
@@ -522,8 +529,8 @@ try:
     sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_method = 'SCREEN'
     sc.eevee.use_shadows = True; sc.eevee.shadow_ray_count = 2; sc.eevee.shadow_step_count = 8
 except Exception as ex: print("rt", ex)
-sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = os.environ.get('LOOK', 'AgX - Punchy')
-sc.view_settings.exposure = float(os.environ.get("EXP", 0.0))
+sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = os.environ.get('LOOK', 'AgX - Medium High Contrast')
+sc.view_settings.exposure = float(os.environ.get("EXP", 0.35))
 sc.render.resolution_x, sc.render.resolution_y = 1080, 1350
 sc.render.resolution_percentage = int(os.environ.get("PCT", 100))
 sc.render.image_settings.file_format = "PNG"
