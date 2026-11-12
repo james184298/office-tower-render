@@ -378,7 +378,20 @@ M_aiimg = imgmat("aip", ai_panel_img(), 0.9)
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
-ZB, ZT = -18.5, -10.8        # rock bottom tip / start of taper
+ZB, ZT = -16.9, -9.3         # rock bottom tip / start of taper
+# taper (measured off the ref silhouette): scale about a centre offset toward +x+y, so the left side tapers more
+TAPER = [(-16.9, 0.18), (-16.5, 0.3), (-15.8, 0.5), (-14.8, 0.7), (-13.5, 0.8), (-11.9, 0.9), (-10.5, 0.96), (-9.3, 1.0)]
+TCX, TCY = 2.5, 2.5
+def taper_s(z):
+    if z <= TAPER[0][0]: return TAPER[0][1]
+    for (z0, s0), (z1, s1) in zip(TAPER, TAPER[1:]):
+        if z <= z1:
+            t = (z-z0)/(z1-z0); t = t*t*(3-2*t); return s0 + (s1-s0)*t
+    return 1.0
+# terrain rises toward the back-right corner (ref: the +x face's top edge reaches v~310 at the right corner)
+HH = float(os.environ.get("HILL", 2.6))
+def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
+def TH(x, y): return HH*_sm((x+2)/8.5)*_sm((y-2.5)/3.5)
 FZ_BOT = -10.2               # recess floor
 NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
 EX, EY = A - 0.6, YC + 1.65  # elevator centre (in a slot on the +x face; measured: shaft centre at ref u~556)
@@ -412,10 +425,11 @@ for v in bm.verts:
             h += 0.07*cr*math.exp(-((d-1.0)/0.25)**2)
         v.co.z += h
     if z < ZT:
-        f = (z - ZB)/(ZT - ZB)
-        s = 0.3 + 0.7*smooth(f)**0.85
-        ns = 1 + 0.12*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))
-        v.co.x *= s*ns; v.co.y *= s*ns
+        s = taper_s(z)
+        ns = 1 + 0.1*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))
+        v.co.x = TCX + (v.co.x - TCX)*s*ns; v.co.y = TCY + (v.co.y - TCY)*s*ns
+    if z > -5.0:
+        v.co.z += TH(x, y)*smooth(1 + z/5.0)
     if z < ZB + 0.01:
         v.co.z += 0.8*noise.noise(Vector((x*0.5, y*0.5, 5)))
 me = C.meshes.new("block"); bm.to_mesh(me); bm.free()
@@ -441,11 +455,12 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
 M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
 for k in range(26):
-    z = rb.uniform(ZB+0.6, ZT-1.0)
-    f = (z - ZB)/(ZT - ZB); sc_ = 0.3 + 0.7*smooth(min(1, f))**0.85
-    if rb.random() < 0.55: x = rb.uniform(-A, A)*sc_; y = -B*sc_ - rb.uniform(0.0, 0.25)
-    else: x = A*sc_ + rb.uniform(0.0, 0.25); y = rb.uniform(-B, B)*sc_
-    o = ico("boulder", (x*0.97, y*0.97, z), rb.uniform(0.18, 0.5), M_boul, 2)
+    z = rb.uniform(ZB+0.8, ZT-1.0)
+    sc_ = taper_s(z)
+    if rb.random() < 0.55: xr = rb.uniform(-A, A); yr = -B - rb.uniform(0.0, 0.25)/max(sc_, 0.3)
+    else: xr = A + rb.uniform(0.0, 0.25)/max(sc_, 0.3); yr = rb.uniform(-B, B)
+    x = TCX + (xr-TCX)*sc_*0.97; y = TCY + (yr-TCY)*sc_*0.97
+    o = ico("boulder", (x, y, z), rb.uniform(0.18, 0.5), M_boul, 2)
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
@@ -893,14 +908,17 @@ _tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"]
 _nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
 for i in range(6):
     for j in range(8):
-        x = -0.3 + j*0.64; y = 2.35 + i*0.5
-        o = box("panel", (x, y, 0.42), (0.58, 0.42, 0.025), M_solar); o.rotation_euler.x = 0.38
-        box("pframe", (x, y-0.215, 0.34), (0.58, 0.02, 0.02), M_metal)
-        cyl("post", (x, y, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
+        x = 0.55 + j*0.64; y = 1.95 + i*0.5
+        if x > 4.2 and y < 3.3: continue
+        h0 = TH(x, y)
+        o = box("panel", (x, y, h0+0.42), (0.58, 0.42, 0.025), M_solar); o.rotation_euler.x = 0.38
+        box("pframe", (x, y-0.215, h0+0.34), (0.58, 0.02, 0.02), M_metal)
+        cyl("post", (x, y, h0+0.1), 0.02, 0.6, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
-for dx, dy in [(5.8, 3.75), (6.0, 4.7), (5.2, 5.4)]:
-    cyl("dpost", (dx, dy, 0.45), 0.04, 0.9, M_metal, 8)
-    c = sph("dish", (dx, dy, 1.05), 0.55, M_white, (1, 1, 0.3), 24); c.rotation_euler = (math.radians(55), 0, math.radians(-45))
+for dx, dy in [(6.25, 3.55), (6.0, 4.3), (5.4, 5.0)]:
+    h0 = TH(dx, dy)
+    cyl("dpost", (dx, dy, h0+0.35), 0.04, 0.9, M_metal, 8)
+    c = sph("dish", (dx, dy, h0+1.05), 0.55, M_white, (1, 1, 0.3), 24); c.rotation_euler = (math.radians(55), 0, math.radians(-45))
 # gold lander (Apollo-style descent stage) + sign, positions measured off the ref
 LX, LY = -4.5, -5.0
 cyl("lander", (LX, LY, 0.45), 0.42, 0.32, M_gold, 8, smooth=False)
@@ -942,7 +960,7 @@ bot(1.3, 1.25, 0.0, M_bots[6], 0.27); bot(1.85, 1.05, 0.0, M_bots[4], 0.27)
 for k in range(140):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
     if (x > XC-0.3 and y < YC+0.3) or (x > EX-0.8 and y < EY+2.5) or math.hypot(x-PX, y-PY) < 2.4: continue
-    o = ico("rock", (x, y, 0.02), random.uniform(0.04, 0.16), M_srock, 1)
+    o = ico("rock", (x, y, 0.02+TH(x, y)), random.uniform(0.04, 0.16), M_srock, 1)
     o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.5,0.8))
 
 # ================= camera =================
