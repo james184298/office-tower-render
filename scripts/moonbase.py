@@ -122,14 +122,14 @@ nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.0; nB.inp
 L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
 # fine striations
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.6; wav.inputs["Distortion"].default_value = 4.0
-wav.inputs["Detail"].default_value = 6; wav.inputs["Detail Scale"].default_value = 0.35; wav.inputs["Detail Roughness"].default_value = 0.7
+wav.inputs["Scale"].default_value = 1.25; wav.inputs["Distortion"].default_value = 1.6
+wav.inputs["Detail"].default_value = 4; wav.inputs["Detail Scale"].default_value = 0.25; wav.inputs["Detail Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
 r.elements[0].position = 0.28; r.elements[0].color = (0.05,0.05,0.055,1)
-r.elements[1].position = 0.75; r.elements[1].color = (0.3,0.3,0.31,1)
-e = r.elements.new(0.45); e.color = (0.12,0.12,0.125,1)
-e = r.elements.new(0.6); e.color = (0.2,0.2,0.21,1)
+r.elements[1].position = 0.75; r.elements[1].color = (0.36,0.36,0.37,1)
+e = r.elements.new(0.45); e.color = (0.15,0.15,0.155,1)
+e = r.elements.new(0.6); e.color = (0.25,0.25,0.26,1)
 L.new(nB.outputs["Fac"], rB.inputs["Fac"])
 fineR = N.new("ShaderNodeValToRGB"); fr_ = fineR.color_ramp
 fr_.elements[0].position = 0.0; fr_.elements[0].color = (0.45,0.45,0.45,1)
@@ -139,11 +139,18 @@ for p_, v_ in [(0.1,1.0),(0.5,1.15),(0.8,1.05)]:
 L.new(wav.outputs["Fac"], fineR.inputs["Fac"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
 L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Color"], mulc.inputs["Color2"])
+gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 55; gn.inputs["Detail"].default_value = 2
+L.new(tc.outputs["Object"], gn.inputs["Vector"])
+gr = N.new("ShaderNodeMapRange"); gr.inputs["From Min"].default_value = 0.3; gr.inputs["From Max"].default_value = 0.7
+gr.inputs["To Min"].default_value = 0.7; gr.inputs["To Max"].default_value = 1.2
+L.new(gn.outputs["Fac"], gr.inputs["Value"])
+mulg = N.new("ShaderNodeMixRGB"); mulg.blend_type = 'MULTIPLY'; mulg.inputs["Fac"].default_value = 1.0
+L.new(mulc.outputs["Color"], mulg.inputs["Color1"]); L.new(gr.outputs["Result"], mulg.inputs["Color2"])
 sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
 mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.0; mr.inputs["From Max"].default_value = -0.2
 L.new(sxyz.outputs["Z"], mr.inputs["Value"])
 crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
-L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
+L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulg.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
 bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.5
 fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 5; fn.inputs["Detail"].default_value = 6
@@ -421,7 +428,8 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wl", (XC-0.36, -B-0.47, zz), (0.12, 0.05, 0.18), M_wlamp)
+    box("wn", (XC-0.95, -B-0.47, zz), (0.24, 0.04, 0.24), M_dark)
+    box("wl", (XC-0.95, -B-0.5, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -663,8 +671,9 @@ box("colR", (A+0.1, EY+0.85, (FZ_BOT+Z0-0.2)/2), (0.75, 0.5, Z0-0.2-FZ_BOT), mat
 for k in range(8):
     box("wlr", (A+0.49, EY+0.85, -2.2 - k*0.95), (0.05, 0.1, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
-box("colL", (XC-0.32, -B-0.075, (FZ_BOT)/2), (0.64, 0.75, -FZ_BOT), mat("col",(0.09,0.09,0.095),0.5))
-box("colLs", (XC-0.12, -B-0.47, (FZ_BOT)/2), (0.05, 0.04, -FZ_BOT), M_metal)
+box("colL", (XC-0.62, -B-0.075, (FZ_BOT)/2), (1.24, 0.75, -FZ_BOT), mat("col",(0.1,0.1,0.105),0.5))
+cyl("colLs", (XC-0.22, -B-0.5, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
+box("colLe", (XC-0.04, -B-0.47, (FZ_BOT)/2), (0.08, 0.04, -FZ_BOT), M_dark)
 
 # ================= surface =================
 PX, PY = -3.5, -1.6
