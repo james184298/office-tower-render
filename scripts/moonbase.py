@@ -131,23 +131,23 @@ wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.12; wn.in
 mpw = N.new("ShaderNodeMapping"); mpw.inputs["Scale"].default_value = (1.0, 1.0, 0.25)
 L.new(tc.outputs["Object"], mpw.inputs["Vector"]); L.new(mpw.outputs["Vector"], wn.inputs["Vector"])
 wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 1.6); wsc.inputs[2].default_value = -0.8
-zl = mnode('MULTIPLY', sx_.outputs["Z"], None, None, 2.3)
+zl = mnode('MULTIPLY', sx_.outputs["Z"], None, None, 3.6)
 zw = mnode('ADD', zl.outputs[0], wsc.outputs[0])
 lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
 wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
 tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
-tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.07,0.07,0.075,1)
-tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.44,0.44,0.45,1)
-_e = tr_.elements.new(0.35); _e.color = (0.17,0.17,0.175,1)
-_e = tr_.elements.new(0.7); _e.color = (0.27,0.27,0.28,1)
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.13,0.13,0.135,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.36,0.36,0.37,1)
+_e = tr_.elements.new(0.3); _e.color = (0.2,0.2,0.205,1)
+_e = tr_.elements.new(0.75); _e.color = (0.27,0.27,0.28,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
-mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (0.25, 0.25, 22.0)
+mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (0.3, 0.3, 30.0)
 L.new(tc.outputs["Object"], mps.inputs["Vector"]); L.new(mps.outputs["Vector"], sn.inputs["Vector"])
 smr = N.new("ShaderNodeMapRange"); smr.inputs["From Min"].default_value = 0.3; smr.inputs["From Max"].default_value = 0.7
-smr.inputs["To Min"].default_value = 0.6; smr.inputs["To Max"].default_value = 1.35
+smr.inputs["To Min"].default_value = 0.7; smr.inputs["To Max"].default_value = 1.3
 L.new(sn.outputs["Fac"], smr.inputs["Value"])
 # grain
 gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 90; gn.inputs["Detail"].default_value = 3
@@ -163,7 +163,7 @@ pmr.inputs["To Min"].default_value = 0.75; pmr.inputs["To Max"].default_value = 
 L.new(pn.outputs["Fac"], pmr.inputs["Value"])
 # dark crisp line at the base of each layer
 edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.06
-edg.inputs["To Min"].default_value = 0.35; edg.inputs["To Max"].default_value = 1.0
+edg.inputs["To Min"].default_value = 0.55; edg.inputs["To Max"].default_value = 1.0
 L.new(lfr.outputs[0], edg.inputs["Value"])
 m1 = mnode('MULTIPLY', smr.outputs["Result"], gmr.outputs["Result"])
 m2 = mnode('MULTIPLY', m1.outputs[0], pmr.outputs["Result"])
@@ -449,7 +449,7 @@ for k in range(26):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("ledge",(0.16,0.16,0.17),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), M_reg)
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -465,7 +465,7 @@ M_glow = C.materials.new("glow"); M_glow.use_nodes = True
 _nt = M_glow.node_tree; _nt.nodes.clear()
 _o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
 _tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
-_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 4.0
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 2.6
 _tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
 _mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
 _pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
@@ -475,7 +475,7 @@ _nt.links.new(_mix.outputs[0], _o.inputs[0])
 try: M_glow.surface_render_method = 'BLENDED'
 except Exception: pass
 
-def bot(x, y, z, m, s=0.27, glow=True):
+def bot(x, y, z, m, s=0.235, glow=True):
     cone("botb", (x, y, z+s*0.42), s*1.08, s*0.72, s*0.84, m, 32)
     sph("bot", (x, y, z+s*0.95), s*0.8, m, (1,1,0.95), 24)
     cd = Vector((0.707, -0.707, 0)); side = Vector((0.707, 0.707, 0))
@@ -483,7 +483,7 @@ def bot(x, y, z, m, s=0.27, glow=True):
         p = Vector((x, y, z+s*1.02)) + cd*(s*0.7) + side*(sgn*s*0.25)
         sph("eye", p, s*0.15, M_eye, (1,1,1.4), 12)
     if glow:
-        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*3.3, s*3.3, 1)
+        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.5, s*2.5, 1)
         g.visible_shadow = False
 
 def plant(x, y, z, s=1.0, tall=False):
@@ -529,7 +529,7 @@ for i in range(NF):
     y0, y1 = -B + d, YC
     W, D = x1-x0, y1-y0
     cx, cy = (x0+x1)/2, (y0+y1)/2
-    box(f"slab{i}", (cx, cy, zf-0.07), (W, D, 0.14), M_white, 0.01)
+    box(f"slab{i}", (cx, cy, zf-0.11), (W, D, 0.22), M_white, 0.01)
     box(f"floor{i}", (cx, cy, zf+0.002), (W-0.06, D-0.06, 0.004), M_slab)
     # thin glass railing on the two open edges
     box("railA", (cx, y0+0.03, zf+0.18), (W, 0.015, 0.36), M_glass)
@@ -836,7 +836,7 @@ def stroke_geom(bm, pts, w, depth):
     for i in range(n_):
         j = (i+1) % n_
         bm.faces.new((fr[i], bk[i], bk[j], fr[j]))
-GW, GH, ST = 1.12, 1.0, 0.17   # glyph width / height / stroke
+GW, GH, ST = 1.12, 1.0, 0.23   # glyph width / height / stroke
 h_ = ST/2
 GLYPHS = {
  'S': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, 0.5), (GW-h_, 0.5), (GW-h_, h_), (0, h_)], 0.28)],
@@ -849,7 +849,7 @@ GLYPHS = {
 bm = bmesh.new(); xo = 0.0
 for ch in "SPACEX":
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.2)
+        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.32)
     xo += GW + 0.27
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
@@ -864,22 +864,22 @@ sgn.matrix_world = SF
 # swoosh from inside the X sweeping out to the right
 sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_white, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
 # scaffold behind the letters: posts + two rails + diagonal braces
-M_scaf = mat("scaf",(0.5,0.51,0.53),0.4,0.3)
+M_scaf = mat("scaf",(0.32,0.33,0.35),0.5,0.2)
 def seg_(a_, b_, r_=0.022, m_=M_scaf):
     a_, b_ = Vector(a_), Vector(b_); d_ = b_-a_
     o = cyl("scaf", (a_+b_)/2, r_, d_.length, m_, 6, smooth=False); o.rotation_euler = d_.to_track_quat('Z','Y').to_euler(); return o
 back_ = -ez_*0.35
-for k in range(7):
-    t_ = -0.2 + k*(SIGN_W+1.2)/6
+for k in range(6):
+    t_ = 0.3 + k*(SIGN_W-0.6)/5
     base_ = SG0 + ex_*t_ + back_
     gz = 0.0
-    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+1.15))
-    if k < 6:
-        nb = SG0 + ex_*(t_+(SIGN_W+1.2)/6) + back_
-        seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+1.1), 0.012)
+    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+0.95), 0.018)
+    if k < 5:
+        nb = SG0 + ex_*(t_+(SIGN_W-0.6)/5) + back_
+        seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+0.9), 0.01)
 for zz_ in (SG0.z+0.1, SG0.z+1.1):
-    p0_ = SG0 + ex_*(-0.2) + back_; p1_ = SG0 + ex_*(SIGN_W+1.0) + back_
-    seg_((p0_.x, p0_.y, zz_), (p1_.x, p1_.y, zz_), 0.016)
+    p0_ = SG0 + ex_*(0.3) + back_; p1_ = SG0 + ex_*(SIGN_W-0.3) + back_
+    seg_((p0_.x, p0_.y, zz_), (p1_.x, p1_.y, zz_), 0.014)
 # LANDING ZONE 1 painted on the pad (reads along the camera's right axis)
 lz = text("LANDING ZONE 1", (0,0,0), 0.2, M_white, extrude=0.0, spacing=1.1)
 lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math.radians(45)); lz.data.align_y = 'CENTER'
@@ -1008,7 +1008,10 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         L.new(tci.outputs["Object"], ci.inputs["Vector"])
         cmx = N.new("ShaderNodeMixRGB"); cmx.inputs["Color2"].default_value = (0.95,0.96,0.98,1)
         cpow = N.new("ShaderNodeMath"); cpow.operation = 'POWER'; cpow.inputs[1].default_value = 0.8
-        L.new(ci.outputs["Color"], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
+        cal = N.new("ShaderNodeMath"); cal.operation = 'MULTIPLY'
+        cbw = N.new("ShaderNodeRGBToBW"); L.new(ci.outputs["Color"], cbw.inputs[0])
+        L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
+        L.new(cal.outputs[0], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
         L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
