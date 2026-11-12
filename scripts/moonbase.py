@@ -140,10 +140,10 @@ lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
 wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
 tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
-tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.13,0.13,0.135,1)
-tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.36,0.36,0.37,1)
-_e = tr_.elements.new(0.3); _e.color = (0.2,0.2,0.205,1)
-_e = tr_.elements.new(0.7); _e.color = (0.27,0.27,0.28,1)
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.11,0.11,0.115,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.31,0.31,0.32,1)
+_e = tr_.elements.new(0.3); _e.color = (0.17,0.17,0.175,1)
+_e = tr_.elements.new(0.7); _e.color = (0.23,0.23,0.24,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
@@ -569,7 +569,7 @@ for i in range(NF):
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_panel)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 115 if i else 70; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 95 if i else 70; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
@@ -912,11 +912,11 @@ for k in range(6):
     t_ = 0.3 + k*(SIGN_W-0.6)/5
     base_ = SG0 + ex_*t_ + back_
     gz = 0.0
-    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+0.95), 0.018)
+    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+0.55), 0.016)
     if k < 5:
         nb = SG0 + ex_*(t_+(SIGN_W-0.6)/5) + back_
-        seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+0.9), 0.01)
-for zz_ in (SG0.z+0.1, SG0.z+1.1):
+        seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+0.5), 0.01)
+for zz_ in (SG0.z+0.1, SG0.z+0.5):
     p0_ = SG0 + ex_*(0.3) + back_; p1_ = SG0 + ex_*(SIGN_W-0.3) + back_
     seg_((p0_.x, p0_.y, zz_), (p1_.x, p1_.y, zz_), 0.014)
 # LANDING ZONE 1 painted on the pad (reads along the camera's right axis)
@@ -926,17 +926,17 @@ lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math
 _nt = M_solar.node_tree; _b = _nt.nodes["Principled BSDF"]
 _br = _nt.nodes.new("ShaderNodeTexBrick"); _br.offset = 0.0
 _br.inputs["Color1"].default_value = (0.006,0.008,0.016,1); _br.inputs["Color2"].default_value = (0.009,0.011,0.022,1)
-_br.inputs["Mortar"].default_value = (0.16,0.17,0.2,1); _br.inputs["Scale"].default_value = 3.0
+_br.inputs["Mortar"].default_value = (0.09,0.1,0.12,1); _br.inputs["Scale"].default_value = 3.2
 _br.inputs["Mortar Size"].default_value = 0.012; _br.inputs["Brick Width"].default_value = 0.5; _br.inputs["Row Height"].default_value = 0.42
 _tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"], _br.inputs["Vector"])
 _nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
-for i in range(6):
-    for j in range(8):
-        x = 0.55 + j*0.64; y = 1.95 + i*0.5
+for i in range(4):
+    for j in range(6):
+        x = 0.75 + j*0.94; y = 2.05 + i*0.74
         if x > 4.2 and y < 3.3: continue
         h0 = TH(x, y)
-        o = box("panel", (x, y, h0+0.42), (0.6, 0.45, 0.025), M_solar); o.rotation_euler.x = 0.38
-        box("pframe", (x, y-0.215, h0+0.34), (0.58, 0.02, 0.02), M_metal)
+        o = box("panel", (x, y, h0+0.42), (0.9, 0.62, 0.025), M_solar); o.rotation_euler.x = 0.3
+        box("pframe", (x, y-0.3, h0+0.33), (0.88, 0.02, 0.02), M_metal)
         cyl("post", (x, y, h0+0.1), 0.02, 0.6, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
 for dx, dy in [(6.25, 3.55), (6.0, 4.3), (5.4, 5.0)]:
@@ -966,7 +966,7 @@ M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
 for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0,0.34,0),(0.34,0.34,0),(0.17,0.17,1),(0.5,-0.3,0)]):
-    box("crate", (-2.6+cx_, 4.2+cy_, 0.15+0.3*cz_), (0.32, 0.32, 0.28), M_crate, 0.01)
+    box("crate", (-2.6+cx_*1.2, 4.2+cy_*1.2, 0.17+0.34*cz_), (0.38, 0.38, 0.32), M_crate, 0.01)
 RVX, RVY = 4.6, 0.75
 bm = bmesh.new()
 prof = [(-0.55,0.1),(0.55,0.1),(0.55,0.3),(0.05,0.5),(-0.55,0.32)]
@@ -1094,7 +1094,7 @@ def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.32; fill.angle = math.radians(20)
+fill = C.lights.new("fill", 'SUN'); fill.energy = 0.55; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
