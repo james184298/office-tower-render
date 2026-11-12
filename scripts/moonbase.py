@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.4,0.41,0.43), 0.35)
+M_slab = mat("slab", (0.34,0.35,0.37), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -205,7 +205,7 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.35; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.32; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.68; er[1].color = (0.27,0.27,0.28,1)
+er[0].position = 0.32; er[0].color = (0.12,0.12,0.125,1); er[1].position = 0.68; er[1].color = (0.38,0.38,0.39,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -409,7 +409,7 @@ HH = float(os.environ.get("HILL", 2.6))
 def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 SGN_P = (-4.71, 4.2, 0.85); SGN_A = math.radians(22); SGN_L = 8.2
 def TH(x, y):
-    h = HH*_sm((x+2)/8.5)*_sm((y-2.5)/3.5)
+    h = HH*_sm((x+2)/8.5)*_sm((y-3.8)/2.2)
     # low berm under the sign so the letters stand on the ground (ref)
     ca, sa = math.cos(SGN_A), math.sin(SGN_A)
     t = (x-SGN_P[0])*ca + (y-SGN_P[1])*sa; tc_ = max(0.0, min(SGN_L, t))
@@ -577,7 +577,7 @@ for i in range(NF):
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_panel)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 95 if i else 70; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 62 if i else 55; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
@@ -639,6 +639,14 @@ for i in range(NF):
         for p in [(2.4,-5.4),(5.6,-4.4)]:
             cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
+        # extra lounge furniture (ref: dark armchairs, small round tables, more seating)
+        for p in [(1.6,-5.5),(2.0,-3.9),(5.9,-3.6),(4.9,-4.0),(-0.2,-3.7)]:
+            box("arm", (p[0], p[1], zt+0.16), (0.36, 0.36, 0.32), M_sofa, 0.04)
+            box("armb", (p[0], p[1]+0.15, zt+0.34), (0.36, 0.06, 0.3), M_sofa, 0.02)
+        for p in [(1.1,-3.6),(5.0,-1.8),(5.9,-1.2)]:
+            cyl("wtab", (p[0], p[1], zt+0.36), 0.25, 0.03, M_white, 24); cyl("wtl", (p[0], p[1], zt+0.18), 0.03, 0.36, M_white, 8)
+            for a_ in range(3): stool(p[0]+0.42*math.cos(a_*2.1+0.3), p[1]+0.42*math.sin(a_*2.1+0.3), zt, M_dark)
+        plant(-0.6, -5.5, zt, 0.6); plant(2.0, -5.6, zt, 0.6, True)
         bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3),(3.0,-5.35,0)]
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
@@ -666,6 +674,14 @@ for i in range(NF):
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
         cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
         for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
+        # extra garden density: big leafy plants, dark kiosk column, more cubes and planters
+        for p in [(-0.3,-3.8,1.3),(1.5,-5.5,1.2),(4.2,-3.6,1.35),(6.0,-4.5,1.1),(5.9,-2.0,1.2),(2.2,-3.5,0.9)]:
+            plant(p[0], p[1], zt, p[2], True)
+        box("kcol", (1.7, -4.6, zt+0.5), (0.22, 0.22, 1.0), M_dark); box("kcolb", (1.7, -4.6, zt+0.03), (0.4, 0.4, 0.06), M_dark)
+        for p in [(0.0,-4.6),(2.9,-3.6),(5.6,-5.6),(4.0,-5.6)]:
+            box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
+        for p in [(0.6,-3.6),(3.4,-3.7)]:
+            cyl("planter", (p[0], p[1], zt+0.2), 0.22, 0.4, M_white, 20)
         bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
         bot(bx, by, zt, M_bots[ci % len(M_bots)])
@@ -675,17 +691,17 @@ zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-cyl("tank", (0.2, -5.3, FZ_BOT+0.47), 0.44, 2.2, M_tank, 40, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.35, -5.3, FZ_BOT+0.47), 0.46, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+cyl("tank", (0.2, -5.25, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.55, -5.25, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.42, -5.3+0.22*math.cos(a), FZ_BOT+0.47+0.22*math.sin(a)), (0.02, 0.06, 0.38), M_metal); o.rotation_euler.x = a - math.pi/2
-cyl("tankband", (-0.2, -5.3, FZ_BOT+0.47), 0.455, 0.16, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
+    o = box("fanblade", (1.63, -5.25+0.26*math.cos(a), FZ_BOT+0.55+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
+cyl("tankband", (-0.75, -5.25, FZ_BOT+0.55), 0.545, 0.22, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
 for k in range(3): box("frame", (-1.2+k*0.16, -5.3, FZ_BOT+0.45), (0.04, 0.7, 0.9), M_metal)
 for j in range(2):
     for k in range(4): box("crate", (4.6+k*0.42, -5.35+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
     for k in range(3): box("crate", (4.8+k*0.42, -5.35+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
-Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 70; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
+Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 48; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
 # glass elevator shaft in its slot (thin dark frame, white light bars inside)
@@ -714,7 +730,7 @@ plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location =
 box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.32,0.32,0.34),0.6))
 bot(EX, EY, cz+0.07, M_bots[4], 0.2, glow=False)
 # top station: glass box recessed into a notch at mission-floor level (ref: ~1.1 x 2.6, top flush with the surface)
-TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, -0.15
+TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, -0.73
 box("tfloor", ((TX0+TX1)/2, (TY0+TY1)/2, TZ0-0.05), (TX1-TX0, TY1-TY0, 0.1), M_white)
 box("tglass", ((TX0+TX1)/2, (TY0+TY1)/2, (TZ0+TZ1)/2), (TX1-TX0, TY1-TY0, TZ1-TZ0), M_glass)
 for xx in (TX0, TX1):
@@ -730,10 +746,11 @@ bot(EX-0.1, EY+0.9, TZ0, M_bots[1], 0.24, glow=False); bot(EX-0.05, EY+1.7, TZ0,
 pl2 = C.lights.new("topl", 'POINT'); pl2.energy = 20; pl2.color = (1, 0.85, 0.7)
 plo2 = C.objects.new("topl", pl2); sc.collection.objects.link(plo2); plo2.location = (EX, EY+1.0, TZ1-0.25)
 # white kiosk with a small dish behind the station
-box("kiosk", (4.95, 2.75, 0.4), (0.7, 0.55, 0.8), M_white, 0.02)
-box("kdoor", (4.95, 2.47, 0.33), (0.28, 0.02, 0.55), M_dark)
-cyl("kpost", (5.1, 2.8, 0.95), 0.025, 0.3, M_metal, 6)
-c_ = sph("kdish", (5.1, 2.8, 1.1), 0.2, M_white, (1, 1, 0.35), 16); c_.rotation_euler = (math.radians(50), 0, math.radians(-45))
+KX, KY, KZ = 5.65, 2.65, TZ1+0.02
+box("kiosk", (KX, KY, KZ+0.27), (0.5, 0.42, 0.54), M_white, 0.02)
+box("kdoor", (KX, KY-0.215, KZ+0.22), (0.2, 0.02, 0.38), M_dark)
+cyl("kpost", (KX+0.1, KY+0.05, KZ+0.65), 0.02, 0.24, M_metal, 6)
+c_ = sph("kdish", (KX+0.1, KY+0.05, KZ+0.78), 0.15, M_white, (1, 1, 0.35), 16); c_.rotation_euler = (math.radians(50), 0, math.radians(-45))
 
 # thin railing along the cutaway rim on the surface
 xx = XC + 0.1
@@ -906,7 +923,7 @@ GLYPHS = {
 bm = bmesh.new(); xo = 0.0
 for ch in "SPACEX":
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.55)
+        stroke_geom(bm, [(x+xo+0.2*y, y) for x, y in pl], ST, 0.6)
     xo += GW + 0.27
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
@@ -957,10 +974,11 @@ for i in range(4):
         box("pframe", (x, y-0.3, h0+0.33), (0.88, 0.02, 0.02), M_metal)
         cyl("post", (x, y, h0+0.1), 0.02, 0.6, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
-for dx, dy in [(6.25, 3.55), (6.0, 4.3), (5.4, 5.0)]:
+for dx, dy in [(6.2, 3.4), (6.25, 3.95), (6.3, 4.5)]:
     h0 = TH(dx, dy)
-    cyl("dpost", (dx, dy, h0+0.35), 0.04, 0.9, M_metal, 8)
-    c = sph("dish", (dx, dy, h0+1.05), 0.55, M_white, (1, 1, 0.3), 24); c.rotation_euler = (math.radians(55), 0, math.radians(-45))
+    cyl("dpost", (dx, dy, h0+0.3), 0.035, 0.6, M_metal, 8)
+    c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); c.rotation_euler = (math.radians(75), 0, math.radians(-60))
+    cyl("dfeed", (dx-0.12, dy-0.07, h0+0.75), 0.012, 0.35, M_dark, 6, rot=(math.radians(75), 0, math.radians(-60)))
 # gold lander (Apollo-style descent stage) + sign, positions measured off the ref
 LX, LY = -4.5, -5.0
 cyl("lander", (LX, LY, 0.45), 0.42, 0.32, M_gold, 8, smooth=False)
@@ -1035,12 +1053,12 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*1.0 + up*0.12 + back*0.12).normalized()
+ldir = (-right*0.44 + up*0.1 + back*0.9).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.02; tm.inputs["From Max"].default_value = 0.4
-tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1.0
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.12; tm.inputs["From Max"].default_value = 0.3
+tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
 L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tm.outputs["Result"], cm.inputs["Color2"])
@@ -1112,7 +1130,7 @@ def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.55; fill.angle = math.radians(20)
+fill = C.lights.new("fill", 'SUN'); fill.energy = 0.85; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
