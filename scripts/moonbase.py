@@ -578,7 +578,7 @@ for i in range(NF):
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
         box("mat", (2.4, -5.25, zt+0.01), (1.6, 0.6, 0.015), M_dark)
         bpy.ops.mesh.primitive_torus_add(major_radius=1.0, minor_radius=0.025, location=(2.6, -4.2, zt+0.01), major_segments=64)
-        _t = bpy.context.object; _t.scale.z = 0.2; _t.data.materials.append(M_white)
+        _t = bpy.context.object; _t.location.z = zt+0.075; _t.scale.z = 0.2; _t.data.materials.append(M_white)
         tx = text("SPACEX", (2.4, -5.3, zt+0.02), 0.25, M_white, extrude=0.0); tx.data.space_character = 1.4
         for p in [(0.2,-4.4,1.1,True),(1.9,-3.7,1.0,True),(3.8,-4.6,1.2,True),(5.6,-3.0,1.0,True),(XC+0.4,-3.8,0.8,False),(4.9,-5.4,0.8,False),(3.0,-4.4,0.7,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
@@ -835,8 +835,8 @@ N = M_earth.node_tree.nodes; L = M_earth.node_tree.links
 be = N["Principled BSDF"]; be.inputs["Roughness"].default_value = 0.5
 ne = N.new("ShaderNodeTexNoise"); ne.inputs["Scale"].default_value = 1.6; ne.inputs["Detail"].default_value = 10; ne.inputs["Roughness"].default_value = 0.6
 re = N.new("ShaderNodeValToRGB"); _el = re.color_ramp.elements
-_el[0].position = 0.0; _el[0].color = (0.003,0.04,0.28,1); _el[1].position = 1.0; _el[1].color = (0.45,0.38,0.2,1)
-for _p, _c in [(0.44,(0.02,0.13,0.5)),(0.5,(0.04,0.2,0.55)),(0.515,(0.12,0.28,0.06)),(0.6,(0.2,0.32,0.08))]:
+_el[0].position = 0.0; _el[0].color = (0.002,0.025,0.18,1); _el[1].position = 1.0; _el[1].color = (0.45,0.38,0.2,1)
+for _p, _c in [(0.44,(0.006,0.045,0.27)),(0.5,(0.012,0.08,0.36)),(0.515,(0.1,0.22,0.04)),(0.6,(0.17,0.26,0.06))]:
     _x = _el.new(_p); _x.color = (*_c, 1)
 nc = N.new("ShaderNodeTexNoise"); nc.inputs["Scale"].default_value = 3.5; nc.inputs["Detail"].default_value = 8; nc.inputs["Distortion"].default_value = 1.2
 rc = N.new("ShaderNodeValToRGB"); rc.color_ramp.elements[0].position = 0.56; rc.color_ramp.elements[1].position = 0.7
