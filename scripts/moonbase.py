@@ -75,6 +75,7 @@ M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
+M_lwall = mat("lwallm", (0.42,0.42,0.44), 0.5)
 M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
 M_metal = mat("metal", (0.62,0.64,0.67), 0.35, 0.2)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
@@ -140,10 +141,10 @@ lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
 wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
 tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
-tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.11,0.11,0.115,1)
-tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.31,0.31,0.32,1)
-_e = tr_.elements.new(0.3); _e.color = (0.17,0.17,0.175,1)
-_e = tr_.elements.new(0.7); _e.color = (0.23,0.23,0.24,1)
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.1,0.1,0.105,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.285,0.285,0.295,1)
+_e = tr_.elements.new(0.3); _e.color = (0.155,0.155,0.16,1)
+_e = tr_.elements.new(0.7); _e.color = (0.21,0.21,0.22,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
@@ -189,7 +190,7 @@ L.new(tone.outputs["Color"], mulc.inputs["Color1"]); L.new(m3.outputs[0], mulc.i
 # lighter crust just under the surface
 mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -0.9; mr.inputs["From Max"].default_value = -0.25
 L.new(sx_.outputs["Z"], mr.inputs["Value"])
-crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
+crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.22,0.22,0.23,1)
 L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
 # bump: layer steps + streaks + grain
@@ -576,7 +577,7 @@ for i in range(NF):
     box("rtA", (cx, y0+0.03, zf+0.36), (W, 0.02, 0.015), M_white)
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
-    box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_panel)
+    box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_lwall)
     Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 62 if i else 55; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
@@ -783,7 +784,7 @@ bpy.context.object.data.materials.append(M_white)
 RB = 0.55; RR = 1.07; BT = 9.8; NOSE = 1.95
 cd = Vector((0.707, -0.707, 0)); sd = Vector((0.707, 0.707, 0))
 M_rbody = mat("rbody", (0.8,0.81,0.83), 0.38)
-M_rband = mat("rband", (0.018,0.019,0.022), 0.7)
+M_rband = mat("rband", (0.005,0.005,0.007), 0.5, spec=0.3)
 M_seam = mat("seam",(0.5,0.51,0.53),0.45)
 def lathe(name, prof, m, segs=64, loc=(0,0,0)):
     bm = bmesh.new(); rings = []
@@ -823,7 +824,7 @@ for ang in (-45+28, -45-50):
 M_win = emis("winw", (1.0,0.92,0.75), 1.6)
 for k in range(4):
     a = -math.pi/4 + (k-1.5)*0.17
-    box("win", (PX+math.cos(a)*(RR+0.005), PY+math.sin(a)*(RR+0.005), 8.35), (0.13, 0.13, 0.11), M_win, rz=a)
+    box("win", (PX+math.cos(a)*(RR+0.005), PY+math.sin(a)*(RR+0.005), 8.35), (0.12, 0.12, 0.085), M_win, rz=a)
 for k in range(8):
     a = -math.pi/4 + (k-3.5)*0.36
     box("hatch", (PX+math.cos(a)*(RR+0.003), PY+math.sin(a)*(RR+0.003), 7.3), (0.17, 0.17, 0.1), M_rband, rz=a)
@@ -910,7 +911,7 @@ def stroke_geom(bm, pts, w, depth):
     for i in range(n_):
         j = (i+1) % n_
         bm.faces.new((fr[i], bk[i], bk[j], fr[j]))
-GW, GH, ST = 1.12, 1.12, 0.25   # glyph width / height / stroke
+GW, GH, ST = 1.12, 0.78, 0.2   # glyph width / height / stroke
 h_ = ST/2
 GLYPHS = {
  'S': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, GH*0.5), (GW-h_, GH*0.5), (GW-h_, h_), (0, h_)], 0.28)],
@@ -921,14 +922,19 @@ GLYPHS = {
  'X': [[(0.0, 0.0), (GW, GH)], [(0.0, GH), (GW, 0.0)]],
 }
 bm = bmesh.new(); xo = 0.0
+GROT = math.radians(float(os.environ.get("GROT", 16)))   # each glyph turned a bit more toward the camera than the row
 for ch in "SPACEX":
+    nv0 = len(bm.verts)
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo+0.2*y, y) for x, y in pl], ST, 0.6)
+        stroke_geom(bm, [(x+xo+0.25*y, y) for x, y in pl], ST, 0.26)
+    bm.verts.ensure_lookup_table()
+    gv = [bm.verts[i] for i in range(nv0, len(bm.verts))]
+    bmesh.ops.rotate(bm, verts=gv, cent=Vector((xo+GW*0.6, 0, 0)), matrix=Matrix.Rotation(GROT, 3, 'Y'))
     xo += GW + 0.27
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
 sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.materials.append(M_white)
-md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.025; md_.segments = 2
+md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.05; md_.segments = 3; md_.limit_method = 'ANGLE'
 SIGN_W = xo - 0.27
 # frame: x along the sign (rotated 22 deg toward the camera), y up, z toward the camera
 SG0 = Vector(SGN_P); SA = SGN_A
@@ -965,20 +971,20 @@ _br.inputs["Mortar"].default_value = (0.09,0.1,0.12,1); _br.inputs["Scale"].defa
 _br.inputs["Mortar Size"].default_value = 0.012; _br.inputs["Brick Width"].default_value = 0.5; _br.inputs["Row Height"].default_value = 0.42
 _tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"], _br.inputs["Vector"])
 _nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
-for i in range(4):
-    for j in range(6):
-        x = 0.75 + j*0.94; y = 2.05 + i*0.74
-        if x > 4.2 and y < 3.3: continue
+for i in range(5):
+    for j in range(9):
+        x = 0.7 + j*0.6; y = 1.95 + i*0.58
+        if x > 4.9 and y < 3.3: continue
         h0 = TH(x, y)
-        o = box("panel", (x, y, h0+0.42), (0.9, 0.62, 0.025), M_solar); o.rotation_euler.x = 0.3
-        box("pframe", (x, y-0.3, h0+0.33), (0.88, 0.02, 0.02), M_metal)
-        cyl("post", (x, y, h0+0.1), 0.02, 0.6, M_metal, 6, smooth=False)
+        o = box("panel", (x, y, h0+0.38), (0.5, 0.46, 0.025), M_solar); o.rotation_euler.x = 0.35
+        box("pframe", (x, y-0.22, h0+0.3), (0.48, 0.02, 0.02), M_metal)
+        cyl("post", (x, y, h0+0.1), 0.018, 0.55, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
 for dx, dy in [(6.2, 3.4), (6.25, 3.95), (6.3, 4.5)]:
     h0 = TH(dx, dy)
     cyl("dpost", (dx, dy, h0+0.3), 0.035, 0.6, M_metal, 8)
-    c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); c.rotation_euler = (math.radians(75), 0, math.radians(-60))
-    cyl("dfeed", (dx-0.12, dy-0.07, h0+0.75), 0.012, 0.35, M_dark, 6, rot=(math.radians(75), 0, math.radians(-60)))
+    c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); DN = Vector((0.15, -0.9, 0.42)).normalized(); c.rotation_euler = DN.to_track_quat('Z','Y').to_euler()
+    fp = Vector((dx, dy, h0+0.75)) + DN*0.2; cyl("dfeed", fp, 0.012, 0.36, M_dark, 6).rotation_euler = DN.to_track_quat('Z','Y').to_euler()
 # gold lander (Apollo-style descent stage) + sign, positions measured off the ref
 LX, LY = -4.5, -5.0
 cyl("lander", (LX, LY, 0.45), 0.42, 0.32, M_gold, 8, smooth=False)
@@ -1001,8 +1007,8 @@ while xx < XC - 1.4:
 M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
-for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0,0.34,0),(0.34,0.34,0),(0.17,0.17,1),(0.5,-0.3,0)]):
-    box("crate", (-2.6+cx_*1.2, 4.2+cy_*1.2, 0.17+0.34*cz_), (0.38, 0.38, 0.32), M_crate, 0.01)
+for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0.68,0,0),(0,0.34,0),(0.34,0.34,0),(0.68,0.34,0),(0.17,0.17,1),(0.51,0.17,1),(0.34,-0.36,0)]):
+    box("crate", (-2.75+cx_*1.15, 4.1+cy_*1.15, 0.17+0.34*cz_+TH(-2.6,4.2)), (0.37, 0.37, 0.32), M_crate, 0.012)
 RVX, RVY = 4.6, 0.75
 bm = bmesh.new()
 prof = [(-0.55,0.1),(0.55,0.1),(0.55,0.3),(0.05,0.5),(-0.55,0.32)]
@@ -1053,7 +1059,7 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*0.44 + up*0.1 + back*0.9).normalized()
+ldir = (-right*0.9 + up*0.1 + back*0.44).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
@@ -1129,6 +1135,10 @@ sp.visible_shadow = False
 def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
+try:
+    sun.shadow_maximum_resolution = 0.0005; sun.shadow_filter_radius = 1.5
+    sc.eevee.shadow_resolution_scale = 1.0
+except Exception as ex: print("shadow", ex)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 0.85; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
