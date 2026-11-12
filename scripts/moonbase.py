@@ -642,7 +642,15 @@ for i in range(NF):
             box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
         box("deck", (3.1, -4.5, zt+0.03), (2.2, 1.7, 0.06), mat("deckw",(0.6,0.45,0.28),0.6))
         for k in range(6): box("plank", (3.1, -5.3+k*0.3, zt+0.061), (2.2, 0.01, 0.002), M_dark)
-        box("totem", (2.0, -4.4, zt+0.4), (0.16, 0.16, 0.8), M_dark); box("totem2", (0.9, -3.9, zt+0.35), (0.14, 0.14, 0.7), M_dark)
+        M_opt = mat("optimus",(0.05,0.05,0.055),0.3,0.6)
+        for (ox, oy) in [(5.0, -4.5), (5.55, -4.15), (0.9, -3.9)]:
+            for sgn_ in (-1, 1):
+                cyl("oleg", (ox+sgn_*0.06, oy, zt+0.22), 0.04, 0.44, M_opt, 10)
+            box("otorso", (ox, oy, zt+0.6), (0.24, 0.14, 0.34), M_opt, 0.03)
+            for sgn_ in (-1, 1):
+                cyl("oarm", (ox+sgn_*0.15, oy, zt+0.56), 0.03, 0.32, M_opt, 8)
+            sph("ohead", (ox, oy, zt+0.86), 0.08, M_opt, (1, 1, 1.15), 16)
+            box("oface", (ox+0.04, oy-0.05, zt+0.86), (0.08, 0.02, 0.04), M_white)
         for k in range(3): chair(4.0+k*0.4, -3.7, zt, 1, M_white)
         cyl("rbench", (1.2, -5.3, zt+0.12), 0.45, 0.24, M_wood, 32)
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
@@ -667,7 +675,7 @@ for k in range(3): box("frame", (-1.2+k*0.16, -5.3, FZ_BOT+0.45), (0.04, 0.7, 0.
 for j in range(2):
     for k in range(4): box("crate", (4.6+k*0.42, -5.35+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
     for k in range(3): box("crate", (4.8+k*0.42, -5.35+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
-Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 160; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
+Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 70; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
 # glass elevator shaft in its slot (thin dark frame, white light bars inside)
@@ -1017,11 +1025,11 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*1.0 + up*0.1 + back*0.22).normalized()
+ldir = (-right*1.0 + up*0.12 + back*0.12).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.15; tm.inputs["From Max"].default_value = 0.3
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.02; tm.inputs["From Max"].default_value = 0.4
 tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
@@ -1058,7 +1066,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -58)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -36)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(4); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
