@@ -107,7 +107,7 @@ M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
 BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", c, 0.3, emit=c, estr=0.35, spec=0.25) for i,c in enumerate(BOT_COLS)]
+M_bots = [mat(f"bot{i}", tuple(v*0.55 for v in c), 0.3, emit=c, estr=0.18, spec=0.2) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
 # ---- rock with soft horizontal strata ----
@@ -116,7 +116,7 @@ nt = M_rock.node_tree; N = nt.nodes; L = nt.links
 bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
 tc = N.new("ShaderNodeTexCoord")
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.32; wav.inputs["Distortion"].default_value = 1.6
+wav.inputs["Scale"].default_value = 0.2; wav.inputs["Distortion"].default_value = 1.8
 wav.inputs["Detail"].default_value = 3; wav.inputs["Detail Scale"].default_value = 0.5
 mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.12, 0.12, 1.3)
 wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inputs["Detail"].default_value = 4
@@ -130,7 +130,12 @@ for p, v in [(0.2,0.19),(0.33,0.07),(0.45,0.26),(0.56,0.05),(0.68,0.22),(0.8,0.0
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
 L.new(mx.outputs["Result"], ramp.inputs["Fac"])
-L.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
+sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
+mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.1; mr.inputs["From Max"].default_value = -0.25
+L.new(sxyz.outputs["Z"], mr.inputs["Value"])
+crust = N.new("ShaderNodeMix"); crust.data_type = 'RGBA'; crust.inputs["B"].default_value = (0.3,0.3,0.31,1)
+L.new(mr.outputs["Result"], crust.inputs["Factor"]); L.new(ramp.outputs["Color"], crust.inputs["A"])
+L.new(crust.outputs["Result"], bsdf.inputs["Base Color"])
 bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25
 fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 8; fn.inputs["Detail"].default_value = 6
 L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
