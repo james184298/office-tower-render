@@ -79,9 +79,21 @@ M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
 M_metal = mat("metal", (0.6,0.62,0.65), 0.25, 1.0)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
 M_glass = mat("glass", (0.75,0.85,0.9), 0.02, 0, alpha=0.18)
-M_screen = emis("screen", (0.2,0.5,1.0), 3.0)
-M_screenG = emis("screenG", (0.2,0.9,0.4), 2.0)
-M_screenP = emis("screenP", (0.55,0.3,1.0), 2.0)
+M_screen = emis("screen", (0.06,0.22,0.9), 1.3)
+M_big = C.materials.new("bigscreen"); M_big.use_nodes = True
+nt = M_big.node_tree; nt.nodes.clear()
+_o = nt.nodes.new("ShaderNodeOutputMaterial"); _e = nt.nodes.new("ShaderNodeEmission"); _t = nt.nodes.new("ShaderNodeTexCoord")
+_w = nt.nodes.new("ShaderNodeTexWave"); _w.inputs["Scale"].default_value = 1.2; _w.inputs["Distortion"].default_value = 6; _w.bands_direction = 'X'
+_n = nt.nodes.new("ShaderNodeTexNoise"); _n.inputs["Scale"].default_value = 9
+_r = nt.nodes.new("ShaderNodeValToRGB"); _r.color_ramp.elements[0].position = 0.55; _r.color_ramp.elements[0].color = (0.005,0.02,0.09,1)
+_r.color_ramp.elements[1].position = 0.75; _r.color_ramp.elements[1].color = (0.35,0.75,1.0,1)
+_m = nt.nodes.new("ShaderNodeMath"); _m.operation = 'MAXIMUM'
+nt.links.new(_t.outputs["Object"], _w.inputs["Vector"]); nt.links.new(_t.outputs["Object"], _n.inputs["Vector"])
+nt.links.new(_w.outputs["Fac"], _m.inputs[0]); nt.links.new(_n.outputs["Fac"], _m.inputs[1])
+nt.links.new(_m.outputs[0], _r.inputs["Fac"]); nt.links.new(_r.outputs["Color"], _e.inputs["Color"])
+_e.inputs["Strength"].default_value = 2.2; nt.links.new(_e.outputs[0], _o.inputs[0])
+M_screenG = emis("screenG", (0.1,0.7,0.25), 1.0)
+M_screenP = emis("screenP", (0.35,0.15,0.9), 1.0)
 M_red = emis("redposter", (1.0,0.25,0.1), 1.5)
 M_lamp = emis("lamp", (1.0,0.8,0.55), 6.0)
 M_leaf = mat("leaf", (0.04,0.3,0.06), 0.55)
@@ -92,7 +104,8 @@ M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
 BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", c, 0.15, emit=c, estr=0.7) for i,c in enumerate(BOT_COLS)]
+M_bots = [mat(f"bot{i}", c, 0.22, emit=c, estr=0.25) for i,c in enumerate(BOT_COLS)]
+M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
 # ---- rock with soft horizontal strata ----
 M_rock = C.materials.new("rock"); M_rock.use_nodes = True
@@ -100,20 +113,22 @@ nt = M_rock.node_tree; N = nt.nodes; L = nt.links
 bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
 tc = N.new("ShaderNodeTexCoord")
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.55; wav.inputs["Distortion"].default_value = 4.0
-wav.inputs["Detail"].default_value = 6; wav.inputs["Detail Scale"].default_value = 0.6
-wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.35; wn.inputs["Detail"].default_value = 3
-mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.3
+wav.inputs["Scale"].default_value = 0.32; wav.inputs["Distortion"].default_value = 1.6
+wav.inputs["Detail"].default_value = 3; wav.inputs["Detail Scale"].default_value = 0.5
+mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.25, 0.25, 7.0)
+wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inputs["Detail"].default_value = 4
+L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
+mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.4
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].position = 0.0; r.elements[0].color = (0.10,0.10,0.105,1)
-r.elements[1].position = 1.0; r.elements[1].color = (0.30,0.30,0.31,1)
-for p, v in [(0.2,0.2),(0.4,0.34),(0.55,0.16),(0.75,0.4),(0.88,0.22)]:
+r.elements[0].position = 0.0; r.elements[0].color = (0.05,0.05,0.055,1)
+r.elements[1].position = 1.0; r.elements[1].color = (0.2,0.2,0.21,1)
+for p, v in [(0.22,0.12),(0.38,0.24),(0.5,0.08),(0.66,0.3),(0.82,0.14)]:
     e = r.elements.new(p); e.color = (v,v,v*1.02,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
 L.new(mx.outputs["Result"], ramp.inputs["Fac"])
 L.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
-bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35
+bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25
 fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 8; fn.inputs["Detail"].default_value = 6
 L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 
@@ -123,7 +138,7 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.6; n2.inputs["Detail"].default_value = 8
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.35; er[0].color = (0.36,0.36,0.37,1); er[1].position = 0.65; er[1].color = (0.56,0.56,0.57,1)
+er[0].position = 0.3; er[0].color = (0.2,0.2,0.205,1); er[1].position = 0.7; er[1].color = (0.42,0.42,0.43,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -132,9 +147,9 @@ L.new(n3.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
-ZB, ZT = -17.0, -11.5        # rock bottom tip / start of taper
-FZ_BOT = -11.2               # recess floor
-NF = 5; Z0 = -1.8; FH = 2.0  # top slab level and floor pitch
+ZB, ZT = -18.0, -12.4        # rock bottom tip / start of taper
+FZ_BOT = -11.7               # recess floor
+NF = 5; Z0 = -1.6; FH = 2.2  # top slab level and floor pitch
 EX, EY = A - 0.8, YC + 1.25  # elevator centre (in a slot on the +x face)
 CRATERS = [(-4.6,1.8,1.0),(-1.5,3.0,0.7),(-5.0,4.6,0.5),(2.0,0.6,0.45),(-0.6,0.9,0.35),(4.6,-0.0,0.3),(-3.2,5.3,0.4)]
 
@@ -187,7 +202,7 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
 # recess ground
-box("recessfloor", ((XC+A)/2+1, (YC-B)/2-1, FZ_BOT+0.02), (A-XC+2, B+YC+2, 0.04), mat("ledge",(0.3,0.3,0.31),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("ledge",(0.16,0.16,0.17),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(10):
@@ -205,8 +220,9 @@ def bot(x, y, z, m, s=0.33):
     cd = Vector((0.707, -0.707, 0))
     side = Vector((0.707, 0.707, 0))
     for sgn in (-1, 1):
-        p = Vector((x, y, z+s*1.0)) + cd*(s*0.72) + side*(sgn*s*0.26)
-        sph("eye", p, s*0.13, M_eye, (1,1,1.4), 10)
+        p = Vector((x, y, z+s*1.02)) + cd*(s*0.66) + side*(sgn*s*0.27)
+        sph("eye", p, s*0.17, M_eye, (1,1,1.35), 12)
+        sph("pup", p + cd*(s*0.12), s*0.07, M_pupil, (1,1,1.3), 8)
 
 def plant(x, y, z, s=1.0, tall=False):
     cyl("pot", (x, y, z+0.16*s), 0.16*s, 0.32*s, M_pot)
@@ -221,8 +237,8 @@ def console(x, y, z, scr=M_screen):
     box("cbase", (x, y, z+0.33), (0.95, 0.42, 0.66), M_desk)
     box("ctop", (x, y-0.05, z+0.68), (1.05, 0.62, 0.05), M_desk)
     for dx in (-0.25, 0.25):
-        box("mon", (x+dx, y+0.18, z+0.92), (0.44, 0.04, 0.3), scr)
-        box("monb", (x+dx, y+0.21, z+0.92), (0.47, 0.03, 0.33), M_dark)
+        box("mon", (x+dx, y+0.16, z+0.88), (0.36, 0.03, 0.22), scr)
+        box("monb", (x+dx, y+0.19, z+0.88), (0.4, 0.03, 0.26), M_dark)
     box("seat", (x, y-0.62, z+0.42), (0.38, 0.38, 0.07), M_chair)
     box("back", (x, y-0.8, z+0.65), (0.38, 0.05, 0.42), M_chair)
     cyl("cpost", (x, y-0.62, z+0.2), 0.03, 0.4, M_chair, 6, smooth=False)
@@ -233,7 +249,7 @@ def stool(x, y, z, m=M_white):
 slabs = []
 for i in range(NF):
     zf = Z0 - i*FH
-    d = 0.15 + 0.45*i
+    d = 0.15
     x0, x1 = XC, A - d
     y0, y1 = -B + d, YC
     W, D = x1-x0, y1-y0
@@ -246,7 +262,7 @@ for i in range(NF):
     box("rtA", (cx, y0+0.04, zf+0.5), (W, 0.04, 0.03), M_metal)
     box("rtB", (x1-0.04, cy, zf+0.5), (0.04, D, 0.03), M_metal)
     # light for the floor
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 90 if i else 60; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 160 if i else 80; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.92, 0.82)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + FH - 0.35)
     zt = zf
@@ -254,10 +270,10 @@ for i in range(NF):
         # big wall screen (several panels)
         for k, (xa, xb, m) in enumerate([(0.6, 2.5, M_screen), (2.6, 4.4, M_screen), (4.5, 5.6, M_screen)]):
             box("bezel", ((xa+xb)/2, YC+0.03, zt+1.0), (xb-xa+0.08, 0.04, 1.28), M_dark)
-            box("big", ((xa+xb)/2, YC-0.0, zt+1.0), (xb-xa, 0.03, 1.2), m)
+            box("big", ((xa+xb)/2, YC-0.0, zt+1.0), (xb-xa, 0.03, 1.2), M_big)
         box("bigtrim", (3.1, YC-0.02, zt+0.36), (5.0, 0.02, 0.04), M_lamp)
         for k in range(3):
-            box("smallscr", (XC+0.45+k*0.45, YC-0.01, zt+1.1), (0.4, 0.03, 0.9), M_screenG if k == 1 else M_screen)
+            box("smallscr", (XC+0.45+k*0.45, YC-0.01, zt+1.1), (0.4, 0.03, 0.9), M_big if k != 1 else M_screenG)
         # dial panel on left wall
         box("dialpanel", (XC+0.03, -2.4, zt+1.05), (0.03, 2.2, 0.9), M_panel)
         for k in range(4):
@@ -337,18 +353,22 @@ eh_top = 1.4
 box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (1.15, 1.15, eh_top-FZ_BOT), M_glass)
 for dx in (-0.575, 0.575):
     for dy in (-0.575, 0.575):
-        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.06, 0.06, eh_top-FZ_BOT), M_dark)
+        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.07, 0.07, eh_top-FZ_BOT), M_metal)
 for k in range(7):
     zz = FZ_BOT + 0.2 + k*FH
-    box("eh1", (EX, EY-0.575, zz), (1.15, 0.05, 0.05), M_dark); box("eh2", (EX+0.575, EY, zz), (0.05, 1.15, 0.05), M_dark)
-box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.2,emit=(1,0.3,0.6),estr=1.2, alpha=0.6))
+    box("eh1", (EX, EY-0.575, zz), (1.15, 0.05, 0.05), M_metal); box("eh2", (EX+0.575, EY, zz), (0.05, 1.15, 0.05), M_metal)
+box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.1,emit=(1,0.3,0.6),estr=0.4, alpha=0.3))
+box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
+eL = C.lights.new("elight", 'POINT'); eL.energy = 60; eL.color = (1,0.85,0.7)
+for zz in (Z0-0.8, Z0-FH*2.5, Z0-FH*4.2):
+    _lo = C.objects.new("el", eL); sc.collection.objects.link(_lo); _lo.location = (EX, EY, zz)
 bot(EX, EY, Z0-2*FH+0.05, M_bots[4], 0.25)
 # top glass box on the surface
 box("etop", (EX-0.2, EY-0.2, 0.75), (1.7, 1.7, 1.5), M_glass)
 for dx in (-0.85, 0.85):
     for dy in (-0.85, 0.85):
         box("etf", (EX-0.2+dx, EY-0.2+dy, 0.75), (0.06, 0.06, 1.5), M_dark)
-box("etroof", (EX-0.2, EY-0.2, 1.52), (1.75, 1.75, 0.05), M_dark)
+box("etroof", (EX-0.2, EY-0.2, 1.52), (1.75, 1.75, 0.05), M_white)
 bot(EX-0.2, EY-0.2, 0.0, M_bots[1], 0.25)
 
 # ================= surface =================
@@ -359,7 +379,7 @@ bpy.context.object.data.materials.append(M_white)
 bpy.ops.mesh.primitive_torus_add(major_radius=1.25, minor_radius=0.02, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
 # rocket (Starship-like)
-RB = 1.0; RR = 0.95
+RB = 1.0; RR = 1.08
 cone("skirt", (PX, PY, RB-0.2), RR*0.75, RR, 0.5, M_dark, 48)
 cyl("rocket", (PX, PY, RB+3.9), RR, 7.8, M_white, 64)
 cyl("band", (PX, PY, RB+7.3), RR+0.01, 1.0, M_dark, 64)
@@ -386,15 +406,16 @@ t = text("SPACEX", (0,0,0), 0.55, M_dark, extrude=0.005)
 t.matrix_world = Matrix.Translation(Vector((PX, PY, RB+4.6)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
 t.data.align_y = 'CENTER'
 # giant SPACEX sign on the back edge
-sgn = text("SPACEX", (-0.6, B-0.6, 0.55), 2.25, M_white, rot=(math.radians(90), 0, 0), extrude=0.18, spacing=1.15)
+sgn = text("SPACEX", (-0.9, B-0.6, 0.6), 2.0, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.25)
+sgn.scale = (1.45, 0.62, 1)
 for xx in (-4.6, -1.5, 1.5, 4.0):
     box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
 box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
 # solar field
 for i in range(6):
-    for j in range(7):
-        x = 0.0 + j*0.68; y = 2.1 + i*0.52
-        o = box("panel", (x, y, 0.42), (0.64, 0.46, 0.03), M_solar); o.rotation_euler.x = 0.45
+    for j in range(8):
+        x = 0.4 + j*0.62; y = 1.2 + i*0.5
+        o = box("panel", (x, y, 0.38), (0.58, 0.44, 0.03), M_solar); o.rotation_euler.x = 0.3
         cyl("post", (x, y+0.05, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
 for dx, dy in [(5.7, 3.3), (6.0, 4.4), (5.2, 5.3)]:
@@ -413,12 +434,12 @@ for xx in (-5.05, -4.15): box("tpost", (xx, -5.6, 0.2), (0.04, 0.04, 0.4), M_met
 # crates, rover, surface bots, rocks
 for k in range(6):
     box("crate", (-2.4+0.42*(k%2), 4.2+0.42*((k//2)%2), 0.2+0.38*(k//4)), (0.4, 0.4, 0.36), M_white, 0.01)
-box("rover", (3.5, 0.9, 0.3), (1.0, 0.55, 0.28), M_white, 0.05)
-box("roverwin", (3.6, 0.9, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
+box("rover", (4.0, 0.3, 0.3), (1.0, 0.55, 0.28), M_white, 0.05)
+box("roverwin", (4.1, 0.3, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
 for dx in (-0.35, 0.35):
     for dy in (-0.3, 0.3):
-        cyl("wheel", (3.5+dx, 0.9+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
-bot(1.4, 1.2, 0.0, M_bots[6], 0.3); bot(2.0, 1.4, 0.0, M_bots[4], 0.3)
+        cyl("wheel", (4.0+dx, 0.3+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
+bot(0.9, 0.4, 0.0, M_bots[6], 0.3); bot(1.5, 0.5, 0.0, M_bots[4], 0.3)
 for k in range(40):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
     if (x > XC-0.3 and y < YC+0.3) or math.hypot(x-PX, y-PY) < 2.4: continue
@@ -471,7 +492,7 @@ sp.visible_shadow = False
 # ================= lights =================
 def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
-sun = C.lights.new("sun", 'SUN'); sun.energy = 3.2; sun.angle = math.radians(3)
+sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.45, -1.0, 0.85))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 0.5; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
