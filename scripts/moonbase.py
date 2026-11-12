@@ -703,8 +703,8 @@ M_flap = mat("flap",(0.45,0.46,0.48),0.4)
 for k in range(4):   # white aft fins down the lower body (as in the ref)
     a = math.radians(-45 + 20 + k*90)
     dvec = Vector((math.cos(a), math.sin(a), 0))
-    p = Vector((PX, PY, RB+0.55)) + dvec*(RR+0.15)
-    o2 = box("afin", (p.x, p.y, p.z), (0.36, 0.05, 1.7), M_white); o2.rotation_euler.z = a
+    p = Vector((PX, PY, RB+0.35)) + dvec*(RR+0.15)
+    o2 = box("afin", (p.x, p.y, p.z), (0.36, 0.05, 1.9), M_white); o2.rotation_euler.z = a
 # small dark hatches under the band (visible in ref)
 for k in (-0.35, 0.35):
     p = Vector((PX, PY, RB+BH-1.95)) + cd*(RR+0.005) + sd*k
@@ -781,7 +781,7 @@ for k in range(4):
     lg = cyl("lleg", (LX+math.cos(a)*0.52, LY+math.sin(a)*0.52, 0.25), 0.025, 0.55, M_gold, 6)
     lg.rotation_euler = (math.sin(a)*0.55, -math.cos(a)*0.55, 0)
     cyl("lfoot", (LX+math.cos(a)*0.66, LY+math.sin(a)*0.66, 0.03), 0.07, 0.03, M_gold, 8)
-SGX, SGY = -3.4, -5.75
+SGX, SGY = -3.0, -5.9
 box("tboard", (SGX, SGY, 0.55), (1.0, 0.05, 0.45), M_white)
 box("tred", (SGX, SGY-0.03, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
 for xx in (SGX-0.45, SGX+0.45): box("tpost", (xx, SGY, 0.2), (0.04, 0.04, 0.4), M_metal)
