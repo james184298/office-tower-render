@@ -106,7 +106,7 @@ M_pot = mat("pot", (0.9,0.9,0.9), 0.35)
 M_purple = mat("carpet", (0.16,0.06,0.36), 0.9)
 M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
-M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
+M_pad = mat("pad", (0.035,0.035,0.04), 0.6)
 BOT_COLS = [(0.02,0.75,0.08),(1.0,0.32,0.0),(0.03,0.18,1.0),(0.42,0.04,1.0),(1.0,0.04,0.32),(0.0,0.62,0.75),(1.0,0.7,0.0),(0.95,0.95,0.97)]
 M_bots = [mat(f"bot{i}", tuple(v*0.8 for v in c), 0.22, emit=c, estr=0.12, spec=0.7) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
@@ -688,7 +688,7 @@ bpy.context.object.data.materials.append(M_white)
 # rocket (Starship-like), sized off the ref: r~1.0, ~11.6 tall
 RB = 0.9; RR = 0.92; BH = 8.8
 cd = Vector((0.707, -0.707, 0)); sd = Vector((0.707, 0.707, 0))
-cone("skirt", (PX, PY, RB-0.15), RR*0.8, RR, 0.4, M_dark, 48)
+cone("skirt", (PX, PY, RB-0.2), RR*0.85, RR, 0.4, M_white, 48)
 cyl("rocket", (PX, PY, RB+BH/2), RR, BH, M_white, 64)
 cyl("band", (PX, PY, RB+BH-0.85), RR+0.008, 1.7, M_dark, 64)
 cyl("ring", (PX, PY, RB+2.2), RR+0.006, 0.05, mat("seam",(0.55,0.56,0.58),0.4), 64)
@@ -700,9 +700,11 @@ n = bpy.context.object; n.scale.z = 1.95; n.data.materials.append(M_white); bpy.
 # delete lower hemisphere of the nose (inside body anyway)
 # forward + aft flaps on the left/right sides of the silhouette
 M_flap = mat("flap",(0.45,0.46,0.48),0.4)
-for sgn in (-1, 1):
-    base = Vector((PX, PY, 0)) + sd*(sgn*(RR+0.12))
-    o2 = box("aflap", (base.x - sd.x*sgn*0.02, base.y - sd.y*sgn*0.02, RB+1.0), (0.34, 0.05, 1.1), M_flap); o2.rotation_euler.z = math.radians(45)
+for k in range(4):   # white aft fins down the lower body (as in the ref)
+    a = math.radians(-45 + 20 + k*90)
+    dvec = Vector((math.cos(a), math.sin(a), 0))
+    p = Vector((PX, PY, RB+0.55)) + dvec*(RR+0.15)
+    o2 = box("afin", (p.x, p.y, p.z), (0.36, 0.05, 1.7), M_white); o2.rotation_euler.z = a
 # small dark hatches under the band (visible in ref)
 for k in (-0.35, 0.35):
     p = Vector((PX, PY, RB+BH-1.95)) + cd*(RR+0.005) + sd*k
@@ -770,18 +772,25 @@ for i in range(6):
 for dx, dy in [(5.8, 3.75), (6.0, 4.7), (5.2, 5.4)]:
     cyl("dpost", (dx, dy, 0.45), 0.04, 0.9, M_metal, 8)
     c = sph("dish", (dx, dy, 1.05), 0.55, M_white, (1, 1, 0.3), 24); c.rotation_euler = (math.radians(55), 0, math.radians(-45))
-# gold lander + sign
-cyl("lander", (-5.0, -4.4, 0.55), 0.5, 0.45, M_gold, 8, smooth=False)
-cyl("landtop", (-5.0, -4.4, 0.82), 0.38, 0.1, M_dark, 16)
+# gold lander (Apollo-style descent stage) + sign, positions measured off the ref
+LX, LY = -4.5, -5.0
+cyl("lander", (LX, LY, 0.45), 0.42, 0.32, M_gold, 8, smooth=False)
+sph("landtop", (LX, LY, 0.62), 0.3, mat("lgrey",(0.25,0.25,0.27),0.4), (1, 1, 0.45), 16)
 for k in range(4):
     a = k*math.pi/2 + 0.4
-    lg = cyl("lleg", (-5.0+math.cos(a)*0.55, -4.4+math.sin(a)*0.55, 0.28), 0.03, 0.6, M_gold, 6)
-    lg.rotation_euler = (math.sin(a)*0.5, -math.cos(a)*0.5, 0)
-box("tboard", (-4.6, -5.6, 0.55), (1.0, 0.05, 0.45), M_white)
-box("tred", (-4.6, -5.63, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
-for xx in (-5.05, -4.15): box("tpost", (xx, -5.6, 0.2), (0.04, 0.04, 0.4), M_metal)
-text("TRANQUILITY BASE", (-4.6, -5.632, 0.6), 0.085, M_dark, rot=(math.radians(90), 0, 0), extrude=0.0)
-text("DO NOT TOUCH", (-4.6, -5.645, 0.42), 0.07, M_white, rot=(math.radians(90), 0, 0), extrude=0.0)
+    lg = cyl("lleg", (LX+math.cos(a)*0.52, LY+math.sin(a)*0.52, 0.25), 0.025, 0.55, M_gold, 6)
+    lg.rotation_euler = (math.sin(a)*0.55, -math.cos(a)*0.55, 0)
+    cyl("lfoot", (LX+math.cos(a)*0.66, LY+math.sin(a)*0.66, 0.03), 0.07, 0.03, M_gold, 8)
+SGX, SGY = -3.4, -5.75
+box("tboard", (SGX, SGY, 0.55), (1.0, 0.05, 0.45), M_white)
+box("tred", (SGX, SGY-0.03, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
+for xx in (SGX-0.45, SGX+0.45): box("tpost", (xx, SGY, 0.2), (0.04, 0.04, 0.4), M_metal)
+text("TRANQUILITY BASE", (SGX, SGY-0.032, 0.6), 0.085, M_dark, rot=(math.radians(90), 0, 0), extrude=0.0)
+text("DO NOT TOUCH", (SGX, SGY-0.045, 0.42), 0.07, M_white, rot=(math.radians(90), 0, 0), extrude=0.0)
+# posts along the front-left top edge
+xx = -A + 0.35
+while xx < XC - 1.4:
+    cyl("epost", (xx, -B+0.22, 0.12), 0.012, 0.24, M_metal, 6, smooth=False); xx += 0.5
 M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
