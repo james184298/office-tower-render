@@ -517,12 +517,12 @@ for i in range(NF):
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
     if i == 0:   # ---- mission control ----
-        box("bezel", (3.45, YC-0.01, zt+0.86), (5.3, 0.04, 1.08), M_dark)
-        plane("big", (3.45, YC-0.035, zt+0.86), 5.2, 1.0, M_bigimg)
-        box("lsbez", (0.25, YC-0.01, zt+0.95), (1.0, 0.04, 0.8), M_dark)
-        plane("lscr", (0.25, YC-0.035, zt+0.95), 0.92, 0.72, M_listimg)
-        box("ldesk", (0.3, YC-0.35, zt+0.35), (1.2, 0.45, 0.7), M_desk)
-        plane("dialp", (XC+0.04, -1.9, zt+0.9), 2.4, 0.95, M_dialimg, '+X')
+        box("bezel", (2.3, YC-0.01, zt+0.8), (6.2, 0.04, 1.12), M_dark)
+        plane("big", (2.3, YC-0.035, zt+0.8), 6.1, 1.04, M_bigimg)
+        box("lsbez", (XC+0.03, -1.85, zt+1.0), (0.04, 1.85, 0.66), M_dark)
+        plane("lscr", (XC+0.055, -1.85, zt+1.0), 1.75, 0.58, M_listimg, '+X')
+        box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
+        plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.36,0.37,0.39),0.4))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
@@ -821,11 +821,13 @@ cam.clip_end = 300
 M_earth = C.materials.new("earth"); M_earth.use_nodes = True
 N = M_earth.node_tree.nodes; L = M_earth.node_tree.links
 be = N["Principled BSDF"]; be.inputs["Roughness"].default_value = 0.5
-ne = N.new("ShaderNodeTexNoise"); ne.inputs["Scale"].default_value = 2.2; ne.inputs["Detail"].default_value = 8
-re = N.new("ShaderNodeValToRGB"); re.color_ramp.elements[0].color = (0.01,0.08,0.38,1); re.color_ramp.elements[1].color = (0.2,0.3,0.08,1)
+ne = N.new("ShaderNodeTexNoise"); ne.inputs["Scale"].default_value = 1.6; ne.inputs["Detail"].default_value = 10; ne.inputs["Roughness"].default_value = 0.6
+re = N.new("ShaderNodeValToRGB"); re.color_ramp.elements[0].color = (0.004,0.05,0.32,1); re.color_ramp.elements[1].color = (0.16,0.3,0.06,1)
+_e3 = re.color_ramp.elements.new(0.75); _e3.color = (0.42,0.36,0.18,1)
+_e4 = re.color_ramp.elements.new(0.45); _e4.color = (0.02,0.14,0.5,1)
 re.color_ramp.elements[0].position = 0.5; re.color_ramp.elements[1].position = 0.53
-nc = N.new("ShaderNodeTexNoise"); nc.inputs["Scale"].default_value = 5; nc.inputs["Detail"].default_value = 6
-rc = N.new("ShaderNodeValToRGB"); rc.color_ramp.elements[0].position = 0.55; rc.color_ramp.elements[1].position = 0.72
+nc = N.new("ShaderNodeTexNoise"); nc.inputs["Scale"].default_value = 3.5; nc.inputs["Detail"].default_value = 8; nc.inputs["Distortion"].default_value = 1.2
+rc = N.new("ShaderNodeValToRGB"); rc.color_ramp.elements[0].position = 0.56; rc.color_ramp.elements[1].position = 0.7
 mxe = N.new("ShaderNodeMixRGB")
 L.new(ne.outputs["Fac"], re.inputs["Fac"]); L.new(nc.outputs["Fac"], rc.inputs["Fac"])
 L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.inputs[1]); mxe.inputs[2].default_value = (0.9,0.9,0.9,1)
