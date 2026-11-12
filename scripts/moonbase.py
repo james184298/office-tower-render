@@ -118,18 +118,18 @@ bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
 tc = N.new("ShaderNodeTexCoord")
 # broad bands: noise stretched along x/y so it varies mostly with z
 mpB = N.new("ShaderNodeMapping"); mpB.inputs["Scale"].default_value = (0.035, 0.035, 0.45)
-nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.0; nB.inputs["Detail"].default_value = 3; nB.inputs["Roughness"].default_value = 0.45
+nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.2; nB.inputs["Detail"].default_value = 1.5; nB.inputs["Roughness"].default_value = 0.4
 L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
 # fine striations
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 1.25; wav.inputs["Distortion"].default_value = 1.6
+wav.inputs["Scale"].default_value = 1.1; wav.inputs["Distortion"].default_value = 2.6
 wav.inputs["Detail"].default_value = 4; wav.inputs["Detail Scale"].default_value = 0.25; wav.inputs["Detail Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
-r.elements[0].position = 0.28; r.elements[0].color = (0.05,0.05,0.055,1)
-r.elements[1].position = 0.75; r.elements[1].color = (0.36,0.36,0.37,1)
-e = r.elements.new(0.45); e.color = (0.15,0.15,0.155,1)
-e = r.elements.new(0.6); e.color = (0.25,0.25,0.26,1)
+r.elements[0].position = 0.36; r.elements[0].color = (0.045,0.045,0.05,1)
+r.elements[1].position = 0.66; r.elements[1].color = (0.36,0.36,0.37,1)
+e = r.elements.new(0.46); e.color = (0.12,0.12,0.125,1)
+e = r.elements.new(0.55); e.color = (0.24,0.24,0.25,1)
 L.new(nB.outputs["Fac"], rB.inputs["Fac"])
 fineR = N.new("ShaderNodeValToRGB"); fr_ = fineR.color_ramp
 fr_.elements[0].position = 0.0; fr_.elements[0].color = (0.45,0.45,0.45,1)
@@ -407,7 +407,8 @@ def cutter(name, x0, x1, y0, y1, z0, z1):
     return c
 for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
                  ("slot", cutter("slotbox", EX-0.6, A+4, YC-0.1, EY+0.6, FZ_BOT, 6)),
-                 ("notch", cutter("notchbox", EX-0.5, A+4, YC-0.1, EY+2.2, Z0-0.16, 6))]:
+                 ("notch", cutter("notchbox", EX-0.5, A+4, YC-0.1, EY+2.2, Z0-0.16, 6)),
+                 ("colcut", cutter("colbox", XC-1.25, XC+0.1, -B-4, -B+0.2, FZ_BOT, 6))]:
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
@@ -428,8 +429,8 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wn", (XC-0.95, -B-0.47, zz), (0.24, 0.04, 0.24), M_dark)
-    box("wl", (XC-0.95, -B-0.5, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
+    box("wn", (XC-0.95, -B-0.26, zz), (0.24, 0.04, 0.24), M_dark)
+    box("wl", (XC-0.95, -B-0.29, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -671,9 +672,8 @@ box("colR", (A+0.1, EY+0.85, (FZ_BOT+Z0-0.2)/2), (0.75, 0.5, Z0-0.2-FZ_BOT), mat
 for k in range(8):
     box("wlr", (A+0.49, EY+0.85, -2.2 - k*0.95), (0.05, 0.1, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
-box("colL", (XC-0.62, -B-0.075, (FZ_BOT)/2), (1.24, 0.75, -FZ_BOT), mat("col",(0.1,0.1,0.105),0.5))
-cyl("colLs", (XC-0.22, -B-0.5, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
-box("colLe", (XC-0.04, -B-0.47, (FZ_BOT)/2), (0.08, 0.04, -FZ_BOT), M_dark)
+box("colL", (XC-0.62, 0.15-B, (FZ_BOT-0.05)/2), (1.24, 0.8, -FZ_BOT-0.05), mat("col",(0.045,0.045,0.05),0.5))
+cyl("colLs", (XC-0.22, -B-0.3, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
 
 # ================= surface =================
 PX, PY = -3.5, -1.6
