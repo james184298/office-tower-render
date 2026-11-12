@@ -130,17 +130,21 @@ r.elements[1].position = 0.75; r.elements[1].color = (0.3,0.3,0.31,1)
 e = r.elements.new(0.45); e.color = (0.12,0.12,0.125,1)
 e = r.elements.new(0.6); e.color = (0.2,0.2,0.21,1)
 L.new(nB.outputs["Fac"], rB.inputs["Fac"])
-fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.62; fineR.inputs["To Max"].default_value = 1.25
-L.new(wav.outputs["Fac"], fineR.inputs["Value"])
+fineR = N.new("ShaderNodeValToRGB"); fr_ = fineR.color_ramp
+fr_.elements[0].position = 0.0; fr_.elements[0].color = (0.45,0.45,0.45,1)
+fr_.elements[1].position = 1.0; fr_.elements[1].color = (0.85,0.85,0.85,1)
+for p_, v_ in [(0.1,1.0),(0.5,1.15),(0.8,1.05)]:
+    e_ = fr_.elements.new(p_); e_.color = (v_,v_,v_,1)
+L.new(wav.outputs["Fac"], fineR.inputs["Fac"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
-L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Result"], mulc.inputs["Color2"])
+L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Color"], mulc.inputs["Color2"])
 sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
 mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.0; mr.inputs["From Max"].default_value = -0.2
 L.new(sxyz.outputs["Z"], mr.inputs["Value"])
 crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
 L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
-bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35
+bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.5
 fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 5; fn.inputs["Detail"].default_value = 6
 mpF = N.new("ShaderNodeMapping"); mpF.inputs["Scale"].default_value = (0.5, 0.5, 2.0)
 L.new(tc.outputs["Object"], mpF.inputs["Vector"]); L.new(mpF.outputs["Vector"], fn.inputs["Vector"])
@@ -633,28 +637,26 @@ bpy.context.object.data.materials.append(M_white)
 bpy.ops.mesh.primitive_torus_add(major_radius=1.25, minor_radius=0.02, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
 # rocket (Starship-like), sized off the ref: r~1.0, ~11.6 tall
-RB = 0.9; RR = 1.0; BH = 8.2
+RB = 0.9; RR = 0.92; BH = 8.8
 cd = Vector((0.707, -0.707, 0)); sd = Vector((0.707, 0.707, 0))
 cone("skirt", (PX, PY, RB-0.15), RR*0.8, RR, 0.4, M_dark, 48)
 cyl("rocket", (PX, PY, RB+BH/2), RR, BH, M_white, 64)
-cyl("band", (PX, PY, RB+BH-0.7), RR+0.008, 1.4, M_dark, 64)
+cyl("band", (PX, PY, RB+BH-0.85), RR+0.008, 1.7, M_dark, 64)
 cyl("ring", (PX, PY, RB+2.2), RR+0.006, 0.05, mat("seam",(0.55,0.56,0.58),0.4), 64)
 for k in range(5):
     a = -math.pi/4 + (k-2)*0.2
-    box("win", (PX+math.cos(a)*(RR+0.01), PY+math.sin(a)*(RR+0.01), RB+BH-1.2), (0.12, 0.12, 0.08), mat("winw",(0.9,0.9,0.92),0.2), rz=a)
+    box("win", (PX+math.cos(a)*(RR+0.01), PY+math.sin(a)*(RR+0.01), RB+BH-1.4), (0.12, 0.12, 0.09), mat("winw",(0.9,0.9,0.92),0.2), rz=a)
 bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, location=(PX, PY, RB+BH))
-n = bpy.context.object; n.scale.z = 2.6; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
+n = bpy.context.object; n.scale.z = 1.95; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
 # delete lower hemisphere of the nose (inside body anyway)
 # forward + aft flaps on the left/right sides of the silhouette
 M_flap = mat("flap",(0.45,0.46,0.48),0.4)
 for sgn in (-1, 1):
     base = Vector((PX, PY, 0)) + sd*(sgn*(RR+0.12))
-    o = box("fflap", (base.x, base.y, RB+BH+0.6), (0.3, 0.04, 0.7), M_flap); o.rotation_euler.z = math.radians(45)
-    o.scale = (1, 1, 1); o.rotation_euler.x = 0
     o2 = box("aflap", (base.x - sd.x*sgn*0.02, base.y - sd.y*sgn*0.02, RB+1.0), (0.34, 0.05, 1.1), M_flap); o2.rotation_euler.z = math.radians(45)
 # small dark hatches under the band (visible in ref)
 for k in (-0.35, 0.35):
-    p = Vector((PX, PY, RB+BH-1.55)) + cd*(RR+0.005) + sd*k
+    p = Vector((PX, PY, RB+BH-1.95)) + cd*(RR+0.005) + sd*k
     o = box("hatch", (p.x, p.y, p.z), (0.2, 0.02, 0.1), M_dark); o.rotation_euler.z = math.radians(45)
 for k in range(6):
     a = k*math.pi/3 + 0.3
@@ -702,11 +704,19 @@ box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
 lz = text("LANDING ZONE 1", (0,0,0), 0.2, M_white, extrude=0.0, spacing=1.1)
 lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math.radians(45)); lz.data.align_y = 'CENTER'
 # solar field
+_nt = M_solar.node_tree; _b = _nt.nodes["Principled BSDF"]
+_br = _nt.nodes.new("ShaderNodeTexBrick"); _br.offset = 0.0
+_br.inputs["Color1"].default_value = (0.01,0.015,0.04,1); _br.inputs["Color2"].default_value = (0.015,0.022,0.05,1)
+_br.inputs["Mortar"].default_value = (0.5,0.52,0.56,1); _br.inputs["Scale"].default_value = 4.0
+_br.inputs["Mortar Size"].default_value = 0.012; _br.inputs["Brick Width"].default_value = 0.5; _br.inputs["Row Height"].default_value = 0.42
+_tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"], _br.inputs["Vector"])
+_nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
 for i in range(6):
     for j in range(8):
-        x = 0.4 + j*0.62; y = 1.2 + i*0.5
-        o = box("panel", (x, y, 0.38), (0.52, 0.4, 0.03), M_solar); o.rotation_euler.x = 0.15
-        cyl("post", (x, y+0.05, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
+        x = -0.3 + j*0.64; y = 2.35 + i*0.5
+        o = box("panel", (x, y, 0.42), (0.58, 0.42, 0.025), M_solar); o.rotation_euler.x = 0.38
+        box("pframe", (x, y-0.215, 0.34), (0.58, 0.02, 0.02), M_metal)
+        cyl("post", (x, y, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
 for dx, dy in [(5.7, 3.3), (6.0, 4.4), (5.2, 5.3)]:
     cyl("dpost", (dx, dy, 0.45), 0.04, 0.9, M_metal, 8)
@@ -729,7 +739,7 @@ box("roverwin", (4.0, 1.0, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
 for dx in (-0.35, 0.35):
     for dy in (-0.3, 0.3):
         cyl("wheel", (3.9+dx, 1.0+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
-bot(0.9, 0.4, 0.0, M_bots[6], 0.3); bot(1.5, 0.5, 0.0, M_bots[4], 0.3)
+bot(1.3, 1.25, 0.0, M_bots[6], 0.27); bot(1.85, 1.05, 0.0, M_bots[4], 0.27)
 for k in range(40):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
     if (x > XC-0.3 and y < YC+0.3) or math.hypot(x-PX, y-PY) < 2.4: continue
@@ -781,7 +791,7 @@ rm = N.new("ShaderNodeMath"); rm.operation = 'MULTIPLY'; L.new(rp_.outputs[0], r
 e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.35,0.6,1.0,1); L.new(rm.outputs[0], e2.inputs["Strength"])
 ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
 L.new(ad.outputs[0], eo.inputs["Surface"])
-earth = sph("earth", target + R @ Vector((220*k, 315*k, -40)), 55*k, M_earth, seg=64)
+earth = sph("earth", target + R @ Vector((229*k, 308*k, -40)), 64*k, M_earth, seg=64)
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
 nt = M_star.node_tree; nt.nodes.clear()
