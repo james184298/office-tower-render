@@ -489,7 +489,7 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), M_reg)
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.07,0.07,0.075),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -695,12 +695,14 @@ cyl("tankfan", (1.55, -5.25, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.
 for k in range(8):
     a = k*math.pi/4
     o = box("fanblade", (1.63, -5.25+0.26*math.cos(a), FZ_BOT+0.55+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
-cyl("tankband", (-0.75, -5.25, FZ_BOT+0.55), 0.545, 0.22, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
-for k in range(3): box("frame", (-1.2+k*0.16, -5.3, FZ_BOT+0.45), (0.04, 0.7, 0.9), M_metal)
+M_yel = mat("yellow",(0.9,0.6,0.02),0.4)
+cyl("tankband", (-1.05, -5.25, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, math.pi/2, 0))
+box("tlabel", (-0.35, -5.25-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
+for k in range(3): box("frame", (-1.75+k*0.18, -5.3, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
 for j in range(2):
     for k in range(4): box("crate", (4.6+k*0.42, -5.35+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
     for k in range(3): box("crate", (4.8+k*0.42, -5.35+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
-Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 48; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
+Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 36; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
 # glass elevator shaft in its slot (thin dark frame, white light bars inside)
@@ -878,12 +880,16 @@ def rounded(pts, r, n=6):
     for i in range(1, len(pts)-1):
         p0, p1, p2 = Vector(pts[i-1]), Vector(pts[i]), Vector(pts[i+1])
         d0 = (p0-p1).normalized(); d1 = (p2-p1).normalized()
-        rr = min(r, (p0-p1).length*0.5, (p2-p1).length*0.5)
+        rr = min(r, (p0-p1).length*0.42, (p2-p1).length*0.42)
         a0 = p1 + d0*rr; a1 = p1 + d1*rr
         for k in range(n+1):   # quadratic bezier corner
             t = k/n; q = a0*(1-t)**2 + p1*2*t*(1-t) + a1*t*t
             out.append((q.x, q.y))
-    out.append(pts[-1]); return out
+    out.append(pts[-1])
+    ded = [out[0]]
+    for q in out[1:]:
+        if (Vector(q)-Vector(ded[-1])).length > 1e-4: ded.append(q)
+    return ded
 def stroke_geom(bm, pts, w, depth):
     vs = [Vector((x, y, 0)) for x, y in pts]
     L_ = []; R_ = []
@@ -1089,7 +1095,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         ci.image.colorspace_settings.name = 'Non-Color'
         L.new(tci.outputs["Object"], ci.inputs["Vector"])
         cmx = N.new("ShaderNodeMixRGB"); cmx.inputs["Color2"].default_value = (0.95,0.96,0.98,1)
-        cpow = N.new("ShaderNodeMath"); cpow.operation = 'POWER'; cpow.inputs[1].default_value = 0.8
+        cpow = N.new("ShaderNodeMath"); cpow.operation = 'POWER'; cpow.inputs[1].default_value = 1.5
         cal = N.new("ShaderNodeMath"); cal.operation = 'MULTIPLY'
         cbw = N.new("ShaderNodeRGBToBW"); L.new(ci.outputs["Color"], cbw.inputs[0])
         L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
@@ -1100,7 +1106,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
     LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(4); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 22))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     earth.rotation_euler = (Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
