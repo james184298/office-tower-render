@@ -626,9 +626,9 @@ for i in range(NF):
         for k in range(3): box("cube", (-0.3+k*0.55, -5.3, zt+0.13), (0.28, 0.28, 0.26), M_white, 0.01)
         M_sofa = mat("sofa",(0.03,0.03,0.035),0.8)
         box("sofa", (-0.55, -4.4, zt+0.17), (0.4, 1.0, 0.3), M_sofa)
-        box("bar", (3.5, -4.25, zt+0.42), (2.8, 0.5, 0.06), mat("lwood",(0.72,0.58,0.4),0.5), 0.01)
-        box("barb", (3.5, -4.15, zt+0.2), (2.7, 0.25, 0.4), M_white)
-        for k in range(7): stool(2.3+k*0.4, -4.75, zt, M_white)
+        box("bar", (3.4, -4.25, zt+0.42), (3.6, 0.5, 0.06), mat("lwood",(0.72,0.58,0.4),0.5), 0.01)
+        box("barb", (3.4, -4.15, zt+0.2), (3.5, 0.25, 0.4), M_white)
+        for k in range(9): stool(1.8+k*0.4, -4.75, zt, M_white)
         for k in range(3): box("pc", (2.6+k*0.8, -4.1, zt+0.56), (0.24, 0.04, 0.16), M_dark)
         cyl("groom", (5.4, -2.6, zt+0.75), 0.75, 1.5, M_glass, 40)
         cyl("groomb", (5.4, -2.6, zt+0.01), 0.77, 0.02, M_dark, 40)
@@ -641,7 +641,7 @@ for i in range(NF):
             cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
         # extra lounge furniture (ref: dark armchairs, small round tables, more seating)
-        for p in [(1.6,-5.5),(2.0,-3.9),(5.9,-3.6),(4.9,-4.0),(-0.2,-3.7)]:
+        for p in [(1.6,-5.5),(2.0,-3.9),(5.9,-3.6),(4.9,-3.4),(-0.2,-3.7)]:
             box("arm", (p[0], p[1], zt+0.16), (0.36, 0.36, 0.32), M_sofa, 0.04)
             box("armb", (p[0], p[1]+0.15, zt+0.34), (0.36, 0.06, 0.3), M_sofa, 0.02)
         for p in [(1.1,-3.6),(5.0,-1.8),(5.9,-1.2)]:
@@ -991,13 +991,14 @@ for dx, dy in [(6.2, 3.4), (6.25, 3.95), (6.3, 4.5)]:
     fp = Vector((dx, dy, h0+0.75)) + DN*0.2; cyl("dfeed", fp, 0.012, 0.36, M_dark, 6).rotation_euler = DN.to_track_quat('Z','Y').to_euler()
 # gold lander (Apollo-style descent stage) + sign, positions measured off the ref
 LX, LY = -4.5, -5.0
-cyl("lander", (LX, LY, 0.45), 0.42, 0.32, M_gold, 8, smooth=False)
-sph("landtop", (LX, LY, 0.62), 0.3, mat("lgrey",(0.25,0.25,0.27),0.4), (1, 1, 0.45), 16)
+cyl("lander", (LX, LY, 0.55), 0.6, 0.42, M_gold, 8, smooth=False)
+cyl("landrim", (LX, LY, 0.78), 0.56, 0.05, mat("lfoil",(0.75,0.55,0.12),0.55,0.6), 8, smooth=False)
+sph("landtop", (LX, LY, 0.8), 0.42, M_dark, (1, 1, 0.3), 20)
 for k in range(4):
     a = k*math.pi/2 + 0.4
-    lg = cyl("lleg", (LX+math.cos(a)*0.52, LY+math.sin(a)*0.52, 0.25), 0.025, 0.55, M_gold, 6)
-    lg.rotation_euler = (math.sin(a)*0.55, -math.cos(a)*0.55, 0)
-    cyl("lfoot", (LX+math.cos(a)*0.66, LY+math.sin(a)*0.66, 0.03), 0.07, 0.03, M_gold, 8)
+    lg = cyl("lleg", (LX+math.cos(a)*0.74, LY+math.sin(a)*0.74, 0.3), 0.03, 0.7, M_gold, 6)
+    lg.rotation_euler = (math.sin(a)*0.6, -math.cos(a)*0.6, 0)
+    cyl("lfoot", (LX+math.cos(a)*0.92, LY+math.sin(a)*0.92, 0.03), 0.1, 0.03, M_gold, 10)
 SGX, SGY = -3.0, -5.9
 box("tboard", (SGX, SGY, 0.55), (1.0, 0.05, 0.45), M_white)
 box("tred", (SGX, SGY-0.03, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
@@ -1144,7 +1145,7 @@ try:
     sc.eevee.shadow_resolution_scale = 1.0
 except Exception as ex: print("shadow", ex)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.85; fill.angle = math.radians(20)
+fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
