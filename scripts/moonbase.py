@@ -121,7 +121,7 @@ nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.0; nB.inp
 L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
 # fine striations
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.42; wav.inputs["Distortion"].default_value = 5.0
+wav.inputs["Scale"].default_value = 0.6; wav.inputs["Distortion"].default_value = 4.0
 wav.inputs["Detail"].default_value = 6; wav.inputs["Detail Scale"].default_value = 0.35; wav.inputs["Detail Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
@@ -130,7 +130,7 @@ r.elements[1].position = 0.75; r.elements[1].color = (0.3,0.3,0.31,1)
 e = r.elements.new(0.45); e.color = (0.12,0.12,0.125,1)
 e = r.elements.new(0.6); e.color = (0.2,0.2,0.21,1)
 L.new(nB.outputs["Fac"], rB.inputs["Fac"])
-fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.45; fineR.inputs["To Max"].default_value = 1.45
+fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.62; fineR.inputs["To Max"].default_value = 1.25
 L.new(wav.outputs["Fac"], fineR.inputs["Value"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
 L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Result"], mulc.inputs["Color2"])
@@ -341,7 +341,7 @@ M_aiimg = imgmat("aip", ai_panel_img(), 0.9)
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
-ZB, ZT = -19.0, -13.6        # rock bottom tip / start of taper
+ZB, ZT = -18.5, -10.8        # rock bottom tip / start of taper
 FZ_BOT = -10.2               # recess floor
 NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
 EX, EY = A - 0.8, YC + 1.25  # elevator centre (in a slot on the +x face)
@@ -376,7 +376,7 @@ for v in bm.verts:
         v.co.z += h
     if z < ZT:
         f = (z - ZB)/(ZT - ZB)
-        s = 0.28 + 0.72*smooth(f)**0.6
+        s = 0.3 + 0.7*smooth(f)**0.85
         ns = 1 + 0.12*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))
         v.co.x *= s*ns; v.co.y *= s*ns
     if z < ZB + 0.01:
@@ -403,7 +403,7 @@ M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
 for k in range(26):
     z = rb.uniform(ZB+0.6, ZT+1.5)
-    f = (z - ZB)/(ZT - ZB); sc_ = 0.28 + 0.72*smooth(min(1, f))**0.6
+    f = (z - ZB)/(ZT - ZB); sc_ = 0.3 + 0.7*smooth(min(1, f))**0.85
     if rb.random() < 0.55: x = rb.uniform(-A, A)*sc_; y = -B*sc_ - rb.uniform(0.0, 0.25)
     else: x = A*sc_ + rb.uniform(0.0, 0.25); y = rb.uniform(-B, B)*sc_
     o = ico("boulder", (x*0.97, y*0.97, z), rb.uniform(0.18, 0.5), M_boul, 2)
@@ -524,7 +524,7 @@ for i in range(NF):
         box("wtable", (2.0, -4.55, zt+0.5), (4.8, 0.45, 0.04), M_wood)
         for k in range(9):
             xx = -0.1 + k*0.53
-            box("tleg", (xx, -4.55, zt+0.25), (0.03, 0.35, 0.5), M_dark)
+            box("tleg", (xx, -4.55, zt+0.25), (0.025, 0.025, 0.5), M_metal)
             if k % 2 == 0: box("lap", (xx+0.2, -4.5, zt+0.57), (0.26, 0.18, 0.1), M_dark)
             chair(xx+0.1, -5.05, zt, -1, M_white); chair(xx-0.05, -4.05, zt, 1, M_white)
         for k in range(6):
@@ -789,7 +789,7 @@ nt = M_star.node_tree; nt.nodes.clear()
 so_ = nt.nodes.new("ShaderNodeOutputMaterial"); em = nt.nodes.new("ShaderNodeEmission")
 tcs = nt.nodes.new("ShaderNodeTexCoord"); vo = nt.nodes.new("ShaderNodeTexVoronoi"); vo.inputs["Scale"].default_value = 260
 rp = nt.nodes.new("ShaderNodeValToRGB"); rp.color_ramp.elements[0].position = 0.0; rp.color_ramp.elements[0].color = (1,1,1,1)
-rp.color_ramp.elements[1].position = 0.045; rp.color_ramp.elements[1].color = (0.0015,0.0015,0.002,1)
+rp.color_ramp.elements[1].position = 0.06; rp.color_ramp.elements[1].color = (0.0015,0.0015,0.002,1)
 vn = nt.nodes.new("ShaderNodeTexNoise"); vn.inputs["Scale"].default_value = 40
 mm = nt.nodes.new("ShaderNodeMath"); mm.operation = 'MULTIPLY'
 nt.links.new(tcs.outputs["Object"], vo.inputs["Vector"]); nt.links.new(vo.outputs["Distance"], rp.inputs["Fac"])
@@ -826,10 +826,13 @@ sc.render.image_settings.file_format = "PNG"
 out = os.environ.get("OUT", "../out/moon_hero.png")
 os.makedirs(os.path.dirname(out), exist_ok=True)
 bpy.context.view_layer.update()
+from bpy_extras.object_utils import world_to_camera_view
 for o in C.objects:
-    if o.type in ('MESH','FONT') and o.name not in ('earth',) and not o.name.startswith('Plane'):
-        p = o.matrix_world.translation
-        if abs(p.x) > 9 or abs(p.y) > 9 or p.z > 13 or p.z < -21: print("FAR", o.name, tuple(round(v,2) for v in p), tuple(round(v,2) for v in o.dimensions))
+    if o.type in ('MESH','FONT'):
+        for vtx in ([o.matrix_world.translation] + [o.matrix_world @ Vector(c) for c in o.bound_box]):
+            q = world_to_camera_view(sc, co, vtx); u = q.x*720; v = (1-q.y)*900
+            if any(abs(u-a_) < 18 and abs(v-b_) < 18 for a_, b_ in [(563,47),(687,197),(153,653)]):
+                print("NEAR", o.name, tuple(round(c_,2) for c_ in o.matrix_world.translation), round(u), round(v)); break
 print("BUILD_SECONDS %.1f objects %d" % (time.time()-T0, len(C.objects)))
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(out), "moonbase.blend"))
 sc.render.filepath = out
