@@ -55,7 +55,7 @@ M_desk = mat("desk", (0.06,0.065,0.07), 0.3)
 M_wood = mat("wood", (0.55,0.42,0.28), 0.5)
 M_metal = mat("metal", (0.6,0.62,0.65), 0.25, 1.0)
 M_glass = mat("glass", (0.8,0.9,0.95), 0.02, 0, alpha=0.25)
-M_screen = mat("screen", (0,0,0), 0.2, emit=(0.25,0.55,1.0), estr=3.0)
+M_screen = mat("screen", (0,0,0), 0.2, emit=(0.25,0.55,1.0), estr=6.0)
 M_screen2 = mat("screen2", (0,0,0), 0.2, emit=(0.6,0.3,1.0), estr=2.5)
 M_lamp = mat("lamp", (1,1,1), 0.5, emit=(1.0,0.85,0.6), estr=8)
 M_leaf = mat("leaf", (0.06,0.35,0.08), 0.6)
@@ -75,10 +75,10 @@ tc = N.new("ShaderNodeTexCoord"); sep = N.new("ShaderNodeSeparateXYZ")
 noi = N.new("ShaderNodeTexNoise"); noi.inputs["Scale"].default_value = 1.5; noi.inputs["Detail"].default_value = 6
 mul = N.new("ShaderNodeMath"); mul.operation = 'MULTIPLY_ADD'; mul.inputs[1].default_value = 0.25
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.9; wav.inputs["Distortion"].default_value = 6; wav.inputs["Detail"].default_value = 8
+wav.inputs["Scale"].default_value = 1.6; wav.inputs["Distortion"].default_value = 2.5; wav.inputs["Detail"].default_value = 8
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].color = (0.05,0.05,0.055,1); r.elements[1].color = (0.42,0.42,0.43,1)
-e = r.elements.new(0.5); e.color = (0.18,0.18,0.19,1)
+r.elements[0].color = (0.12,0.12,0.125,1); r.elements[1].color = (0.36,0.36,0.37,1)
+e = r.elements.new(0.5); e.color = (0.22,0.22,0.23,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Color"], ramp.inputs["Fac"])
 L.new(ramp.outputs["Color"], bsdf.inputs["Base Color"])
@@ -89,7 +89,7 @@ M_regolith = C.materials.new("regolith"); M_regolith.use_nodes = True
 nt = M_regolith.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 6; n2.inputs["Detail"].default_value = 10
-r2 = N.new("ShaderNodeValToRGB"); r2.color_ramp.elements[0].color = (0.2,0.2,0.21,1); r2.color_ramp.elements[1].color = (0.6,0.6,0.6,1)
+r2 = N.new("ShaderNodeValToRGB"); r2.color_ramp.elements[0].color = (0.32,0.32,0.33,1); r2.color_ramp.elements[1].color = (0.5,0.5,0.5,1); r2.color_ramp.elements[0].position=0.3; r2.color_ramp.elements[1].position=0.7
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.3
 L.new(n2.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.inputs["Normal"])
@@ -140,7 +140,7 @@ X0, X1 = CUT_X0, S - 0.4
 Y0, Y1 = -S + 0.4, CUT_Y1
 W = X1 - X0; D = Y1 - Y0
 
-def bot(loc, m, s=0.22):
+def bot(loc, m, s=0.3):
     x,y,z = loc
     b = sph("bot", (x,y,z+s*1.0), s, m, (1,1,1.15))
     # flatten bottom by a skirt cone
@@ -174,7 +174,7 @@ for f in range(NF):
     # ceiling lights strip
     for k in range(4):
         box("light", (X0+1+k*1.8, Y0+D/2, z+fh-0.05), (1.2, 0.15, 0.03), M_lamp)
-    L_ = C.lights.new(f"fl{f}", 'AREA'); L_.energy = 900; L_.size = 5; L_.color = (1,0.93,0.85)
+    L_ = C.lights.new(f"fl{f}", 'AREA'); L_.energy = 150; L_.size = 4; L_.color = (1,0.93,0.85)
     lo = C.objects.new(f"fl{f}", L_); sc.collection.objects.link(lo); lo.location = (X0+W/2, Y0+D/2, z+fh-0.15)
     # back walls: left wall (x=X0) dark with lights, right wall (y=Y1) screens
     box("wallL", (X0+0.05, Y0+D/2, z+fh/2), (0.1, D, fh), M_white)
@@ -209,7 +209,7 @@ for f in range(NF):
         box("tank", (X0+0.9, Y0+0.9, z+0.6), (1.4, 0.8, 0.8), M_dark, 0.3)
     for k in range(4 + random.randint(0,2)):
         plant((X0+0.4+random.random()*(W-0.8), Y0+0.4+random.random()*(D-0.8), z+0.16), 0.8+random.random()*0.6)
-    for k in range(5):
+    for k in range(6):
         bot((X0+0.6+random.random()*(W-1.2), Y0+0.5+random.random()*(D-1.0), z+0.16), random.choice(M_bots))
     # pillars under bottom floor
     if f == 0:
@@ -295,18 +295,21 @@ L.new(mx.outputs["Color"], be.inputs["Base Color"])
 earth = sph("earth", (14, 6, 12), 2.2, M_earth, seg=64)
 
 # ---------- lights / camera ----------
-sun = C.lights.new("sun", 'SUN'); sun.energy = 4.0; sun.angle = 0.02
+sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = 0.02
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); so.rotation_euler = (math.radians(50), math.radians(-25), math.radians(-20))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 0.6
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); fo.rotation_euler = (math.radians(70), 0, math.radians(200))
 
-cam = C.cameras.new("cam"); cam.type = 'ORTHO'; cam.ortho_scale = float(os.environ.get("OS", 22))
+cam = C.cameras.new("cam"); cam.type = 'ORTHO'; cam.ortho_scale = float(os.environ.get("OS", 31))
 co = C.objects.new("cam", cam); sc.collection.objects.link(co); sc.camera = co
 co.rotation_euler = (math.radians(58), 0, math.radians(45))
 dvec = co.rotation_euler.to_matrix() @ Vector((0,0,1))
-target = Vector((float(os.environ.get("TX",0.3)), float(os.environ.get("TY",-0.3)), float(os.environ.get("TZ",-3.2))))
+target = Vector((float(os.environ.get("TX",0.3)), float(os.environ.get("TY",-0.3)), float(os.environ.get("TZ",-1.0))))
 co.location = target + dvec*40
 cam.clip_end = 200
+R = co.rotation_euler.to_matrix()
+earth.location = target + R @ Vector((9.0, 12.5, -20))
+earth.scale = (1.4,1.4,1.4)
 
 # ---------- render ----------
 sc.render.engine = "BLENDER_EEVEE_NEXT"
