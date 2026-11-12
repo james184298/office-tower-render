@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.46,0.47,0.49), 0.35)
+M_slab = mat("slab", (0.56,0.57,0.59), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -111,52 +111,77 @@ BOT_COLS = [(0.02,0.75,0.08),(1.0,0.32,0.0),(0.03,0.18,1.0),(0.42,0.04,1.0),(1.0
 M_bots = [mat(f"bot{i}", tuple(v*0.8 for v in c), 0.22, emit=c, estr=0.12, spec=0.7) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
-# ---- rock: broad soft strata bands + faint fine striations ----
+# ---- rock: discrete sediment layers (per-layer random tone), fine streaks, grain, crisp layer edges ----
 M_rock = C.materials.new("rock"); M_rock.use_nodes = True
 nt = M_rock.node_tree; N = nt.nodes; L = nt.links
-bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
+bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.95
+try: bsdf.inputs["Specular IOR Level"].default_value = 0.25
+except Exception: pass
 tc = N.new("ShaderNodeTexCoord")
-# broad bands: noise stretched along x/y so it varies mostly with z
-mpB = N.new("ShaderNodeMapping"); mpB.inputs["Scale"].default_value = (0.035, 0.035, 0.45)
-nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.2; nB.inputs["Detail"].default_value = 1.5; nB.inputs["Roughness"].default_value = 0.4
-L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
-# fine striations
-wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 1.1; wav.inputs["Distortion"].default_value = 2.6
-wav.inputs["Detail"].default_value = 4; wav.inputs["Detail Scale"].default_value = 0.25; wav.inputs["Detail Roughness"].default_value = 0.7
-L.new(tc.outputs["Object"], wav.inputs["Vector"])
-rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
-r.elements[0].position = 0.36; r.elements[0].color = (0.045,0.045,0.05,1)
-r.elements[1].position = 0.66; r.elements[1].color = (0.36,0.36,0.37,1)
-e = r.elements.new(0.46); e.color = (0.12,0.12,0.125,1)
-e = r.elements.new(0.55); e.color = (0.24,0.24,0.25,1)
-L.new(nB.outputs["Fac"], rB.inputs["Fac"])
-fineR = N.new("ShaderNodeValToRGB"); fr_ = fineR.color_ramp
-fr_.elements[0].position = 0.0; fr_.elements[0].color = (0.45,0.45,0.45,1)
-fr_.elements[1].position = 1.0; fr_.elements[1].color = (0.85,0.85,0.85,1)
-for p_, v_ in [(0.1,1.0),(0.5,1.15),(0.8,1.05)]:
-    e_ = fr_.elements.new(p_); e_.color = (v_,v_,v_,1)
-L.new(wav.outputs["Fac"], fineR.inputs["Fac"])
-mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
-L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Color"], mulc.inputs["Color2"])
-gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 55; gn.inputs["Detail"].default_value = 2
+sx_ = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sx_.inputs[0])
+def mnode(op, a_=None, b_=None, v0=None, v1=None):
+    m_ = N.new("ShaderNodeMath"); m_.operation = op
+    if a_ is not None: L.new(a_, m_.inputs[0])
+    elif v0 is not None: m_.inputs[0].default_value = v0
+    if b_ is not None: L.new(b_, m_.inputs[1])
+    elif v1 is not None: m_.inputs[1].default_value = v1
+    return m_
+# warp: low-frequency noise shifts the layers up/down along the face
+wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.12; wn.inputs["Detail"].default_value = 2
+mpw = N.new("ShaderNodeMapping"); mpw.inputs["Scale"].default_value = (1.0, 1.0, 0.25)
+L.new(tc.outputs["Object"], mpw.inputs["Vector"]); L.new(mpw.outputs["Vector"], wn.inputs["Vector"])
+wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 1.6); wsc.inputs[2].default_value = -0.8
+zl = mnode('MULTIPLY', sx_.outputs["Z"], None, None, 2.3)
+zw = mnode('ADD', zl.outputs[0], wsc.outputs[0])
+lid = mnode('FLOOR', zw.outputs[0])
+lfr = mnode('FRACT', zw.outputs[0])
+wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
+tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.07,0.07,0.075,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.44,0.44,0.45,1)
+_e = tr_.elements.new(0.35); _e.color = (0.17,0.17,0.175,1)
+_e = tr_.elements.new(0.7); _e.color = (0.27,0.27,0.28,1)
+L.new(wh.outputs["Value"], tone.inputs["Fac"])
+# sub-layer streaks: noise heavily stretched horizontally
+sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
+mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (0.25, 0.25, 22.0)
+L.new(tc.outputs["Object"], mps.inputs["Vector"]); L.new(mps.outputs["Vector"], sn.inputs["Vector"])
+smr = N.new("ShaderNodeMapRange"); smr.inputs["From Min"].default_value = 0.3; smr.inputs["From Max"].default_value = 0.7
+smr.inputs["To Min"].default_value = 0.6; smr.inputs["To Max"].default_value = 1.35
+L.new(sn.outputs["Fac"], smr.inputs["Value"])
+# grain
+gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 90; gn.inputs["Detail"].default_value = 3
 L.new(tc.outputs["Object"], gn.inputs["Vector"])
-gr = N.new("ShaderNodeMapRange"); gr.inputs["From Min"].default_value = 0.3; gr.inputs["From Max"].default_value = 0.7
-gr.inputs["To Min"].default_value = 0.7; gr.inputs["To Max"].default_value = 1.2
-L.new(gn.outputs["Fac"], gr.inputs["Value"])
-mulg = N.new("ShaderNodeMixRGB"); mulg.blend_type = 'MULTIPLY'; mulg.inputs["Fac"].default_value = 1.0
-L.new(mulc.outputs["Color"], mulg.inputs["Color1"]); L.new(gr.outputs["Result"], mulg.inputs["Color2"])
-sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
-mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.0; mr.inputs["From Max"].default_value = -0.2
-L.new(sxyz.outputs["Z"], mr.inputs["Value"])
+gmr = N.new("ShaderNodeMapRange"); gmr.inputs["From Min"].default_value = 0.3; gmr.inputs["From Max"].default_value = 0.7
+gmr.inputs["To Min"].default_value = 0.72; gmr.inputs["To Max"].default_value = 1.25
+L.new(gn.outputs["Fac"], gmr.inputs["Value"])
+# broad patches
+pn = N.new("ShaderNodeTexNoise"); pn.inputs["Scale"].default_value = 0.35; pn.inputs["Detail"].default_value = 3
+L.new(tc.outputs["Object"], pn.inputs["Vector"])
+pmr = N.new("ShaderNodeMapRange"); pmr.inputs["From Min"].default_value = 0.35; pmr.inputs["From Max"].default_value = 0.65
+pmr.inputs["To Min"].default_value = 0.75; pmr.inputs["To Max"].default_value = 1.2
+L.new(pn.outputs["Fac"], pmr.inputs["Value"])
+# dark crisp line at the base of each layer
+edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.06
+edg.inputs["To Min"].default_value = 0.35; edg.inputs["To Max"].default_value = 1.0
+L.new(lfr.outputs[0], edg.inputs["Value"])
+m1 = mnode('MULTIPLY', smr.outputs["Result"], gmr.outputs["Result"])
+m2 = mnode('MULTIPLY', m1.outputs[0], pmr.outputs["Result"])
+m3 = mnode('MULTIPLY', m2.outputs[0], edg.outputs["Result"])
+mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
+L.new(tone.outputs["Color"], mulc.inputs["Color1"]); L.new(m3.outputs[0], mulc.inputs["Color2"])
+# lighter crust just under the surface
+mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -0.9; mr.inputs["From Max"].default_value = -0.25
+L.new(sx_.outputs["Z"], mr.inputs["Value"])
 crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
-L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulg.outputs["Color"], crust.inputs["Color1"])
+L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
-bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.5
-fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 5; fn.inputs["Detail"].default_value = 6
-mpF = N.new("ShaderNodeMapping"); mpF.inputs["Scale"].default_value = (0.5, 0.5, 2.0)
-L.new(tc.outputs["Object"], mpF.inputs["Vector"]); L.new(mpF.outputs["Vector"], fn.inputs["Vector"])
-L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+# bump: layer steps + streaks + grain
+bh1 = mnode('MULTIPLY', lfr.outputs[0], None, None, 0.6)
+bh2 = mnode('MULTIPLY_ADD', sn.outputs["Fac"], None, None, 0.5); L.new(bh1.outputs[0], bh2.inputs[2])
+bh3 = mnode('MULTIPLY_ADD', gn.outputs["Fac"], None, None, 0.25); L.new(bh2.outputs[0], bh3.inputs[2])
+bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35; bump.inputs["Distance"].default_value = 0.05
+L.new(bh3.outputs[0], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 
 # ---- regolith ----
 M_reg = C.materials.new("regolith"); M_reg.use_nodes = True
@@ -471,12 +496,12 @@ def plant(x, y, z, s=1.0, tall=False):
         o = ico("leaf", (x+math.cos(a)*r_, y+math.sin(a)*r_, zz), (0.08+random.random()*0.06)*s, random.choice((M_leaf, M_leaf2)), 1)
         o.scale = (1.3, 0.8, 0.5); o.rotation_euler = (random.random(), random.random(), a)
 
-def chair(x, y, z, face=1, m=None):
+def chair(x, y, z, face=1, m=None, s=0.85):
     m = m or M_chair
-    box("seat", (x, y, z+0.28), (0.22, 0.22, 0.04), m)
-    box("back", (x, y-face*0.1, z+0.4), (0.22, 0.03, 0.22), m)
-    cyl("cpost", (x, y, z+0.15), 0.02, 0.3, m if m is not M_chair else M_dark, 6, smooth=False)
-    cyl("cbase", (x, y, z+0.015), 0.1, 0.03, m if m is not M_chair else M_dark, 8)
+    box("seat", (x, y, z+0.28*s), (0.22*s, 0.22*s, 0.04*s), m)
+    box("back", (x, y-face*0.1*s, z+0.4*s), (0.22*s, 0.03*s, 0.22*s), m)
+    cyl("cpost", (x, y, z+0.15*s), 0.02*s, 0.3*s, m if m is not M_chair else M_dark, 6, smooth=False)
+    cyl("cbase", (x, y, z+0.015), 0.1*s, 0.03, m if m is not M_chair else M_dark, 8)
 
 def stool(x, y, z, m=M_white):
     cyl("stool", (x, y, z+0.36), 0.1, 0.04, m, 12); cyl("sl", (x, y, z+0.18), 0.018, 0.36, M_metal, 6, smooth=False)
@@ -489,12 +514,12 @@ def console_row(cx, cy, z, n, R=7.0, seg=0.5):
         rot = th
         def P(dx, dy):   # local -> world (rotated about z by rot)
             return (px + dx*math.cos(rot) - dy*math.sin(rot), py + dx*math.sin(rot) + dy*math.cos(rot))
-        o = box("cdesk", (*P(0, 0), z+0.4), (seg-0.02, 0.36, 0.05), M_desk); o.rotation_euler.z = rot
-        o = box("cbody", (*P(0, 0.05), z+0.2), (seg-0.06, 0.24, 0.38), M_dark); o.rotation_euler.z = rot
+        o = box("cdesk", (*P(0, 0), z+0.36), (seg-0.03, 0.3, 0.04), M_desk); o.rotation_euler.z = rot
+        o = box("cbody", (*P(0, 0.05), z+0.18), (seg-0.08, 0.18, 0.34), M_dark); o.rotation_euler.z = rot
         for dx in (-0.12, 0.12):
-            o = box("cmonb", (*P(dx, 0.13), z+0.56), (0.2, 0.025, 0.14), M_dark); o.rotation_euler.z = rot
-            o = plane("cmon", (*P(dx, 0.115), z+0.56), 0.18, 0.12, M_conimg); o.rotation_euler.z = rot
-        cx_, cy_ = P(0, -0.33); chair(cx_, cy_, z, 1)
+            o = box("cmonb", (*P(dx, 0.11), z+0.5), (0.17, 0.02, 0.115), M_dark); o.rotation_euler.z = rot
+            o = plane("cmon", (*P(dx, 0.098), z+0.5), 0.155, 0.1, M_conimg); o.rotation_euler.z = rot
+        cx_, cy_ = P(0, -0.3); chair(cx_, cy_, z, 1, s=0.8)
 
 slabs = []
 for i in range(NF):
@@ -527,12 +552,11 @@ for i in range(NF):
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.36,0.37,0.39),0.4))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
-            for r_, yy in enumerate([-1.7, -3.05, -4.4]):
-                console_row(gx, yy+gy, zt+0.04, 4, seg=0.56)
-        box("frontdesk", (5.3, -5.3, zt+0.35), (1.2, 0.45, 0.7), M_wood)
+            for r_, yy in enumerate([-1.55, -2.6, -3.65, -4.7]):
+                console_row(gx, yy+gy, zt+0.04, 5, seg=0.46)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
-        bots = [(0.0,-2.4,2),(1.2,-1.05,1),(2.45,-2.0,0),(4.1,-3.75,3),(2.5,-3.75,7),(5.6,-2.2,5)]
+        bots = [(0.0,-2.12,2),(1.2,-1.1,1),(2.45,-2.05,0),(4.1,-3.55,3),(2.5,-3.15,7),(5.6,-2.2,5),(3.3,-5.3,4)]
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
         box("wtable", (2.0, -4.55, zt+0.5), (4.8, 0.45, 0.04), M_wood)
@@ -550,7 +574,7 @@ for i in range(NF):
         box("lounge", (5.5, -1.7, zt+0.18), (0.8, 0.5, 0.36), M_dark)
         cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_dark, 32)
         plant(XC+0.3, -5.5, zt, 0.7); plant(6.0, -5.5, zt, 0.7)
-        bots = [(1.1,-3.85,0),(2.7,-3.9,4),(5.2,-4.6,7),(4.4,-3.4,1)]
+        bots = [(1.1,-3.85,0),(2.7,-3.9,4),(5.2,-4.6,7),(4.4,-3.4,1),(0.2,-5.45,2)]
     elif i == 2:  # ---- lounge: purple carpet + wood bar ----
         plane("chartp", (XC+0.04, -4.8, zt+1.0), 1.1, 0.9, M_chartimg, '+X')
         box("darkscr", (XC+0.04, -3.6, zt+1.1), (0.02, 0.8, 0.6), M_dark)
@@ -573,7 +597,7 @@ for i in range(NF):
         for p in [(2.4,-5.4),(5.6,-4.4)]:
             cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
-        bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3)]
+        bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3),(3.0,-5.35,0)]
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
         box("mat", (2.4, -5.25, zt+0.01), (1.6, 0.6, 0.015), M_dark)
@@ -592,7 +616,7 @@ for i in range(NF):
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
         cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
         for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
-        bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6)]
+        bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
         bot(bx, by, zt, M_bots[ci % len(M_bots)])
 
@@ -671,51 +695,86 @@ box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC, 0.02), M_metal)
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
-box("colR", (A+0.1, EY+0.85, (FZ_BOT+Z0-0.2)/2), (0.75, 0.5, Z0-0.2-FZ_BOT), mat("colr",(0.07,0.07,0.075),0.5))
+box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(0.07,0.07,0.075),0.5))
 for k in range(8):
-    box("wlr", (A+0.49, EY+0.85, -2.2 - k*0.95), (0.05, 0.1, 0.16), M_wlamp)
+    box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
 box("colL", (XC-0.62, 0.15-B, (FZ_BOT-0.05)/2), (1.24, 0.8, -FZ_BOT-0.05), mat("col",(0.045,0.045,0.05),0.5))
 cyl("colLs", (XC-0.22, -B-0.3, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
 
 # ================= surface =================
-PX, PY = -3.5, -1.6
-cyl("pad", (PX, PY, 0.05), 2.2, 0.14, M_pad, 64)
-bpy.ops.mesh.primitive_torus_add(major_radius=1.95, minor_radius=0.035, location=(PX, PY, 0.13), major_segments=64)
+PX, PY = -3.38, -1.48
+cyl("pad", (PX, PY, 0.05), 2.15, 0.14, M_pad, 64)
+bpy.ops.mesh.primitive_torus_add(major_radius=1.92, minor_radius=0.03, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
-bpy.ops.mesh.primitive_torus_add(major_radius=1.25, minor_radius=0.02, location=(PX, PY, 0.13), major_segments=64)
+bpy.ops.mesh.primitive_torus_add(major_radius=1.3, minor_radius=0.018, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
-# rocket (Starship-like), sized off the ref: r~1.0, ~11.6 tall
-RB = 0.9; RR = 0.92; BH = 8.8
+# rocket, measured off the ref: r=1.07, body bottom z~0.55, black band z 7.45-9.8, ogive nose tip z~11.75
+RB = 0.55; RR = 1.07; BT = 9.8; NOSE = 1.95
 cd = Vector((0.707, -0.707, 0)); sd = Vector((0.707, 0.707, 0))
-cone("skirt", (PX, PY, RB-0.2), RR*0.85, RR, 0.4, M_white, 48)
-cyl("rocket", (PX, PY, RB+BH/2), RR, BH, M_white, 64)
-cyl("band", (PX, PY, RB+BH-0.85), RR+0.008, 1.7, M_dark, 64)
-cyl("ring", (PX, PY, RB+2.2), RR+0.006, 0.05, mat("seam",(0.55,0.56,0.58),0.4), 64)
-for k in range(5):
-    a = -math.pi/4 + (k-2)*0.2
-    box("win", (PX+math.cos(a)*(RR+0.01), PY+math.sin(a)*(RR+0.01), RB+BH-1.4), (0.12, 0.12, 0.09), mat("winw",(0.9,0.9,0.92),0.2), rz=a)
-bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, location=(PX, PY, RB+BH))
-n = bpy.context.object; n.scale.z = 1.95; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
-# delete lower hemisphere of the nose (inside body anyway)
-# forward + aft flaps on the left/right sides of the silhouette
-M_flap = mat("flap",(0.45,0.46,0.48),0.4)
-for k in range(4):   # white aft fins down the lower body (as in the ref)
-    a = math.radians(-45 + 20 + k*90)
+M_rbody = mat("rbody", (0.8,0.81,0.83), 0.38)
+M_rband = mat("rband", (0.018,0.019,0.022), 0.7)
+M_seam = mat("seam",(0.5,0.51,0.53),0.45)
+def lathe(name, prof, m, segs=64, loc=(0,0,0)):
+    bm = bmesh.new(); rings = []
+    for (r_, z_) in prof:
+        ring = []
+        for k in range(segs):
+            a = 2*math.pi*k/segs
+            ring.append(bm.verts.new((loc[0]+r_*math.cos(a), loc[1]+r_*math.sin(a), loc[2]+z_)))
+        rings.append(ring)
+    for i in range(len(rings)-1):
+        for k in range(segs):
+            k2 = (k+1) % segs
+            bm.faces.new((rings[i][k], rings[i][k2], rings[i+1][k2], rings[i+1][k]))
+    me = C.meshes.new(name); bm.to_mesh(me); bm.free()
+    for f in me.polygons: f.use_smooth = True
+    o = C.objects.new(name, me); sc.collection.objects.link(o); o.data.materials.append(m); return o
+# tangent-ogive nose
+rho = (RR*RR + NOSE*NOSE)/(2*RR)
+prof = []
+for k in range(25):
+    zz = NOSE*k/24
+    r_ = math.sqrt(max(0.0, rho*rho - zz*zz)) + RR - rho
+    prof.append((max(r_, 0.0005), zz))
+lathe("nose", prof, M_rbody, 64, (PX, PY, BT))
+cyl("rocket", (PX, PY, (RB+7.45)/2), RR, 7.45-RB, M_rbody, 64)
+cyl("band", (PX, PY, (7.45+BT)/2), RR, BT-7.45, M_rband, 64)
+cyl("bandring", (PX, PY, 8.95), RR+0.006, 0.035, M_seam, 64)
+cyl("ring", (PX, PY, 2.6), RR+0.004, 0.03, M_seam, 64)
+cyl("ring2", (PX, PY, 5.2), RR+0.004, 0.025, M_seam, 64)
+cyl("engbay", (PX, PY, RB-0.1), RR*0.92, 0.25, M_rband, 48)
+# vertical panel seam facing the camera (slightly right of centre, as in the ref)
+for ang in (-45+28, -45-50):
+    a = math.radians(ang); dv = Vector((math.cos(a), math.sin(a), 0))
+    p = Vector((PX, PY, (RB+7.45)/2)) + dv*(RR+0.002)
+    o = box("pseam", (p.x, p.y, p.z), (0.012, 0.012, 7.45-RB-0.1), M_seam)
+# four light windows in the band and small dark hatches just under it
+M_win = emis("winw", (1.0,0.92,0.75), 1.6)
+for k in range(4):
+    a = -math.pi/4 + (k-1.5)*0.17
+    box("win", (PX+math.cos(a)*(RR+0.005), PY+math.sin(a)*(RR+0.005), 8.35), (0.13, 0.13, 0.11), M_win, rz=a)
+for k in range(8):
+    a = -math.pi/4 + (k-3.5)*0.36
+    box("hatch", (PX+math.cos(a)*(RR+0.003), PY+math.sin(a)*(RR+0.003), 7.3), (0.17, 0.17, 0.1), M_rband, rz=a)
+# aft strakes (four tall narrow white plates) + splayed landing struts
+for k in range(4):
+    a = math.radians(-45 + 38 + k*90)
     dvec = Vector((math.cos(a), math.sin(a), 0))
-    p = Vector((PX, PY, RB+0.35)) + dvec*(RR+0.15)
-    o2 = box("afin", (p.x, p.y, p.z), (0.36, 0.05, 1.9), M_white); o2.rotation_euler.z = a
-# small dark hatches under the band (visible in ref)
-for k in (-0.35, 0.35):
-    p = Vector((PX, PY, RB+BH-1.95)) + cd*(RR+0.005) + sd*k
-    o = box("hatch", (p.x, p.y, p.z), (0.2, 0.02, 0.1), M_dark); o.rotation_euler.z = math.radians(45)
+    p = Vector((PX, PY, RB+1.05)) + dvec*(RR+0.1)
+    o2 = box("afin", (p.x, p.y, p.z), (0.26, 0.05, 2.1), M_rbody); o2.rotation_euler.z = a
 for k in range(6):
-    a = k*math.pi/3 + 0.3
-    p0 = Vector((PX+math.cos(a)*RR*0.9, PY+math.sin(a)*RR*0.9, RB+1.3)); p1 = Vector((PX+math.cos(a)*1.65, PY+math.sin(a)*1.65, 0.12))
-    mid = (p0+p1)/2; dv = p0-p1
-    lg = cyl("leg", mid, 0.04, dv.length, M_metal, 8)
-    lg.rotation_euler = dv.to_track_quat('Z','Y').to_euler()
-    cyl("foot", p1, 0.11, 0.05, M_metal, 12)
+    a = math.radians(-45 + 10 + k*60)
+    dv = Vector((math.cos(a), math.sin(a), 0))
+    p0 = Vector((PX, PY, RB+1.55)) + dv*(RR*0.98); p1 = Vector((PX, PY, 0.14)) + dv*1.85
+    mid = (p0+p1)/2; dvv = p0-p1
+    lg = cyl("leg", mid, 0.045, dvv.length, M_white, 8)
+    lg.rotation_euler = dvv.to_track_quat('Z','Y').to_euler()
+    p2 = Vector((PX, PY, RB+0.25)) + dv*(RR*0.95)
+    mid = (p2+p1)/2; dvv = p2-p1
+    lg = cyl("leg2", mid, 0.03, dvv.length, M_metal, 6)
+    lg.rotation_euler = dvv.to_track_quat('Z','Y').to_euler()
+    cyl("foot", p1, 0.13, 0.05, M_dark, 12)
 
 def swoosh(name, p0, p1, bulge, thick, m, width=0.04, frame=None, n=24):
     """crescent swoosh from p0 to p1 (2D in the frame's x/y), bulging by `bulge`, thickness tapering"""
@@ -735,22 +794,92 @@ def swoosh(name, p0, p1, bulge, thick, m, width=0.04, frame=None, n=24):
 
 # vertical SPACEX on the body, facing camera (wide letter spacing like the logo)
 Xv = Vector((0,0,1)); Zv = cd.copy(); Yv = Zv.cross(Xv)
-FR = Matrix.Translation(Vector((PX, PY, RB+3.1)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
-t = text("SPACEX", (0,0,0), 0.5, M_dark, extrude=0.004, align='LEFT', spacing=1.35)
+FR = Matrix.Translation(Vector((PX, PY, 2.75)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
+t = text("SPACEX", (0,0,0), 0.56, M_dark, extrude=0.004, align='LEFT', spacing=1.35)
 t.scale = (1.15, 1, 1); t.matrix_world = FR @ Matrix.Diagonal((1.15, 1, 1, 1))
 t.data.align_y = 'CENTER'
-swoosh("rswoosh", (2.0, -0.32), (3.4, 0.55), 0.22, 0.09, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
-# giant SPACEX sign on the back edge: chunky extruded letters + swoosh on the X
-sgn = text("SPACEX", (-0.45, B-0.6, 0.55), 1.55, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.15)
-sgn.data.bevel_depth = 0.03; sgn.data.bevel_resolution = 2
-sgn.scale = (1.45, 0.8, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
-bpy.context.view_layer.update()
-SF = sgn.matrix_world.copy()
-# swoosh in the sign's local frame (text units before scale): from inside the X out to the right
-sw = swoosh("sswoosh", (2.7, 0.05), (4.5, 0.75), -0.15, 0.2, M_white, 0.12, SF @ Matrix.Translation((0, 0, 0.05)))
-for xx in (-4.6, -1.5, 1.5, 4.0):
-    box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
-box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
+swoosh("rswoosh", (2.24, -0.36), (3.8, 0.62), 0.25, 0.1, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
+# giant SPACEX sign on the back edge: custom logotype glyphs (thin strokes, A without bar) on a light scaffold
+def rounded(pts, r, n=6):
+    out = [pts[0]]
+    for i in range(1, len(pts)-1):
+        p0, p1, p2 = Vector(pts[i-1]), Vector(pts[i]), Vector(pts[i+1])
+        d0 = (p0-p1).normalized(); d1 = (p2-p1).normalized()
+        rr = min(r, (p0-p1).length*0.5, (p2-p1).length*0.5)
+        a0 = p1 + d0*rr; a1 = p1 + d1*rr
+        for k in range(n+1):   # quadratic bezier corner
+            t = k/n; q = a0*(1-t)**2 + p1*2*t*(1-t) + a1*t*t
+            out.append((q.x, q.y))
+    out.append(pts[-1]); return out
+def stroke_geom(bm, pts, w, depth):
+    vs = [Vector((x, y, 0)) for x, y in pts]
+    L_ = []; R_ = []
+    for i, v in enumerate(vs):
+        if i == 0: t = (vs[1]-v).normalized()
+        elif i == len(vs)-1: t = (v-vs[i-1]).normalized()
+        else:
+            t = ((v-vs[i-1]).normalized() + (vs[i+1]-v).normalized()).normalized()
+        nrm = Vector((-t.y, t.x, 0))
+        if 0 < i < len(vs)-1:
+            t0 = (v-vs[i-1]).normalized(); n0 = Vector((-t0.y, t0.x, 0))
+            sc_ = 1.0/max(0.4, nrm.dot(n0))
+        else: sc_ = 1.0
+        L_.append(v + nrm*w/2*sc_); R_.append(v - nrm*w/2*sc_)
+    fr = []; bk = []
+    for P_ in L_ + R_[::-1]:
+        fr.append(bm.verts.new(P_)); bk.append(bm.verts.new(P_ + Vector((0, 0, -depth))))
+    n_ = len(fr)
+    half = len(L_)
+    for i in range(half-1):
+        bm.faces.new((fr[i], fr[i+1], fr[n_-2-i], fr[n_-1-i]))
+        bm.faces.new((bk[n_-1-i], bk[n_-2-i], bk[i+1], bk[i]))
+    for i in range(n_):
+        j = (i+1) % n_
+        bm.faces.new((fr[i], bk[i], bk[j], fr[j]))
+GW, GH, ST = 1.12, 1.0, 0.17   # glyph width / height / stroke
+h_ = ST/2
+GLYPHS = {
+ 'S': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, 0.5), (GW-h_, 0.5), (GW-h_, h_), (0, h_)], 0.28)],
+ 'P': [rounded([(h_, 0), (h_, GH-h_), (GW-h_, GH-h_), (GW-h_, 0.47), (h_, 0.47)], 0.24)],
+ 'A': [[(0.02, 0), (GW*0.5, GH-0.02), (GW-0.02, 0)]],
+ 'C': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, h_), (GW, h_)], 0.28)],
+ 'E': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, h_), (GW, h_)], 0.18), [(h_, 0.5), (GW*0.92, 0.5)]],
+ 'X': [[(0.0, 0.0), (GW, GH)], [(0.0, GH), (GW, 0.0)]],
+}
+bm = bmesh.new(); xo = 0.0
+for ch in "SPACEX":
+    for pl in GLYPHS[ch]:
+        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.2)
+    xo += GW + 0.27
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
+sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.materials.append(M_white)
+md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.025; md_.segments = 2
+SIGN_W = xo - 0.27
+# frame: x along the sign (rotated 22 deg toward the camera), y up, z toward the camera
+SG0 = Vector((-4.71, 4.2, 0.85)); SA = math.radians(22)
+ex_ = Vector((math.cos(SA), math.sin(SA), 0)); ey_ = Vector((0, 0, 1)); ez_ = ex_.cross(ey_)
+SF = Matrix.Translation(SG0) @ Matrix((ex_, ey_, ez_)).transposed().to_4x4()
+sgn.matrix_world = SF
+# swoosh from inside the X sweeping out to the right
+sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_white, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
+# scaffold behind the letters: posts + two rails + diagonal braces
+M_scaf = mat("scaf",(0.5,0.51,0.53),0.4,0.3)
+def seg_(a_, b_, r_=0.022, m_=M_scaf):
+    a_, b_ = Vector(a_), Vector(b_); d_ = b_-a_
+    o = cyl("scaf", (a_+b_)/2, r_, d_.length, m_, 6, smooth=False); o.rotation_euler = d_.to_track_quat('Z','Y').to_euler(); return o
+back_ = -ez_*0.35
+for k in range(7):
+    t_ = -0.2 + k*(SIGN_W+1.2)/6
+    base_ = SG0 + ex_*t_ + back_
+    gz = 0.0
+    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+1.15))
+    if k < 6:
+        nb = SG0 + ex_*(t_+(SIGN_W+1.2)/6) + back_
+        seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+1.1), 0.012)
+for zz_ in (SG0.z+0.1, SG0.z+1.1):
+    p0_ = SG0 + ex_*(-0.2) + back_; p1_ = SG0 + ex_*(SIGN_W+1.0) + back_
+    seg_((p0_.x, p0_.y, zz_), (p1_.x, p1_.y, zz_), 0.016)
 # LANDING ZONE 1 painted on the pad (reads along the camera's right axis)
 lz = text("LANDING ZONE 1", (0,0,0), 0.2, M_white, extrude=0.0, spacing=1.1)
 lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math.radians(45)); lz.data.align_y = 'CENTER'
@@ -864,17 +993,52 @@ e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.35,0.6,1
 ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
 L.new(ad.outputs[0], eo.inputs["Surface"])
 earth = sph("earth", target + R @ Vector((229*k, 308*k, -40)), 64*k, M_earth, seg=64)
+EARTH_IMG = os.environ.get("EARTH", "/tmp/earth_land.jpg"); CLOUD_IMG = os.environ.get("CLOUDS", "/tmp/earth_cloud.jpg")
+if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
+    print("EARTH texture", EARTH_IMG)
+    tci = N.new("ShaderNodeTexCoord")
+    li = N.new("ShaderNodeTexImage"); li.image = bpy.data.images.load(EARTH_IMG); li.projection = 'SPHERE'
+    L.new(tci.outputs["Object"], li.inputs["Vector"])
+    land_col = li.outputs["Color"]
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.15; hsv.inputs["Value"].default_value = 1.1
+    L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
+    if os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:
+        ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
+        ci.image.colorspace_settings.name = 'Non-Color'
+        L.new(tci.outputs["Object"], ci.inputs["Vector"])
+        cmx = N.new("ShaderNodeMixRGB"); cmx.inputs["Color2"].default_value = (0.95,0.96,0.98,1)
+        cpow = N.new("ShaderNodeMath"); cpow.operation = 'POWER'; cpow.inputs[1].default_value = 0.8
+        L.new(ci.outputs["Color"], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
+        L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
+    L.new(land_col, cm.inputs["Color1"])
+    # orient: longitude -65 on the equator faces the camera, north up on screen
+    # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
+    LON = float(os.environ.get("ELON", -65)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
+    W1 = back.normalized(); Wz = up.normalized(); W3 = Wz.cross(W1)
+    Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
+    earth.rotation_euler = (Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
 nt = M_star.node_tree; nt.nodes.clear()
 so_ = nt.nodes.new("ShaderNodeOutputMaterial"); em = nt.nodes.new("ShaderNodeEmission")
-tcs = nt.nodes.new("ShaderNodeTexCoord"); vo = nt.nodes.new("ShaderNodeTexVoronoi"); vo.inputs["Scale"].default_value = 260
-rp = nt.nodes.new("ShaderNodeValToRGB"); rp.color_ramp.elements[0].position = 0.0; rp.color_ramp.elements[0].color = (1,1,1,1)
-rp.color_ramp.elements[1].position = 0.06; rp.color_ramp.elements[1].color = (0.0015,0.0015,0.002,1)
-vn = nt.nodes.new("ShaderNodeTexNoise"); vn.inputs["Scale"].default_value = 40
-mm = nt.nodes.new("ShaderNodeMath"); mm.operation = 'MULTIPLY'
-nt.links.new(tcs.outputs["Object"], vo.inputs["Vector"]); nt.links.new(vo.outputs["Distance"], rp.inputs["Fac"])
-nt.links.new(rp.outputs["Color"], em.inputs["Color"]); em.inputs["Strength"].default_value = 1.2
+tcs = nt.nodes.new("ShaderNodeTexCoord"); vo = nt.nodes.new("ShaderNodeTexVoronoi"); vo.inputs["Scale"].default_value = 115
+vo.inputs["Randomness"].default_value = 0.9
+smp = nt.nodes.new("ShaderNodeMapping"); smp.inputs["Scale"].default_value = (1.0, 1.333, 1.0)
+nt.links.new(tcs.outputs["Object"], smp.inputs["Vector"]); nt.links.new(smp.outputs["Vector"], vo.inputs["Vector"])
+dmr = nt.nodes.new("ShaderNodeMapRange"); dmr.inputs["From Min"].default_value = 0.03; dmr.inputs["From Max"].default_value = 0.11
+dmr.inputs["To Min"].default_value = 1.0; dmr.inputs["To Max"].default_value = 0.0
+nt.links.new(vo.outputs["Distance"], dmr.inputs["Value"])
+srgb = nt.nodes.new("ShaderNodeSeparateColor"); nt.links.new(vo.outputs["Color"], srgb.inputs[0])
+keep = nt.nodes.new("ShaderNodeMath"); keep.operation = 'GREATER_THAN'; keep.inputs[1].default_value = 0.955
+nt.links.new(srgb.outputs[0], keep.inputs[0])
+bri = nt.nodes.new("ShaderNodeMath"); bri.operation = 'MULTIPLY_ADD'; bri.inputs[1].default_value = 2.2; bri.inputs[2].default_value = 0.35
+nt.links.new(srgb.outputs[1], bri.inputs[0])
+s1 = nt.nodes.new("ShaderNodeMath"); s1.operation = 'MULTIPLY'; nt.links.new(dmr.outputs[0], s1.inputs[0]); nt.links.new(keep.outputs[0], s1.inputs[1])
+s2 = nt.nodes.new("ShaderNodeMath"); s2.operation = 'MULTIPLY'; nt.links.new(s1.outputs[0], s2.inputs[0]); nt.links.new(bri.outputs[0], s2.inputs[1])
+s3 = nt.nodes.new("ShaderNodeMath"); s3.operation = 'ADD'; s3.inputs[1].default_value = 0.002; nt.links.new(s2.outputs[0], s3.inputs[0])
+em.inputs["Color"].default_value = (0.92,0.95,1.0,1)
+nt.links.new(s3.outputs[0], em.inputs["Strength"])
 nt.links.new(em.outputs[0], so_.inputs[0])
 bpy.ops.mesh.primitive_plane_add(size=1, location=target - back*120)
 sp = bpy.context.object; sp.scale = (OS*1.2, OS*1.6, 1); sp.rotation_euler = co.rotation_euler; sp.data.materials.append(M_star)
