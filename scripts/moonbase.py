@@ -133,9 +133,9 @@ L.new(mx.outputs["Result"], ramp.inputs["Fac"])
 sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
 mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.1; mr.inputs["From Max"].default_value = -0.25
 L.new(sxyz.outputs["Z"], mr.inputs["Value"])
-crust = N.new("ShaderNodeMix"); crust.data_type = 'RGBA'; crust.inputs["B"].default_value = (0.3,0.3,0.31,1)
-L.new(mr.outputs["Result"], crust.inputs["Factor"]); L.new(ramp.outputs["Color"], crust.inputs["A"])
-L.new(crust.outputs["Result"], bsdf.inputs["Base Color"])
+crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
+L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(ramp.outputs["Color"], crust.inputs["Color1"])
+L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
 bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25
 fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 8; fn.inputs["Detail"].default_value = 6
 L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
