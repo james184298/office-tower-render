@@ -407,7 +407,15 @@ def taper_s(z):
 # terrain rises toward the back-right corner (ref: the +x face's top edge reaches v~310 at the right corner)
 HH = float(os.environ.get("HILL", 2.6))
 def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
-def TH(x, y): return HH*_sm((x+2)/8.5)*_sm((y-2.5)/3.5)
+SGN_P = (-4.71, 4.2, 0.85); SGN_A = math.radians(22); SGN_L = 8.2
+def TH(x, y):
+    h = HH*_sm((x+2)/8.5)*_sm((y-2.5)/3.5)
+    # low berm under the sign so the letters stand on the ground (ref)
+    ca, sa = math.cos(SGN_A), math.sin(SGN_A)
+    t = (x-SGN_P[0])*ca + (y-SGN_P[1])*sa; tc_ = max(0.0, min(SGN_L, t))
+    d = math.hypot(x-(SGN_P[0]+ca*tc_), y-(SGN_P[1]+sa*tc_))
+    h += max(0.0, SGN_P[2]-0.05-h)*math.exp(-(d/0.75)**2)
+    return h
 FZ_BOT = -10.2               # recess floor
 NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
 EX, EY = A - 0.6, YC + 1.65  # elevator centre (in a slot on the +x face; measured: shaft centre at ref u~556)
@@ -590,12 +598,14 @@ for i in range(NF):
         bots = [(0.0,-2.12,2),(1.2,-1.1,1),(2.45,-2.05,0),(4.1,-3.55,3),(2.5,-3.15,7),(5.6,-2.2,5),(3.3,-5.3,4)]
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
-        box("wtable", (2.0, -4.55, zt+0.5), (4.8, 0.45, 0.04), M_wood)
-        for k in range(9):
-            xx = -0.1 + k*0.53
-            box("tleg", (xx, -4.55, zt+0.25), (0.025, 0.025, 0.5), M_metal)
-            if k % 2 == 0: box("lap", (xx+0.2, -4.5, zt+0.57), (0.26, 0.18, 0.1), M_dark)
-            chair(xx+0.1, -5.05, zt, -1, M_white); chair(xx-0.05, -4.05, zt, 1, M_white)
+        BY = -4.0
+        box("wtable", (2.35, BY, zt+0.5), (5.8, 0.5, 0.04), M_wood)
+        for k in range(12):
+            xx = -0.35 + k*0.5
+            box("tleg", (xx, BY, zt+0.25), (0.025, 0.025, 0.5), M_metal)
+            box("lap", (xx+0.2, BY+0.03, zt+0.56), (0.24, 0.16, 0.08), M_dark)
+            if k % 3 == 1: box("lamp_", (xx+0.05, BY+0.15, zt+0.62), (0.05, 0.05, 0.2), M_dark)
+            chair(xx+0.1, BY-0.48, zt, -1, M_white); chair(xx-0.05, BY+0.5, zt, 1, M_white)
         for k in range(6):
             chair(4.5+ (k % 2)*0.7, -3.4 - (k//2)*0.7, zt, 1, M_white)
         cyl("rug", (5.0, -2.9, zt+0.01), 0.85, 0.02, M_dark, 48)
@@ -896,7 +906,7 @@ GLYPHS = {
 bm = bmesh.new(); xo = 0.0
 for ch in "SPACEX":
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.32)
+        stroke_geom(bm, [(x+xo, y) for x, y in pl], ST, 0.55)
     xo += GW + 0.27
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
@@ -904,14 +914,14 @@ sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.mate
 md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.025; md_.segments = 2
 SIGN_W = xo - 0.27
 # frame: x along the sign (rotated 22 deg toward the camera), y up, z toward the camera
-SG0 = Vector((-4.71, 4.2, 0.85)); SA = math.radians(22)
+SG0 = Vector(SGN_P); SA = SGN_A
 ex_ = Vector((math.cos(SA), math.sin(SA), 0)); ey_ = Vector((0, 0, 1)); ez_ = ex_.cross(ey_)
 SF = Matrix.Translation(SG0) @ Matrix((ex_, ey_, ez_)).transposed().to_4x4()
 sgn.matrix_world = SF
 # swoosh from inside the X sweeping out to the right
 sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_white, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
 # scaffold behind the letters: posts + two rails + diagonal braces
-M_scaf = mat("scaf",(0.32,0.33,0.35),0.5,0.2)
+M_scaf = mat("scaf",(0.2,0.2,0.22),0.5,0.2)
 def seg_(a_, b_, r_=0.022, m_=M_scaf):
     a_, b_ = Vector(a_), Vector(b_); d_ = b_-a_
     o = cyl("scaf", (a_+b_)/2, r_, d_.length, m_, 6, smooth=False); o.rotation_euler = d_.to_track_quat('Z','Y').to_euler(); return o
