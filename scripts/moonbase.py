@@ -76,7 +76,7 @@ M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
 M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
-M_metal = mat("metal", (0.6,0.62,0.65), 0.25, 1.0)
+M_metal = mat("metal", (0.62,0.64,0.67), 0.35, 0.2)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
 M_glass = mat("glass", (0.75,0.85,0.9), 0.02, 0, alpha=0.18)
 M_screen = emis("screen", (0.06,0.22,0.9), 1.3)
@@ -121,11 +121,11 @@ wav.inputs["Detail"].default_value = 3; wav.inputs["Detail Scale"].default_value
 mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.12, 0.12, 1.3)
 wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inputs["Detail"].default_value = 4
 L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
-mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.55
+mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.3
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].position = 0.0; r.elements[0].color = (0.045,0.045,0.05,1)
-r.elements[1].position = 1.0; r.elements[1].color = (0.22,0.22,0.23,1)
-for p, v in [(0.22,0.14),(0.36,0.3),(0.47,0.055),(0.62,0.36),(0.8,0.1),(0.9,0.26)]:
+r.elements[0].position = 0.0; r.elements[0].color = (0.04,0.04,0.045,1)
+r.elements[1].position = 1.0; r.elements[1].color = (0.12,0.12,0.125,1)
+for p, v in [(0.2,0.19),(0.33,0.07),(0.45,0.26),(0.56,0.05),(0.68,0.22),(0.8,0.08),(0.9,0.2)]:
     e = r.elements.new(p); e.color = (v,v,v*1.02,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
 L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
@@ -217,7 +217,7 @@ for k in range(9):
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
 
 # ================= interior =================
-def bot(x, y, z, m, s=0.33):
+def bot(x, y, z, m, s=0.38):
     cone("botb", (x, y, z+s*0.45), s*1.05, s*0.75, s*0.9, m, 24)
     sph("bot", (x, y, z+s*0.95), s*0.78, m, (1,1,0.95), 20)
     cd = Vector((0.707, -0.707, 0))
@@ -373,9 +373,9 @@ for i in range(NF):
 zb = Z0 - (NF-1)*FH - 0.22
 for px, py in [(XC+0.4,-B+2.1+0.2),(1.5,-B+2.1),(A-2.5,-B+2.1),(A-2.3,-2.0),(A-2.3,YC-0.4)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
-cyl("tank", (0.6, -4.9, FZ_BOT+0.62), 0.55, 2.2, mat("tank",(0.02,0.02,0.025),0.2,0.3), 32, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.75, -4.9, FZ_BOT+0.62), 0.5, 0.06, M_metal, 16, rot=(0, math.pi/2, 0))
-for k in range(3): box("frame", (-0.7+k*0.18, -4.9, FZ_BOT+0.55), (0.05, 0.7, 1.1), M_metal)
+cyl("tank", (0.8, -5.2, FZ_BOT+0.66), 0.62, 2.3, mat("tank",(0.02,0.02,0.025),0.2,0.3), 32, rot=(0, math.pi/2, 0))
+cyl("tankfan", (2.0, -5.2, FZ_BOT+0.66), 0.56, 0.06, M_metal, 16, rot=(0, math.pi/2, 0))
+for k in range(3): box("frame", (-0.6+k*0.18, -5.2, FZ_BOT+0.55), (0.05, 0.7, 1.1), M_metal)
 for k in range(3): box("crate", (3.6+k*0.5, -5.2, FZ_BOT+0.18), (0.45, 0.4, 0.32), M_white)
 
 # glass elevator in its slot
@@ -521,8 +521,8 @@ sp.visible_shadow = False
 def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
-so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.45, -1.0, 0.85))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.5; fill.angle = math.radians(20)
+so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
+fill = C.lights.new("fill", 'SUN'); fill.energy = 0.3; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
