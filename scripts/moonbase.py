@@ -440,7 +440,7 @@ M_glow = C.materials.new("glow"); M_glow.use_nodes = True
 _nt = M_glow.node_tree; _nt.nodes.clear()
 _o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
 _tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
-_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 3.0
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 4.0
 _tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
 _mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
 _pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
@@ -458,7 +458,7 @@ def bot(x, y, z, m, s=0.27, glow=True):
         p = Vector((x, y, z+s*1.02)) + cd*(s*0.7) + side*(sgn*s*0.25)
         sph("eye", p, s*0.15, M_eye, (1,1,1.4), 12)
     if glow:
-        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.6, s*2.6, 1)
+        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*3.3, s*3.3, 1)
         g.visible_shadow = False
 
 def plant(x, y, z, s=1.0, tall=False):
@@ -559,7 +559,8 @@ for i in range(NF):
         for k in range(3): box("cube", (-0.3+k*0.55, -5.3, zt+0.13), (0.28, 0.28, 0.26), M_white, 0.01)
         M_sofa = mat("sofa",(0.03,0.03,0.035),0.8)
         box("sofa", (-0.55, -4.4, zt+0.17), (0.4, 1.0, 0.3), M_sofa)
-        box("bar", (3.5, -4.2, zt+0.25), (2.8, 0.7, 0.5), mat("lwood",(0.72,0.58,0.4),0.5), 0.02)
+        box("bar", (3.5, -4.25, zt+0.42), (2.8, 0.5, 0.06), mat("lwood",(0.72,0.58,0.4),0.5), 0.01)
+        box("barb", (3.5, -4.15, zt+0.2), (2.7, 0.25, 0.4), M_white)
         for k in range(7): stool(2.3+k*0.4, -4.75, zt, M_white)
         for k in range(3): box("pc", (2.6+k*0.8, -4.1, zt+0.56), (0.24, 0.04, 0.16), M_dark)
         cyl("groom", (5.4, -2.6, zt+0.75), 0.75, 1.5, M_glass, 40)
@@ -576,6 +577,8 @@ for i in range(NF):
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
         box("mat", (2.4, -5.25, zt+0.01), (1.6, 0.6, 0.015), M_dark)
+        bpy.ops.mesh.primitive_torus_add(major_radius=1.0, minor_radius=0.025, location=(2.6, -4.2, zt+0.01), major_segments=64)
+        _t = bpy.context.object; _t.scale.z = 0.2; _t.data.materials.append(M_white)
         tx = text("SPACEX", (2.4, -5.3, zt+0.02), 0.25, M_white, extrude=0.0); tx.data.space_character = 1.4
         for p in [(0.2,-4.4,1.1,True),(1.9,-3.7,1.0,True),(3.8,-4.6,1.2,True),(5.6,-3.0,1.0,True),(XC+0.4,-3.8,0.8,False),(4.9,-5.4,0.8,False),(3.0,-4.4,0.7,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
@@ -598,13 +601,13 @@ zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-cyl("tank", (0.5, -5.3, FZ_BOT+0.62), 0.58, 2.0, M_tank, 40, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.55, -5.3, FZ_BOT+0.62), 0.6, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+cyl("tank", (0.2, -5.3, FZ_BOT+0.47), 0.44, 2.2, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.35, -5.3, FZ_BOT+0.47), 0.46, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.62, -5.3+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a - math.pi/2
-cyl("tankband", (0.2, -5.3, FZ_BOT+0.62), 0.6, 0.18, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
-for k in range(3): box("frame", (-0.85+k*0.16, -5.3, FZ_BOT+0.55), (0.04, 0.8, 1.1), M_metal)
+    o = box("fanblade", (1.42, -5.3+0.22*math.cos(a), FZ_BOT+0.47+0.22*math.sin(a)), (0.02, 0.06, 0.38), M_metal); o.rotation_euler.x = a - math.pi/2
+cyl("tankband", (-0.2, -5.3, FZ_BOT+0.47), 0.455, 0.16, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
+for k in range(3): box("frame", (-1.2+k*0.16, -5.3, FZ_BOT+0.45), (0.04, 0.7, 0.9), M_metal)
 for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
 for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white)
 
@@ -822,10 +825,10 @@ M_earth = C.materials.new("earth"); M_earth.use_nodes = True
 N = M_earth.node_tree.nodes; L = M_earth.node_tree.links
 be = N["Principled BSDF"]; be.inputs["Roughness"].default_value = 0.5
 ne = N.new("ShaderNodeTexNoise"); ne.inputs["Scale"].default_value = 1.6; ne.inputs["Detail"].default_value = 10; ne.inputs["Roughness"].default_value = 0.6
-re = N.new("ShaderNodeValToRGB"); re.color_ramp.elements[0].color = (0.004,0.05,0.32,1); re.color_ramp.elements[1].color = (0.16,0.3,0.06,1)
-_e3 = re.color_ramp.elements.new(0.75); _e3.color = (0.42,0.36,0.18,1)
-_e4 = re.color_ramp.elements.new(0.45); _e4.color = (0.02,0.14,0.5,1)
-re.color_ramp.elements[0].position = 0.5; re.color_ramp.elements[1].position = 0.53
+re = N.new("ShaderNodeValToRGB"); _el = re.color_ramp.elements
+_el[0].position = 0.0; _el[0].color = (0.003,0.04,0.28,1); _el[1].position = 1.0; _el[1].color = (0.45,0.38,0.2,1)
+for _p, _c in [(0.44,(0.02,0.13,0.5)),(0.5,(0.04,0.2,0.55)),(0.515,(0.12,0.28,0.06)),(0.6,(0.2,0.32,0.08))]:
+    _x = _el.new(_p); _x.color = (*_c, 1)
 nc = N.new("ShaderNodeTexNoise"); nc.inputs["Scale"].default_value = 3.5; nc.inputs["Detail"].default_value = 8; nc.inputs["Distortion"].default_value = 1.2
 rc = N.new("ShaderNodeValToRGB"); rc.color_ramp.elements[0].position = 0.56; rc.color_ramp.elements[1].position = 0.7
 mxe = N.new("ShaderNodeMixRGB")
