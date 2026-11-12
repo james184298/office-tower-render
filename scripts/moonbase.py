@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.34,0.35,0.37), 0.35)
+M_slab = mat("slab", (0.27,0.275,0.29), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -578,7 +578,7 @@ for i in range(NF):
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_lwall)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 62 if i else 55; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i else 50; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
@@ -590,7 +590,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.36,0.37,0.39),0.4))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.24,0.245,0.26),0.4))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
             for r_, yy in enumerate([-1.55, -2.6, -3.65, -4.7]):
                 console_row(gx, yy+gy, zt+0.04, 5, seg=0.46)
@@ -651,7 +651,7 @@ for i in range(NF):
         bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3),(3.0,-5.35,0)]
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
-        box("mat", (2.4, -5.25, zt+0.01), (1.6, 0.6, 0.015), M_dark)
+        box("mat", (2.4, -5.25, zt+0.01), (2.0, 0.62, 0.015), M_dark)
         bpy.ops.mesh.primitive_torus_add(major_radius=1.0, minor_radius=0.025, location=(2.6, -4.2, zt+0.01), major_segments=64)
         _t = bpy.context.object; _t.location.z = zt+0.075; _t.scale.z = 0.2; _t.data.materials.append(M_white)
         tx = text("SPACEX", (2.4, -5.3, zt+0.02), 0.25, M_white, extrude=0.0); tx.data.space_character = 1.4
@@ -659,8 +659,6 @@ for i in range(NF):
             plant(p[0], p[1], zt, p[2], p[3])
         for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
             box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
-        box("deck", (3.1, -4.5, zt+0.03), (2.2, 1.7, 0.06), mat("deckw",(0.6,0.45,0.28),0.6))
-        for k in range(6): box("plank", (3.1, -5.3+k*0.3, zt+0.061), (2.2, 0.01, 0.002), M_dark)
         M_opt = mat("optimus",(0.05,0.05,0.055),0.3,0.6)
         for (ox, oy) in [(5.0, -4.5), (5.55, -4.15), (0.9, -3.9)]:
             for sgn_ in (-1, 1):
@@ -911,7 +909,7 @@ def stroke_geom(bm, pts, w, depth):
     for i in range(n_):
         j = (i+1) % n_
         bm.faces.new((fr[i], bk[i], bk[j], fr[j]))
-GW, GH, ST = 1.12, 0.78, 0.2   # glyph width / height / stroke
+GW, GH, ST = 1.12, 1.0, 0.27   # glyph width / height / stroke
 h_ = ST/2
 GLYPHS = {
  'S': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, GH*0.5), (GW-h_, GH*0.5), (GW-h_, h_), (0, h_)], 0.28)],
@@ -926,7 +924,7 @@ GROT = math.radians(float(os.environ.get("GROT", 16)))   # each glyph turned a b
 for ch in "SPACEX":
     nv0 = len(bm.verts)
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo+0.25*y, y) for x, y in pl], ST, 0.26)
+        stroke_geom(bm, [(x+xo+0.25*y, y) for x, y in pl], ST, 0.36)
     bm.verts.ensure_lookup_table()
     gv = [bm.verts[i] for i in range(nv0, len(bm.verts))]
     bmesh.ops.rotate(bm, verts=gv, cent=Vector((xo+GW*0.6, 0, 0)), matrix=Matrix.Rotation(GROT, 3, 'Y'))
@@ -1008,7 +1006,7 @@ M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
 for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0.68,0,0),(0,0.34,0),(0.34,0.34,0),(0.68,0.34,0),(0.17,0.17,1),(0.51,0.17,1),(0.34,-0.36,0)]):
-    box("crate", (-2.75+cx_*1.15, 4.1+cy_*1.15, 0.17+0.34*cz_+TH(-2.6,4.2)), (0.37, 0.37, 0.32), M_crate, 0.012)
+    box("crate", (-2.7+cx_*0.88, 4.1+cy_*0.88, 0.14+0.27*cz_+TH(-2.6,4.2)), (0.29, 0.29, 0.26), M_crate, 0.012)
 RVX, RVY = 4.6, 0.75
 bm = bmesh.new()
 prof = [(-0.55,0.1),(0.55,0.1),(0.55,0.3),(0.05,0.5),(-0.55,0.32)]
@@ -1063,7 +1061,7 @@ ldir = (-right*0.9 + up*0.1 + back*0.44).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.12; tm.inputs["From Max"].default_value = 0.3
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.3; tm.inputs["From Max"].default_value = 0.3
 tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
@@ -1084,7 +1082,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li = N.new("ShaderNodeTexImage"); li.image = bpy.data.images.load(EARTH_IMG); li.projection = 'SPHERE'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.7; hsv.inputs["Value"].default_value = 1.2
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = 1.45
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
@@ -1100,7 +1098,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -36)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(4); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
