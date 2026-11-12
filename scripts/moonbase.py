@@ -35,7 +35,7 @@ def box(name, loc, size, m, bevel=0.0, rz=0.0):
     bpy.ops.mesh.primitive_cube_add(location=loc)
     o = bpy.context.object; o.name = name
     o.scale = (size[0]/2, size[1]/2, size[2]/2)
-    bpy.ops.object.transform_apply(scale=True)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     if bevel:
         md = o.modifiers.new("b", 'BEVEL'); md.width = bevel; md.segments = 2
     o.rotation_euler.z = rz
@@ -107,7 +107,7 @@ M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
 BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", c, 0.18, emit=c, estr=0.35, spec=0.6) for i,c in enumerate(BOT_COLS)]
+M_bots = [mat(f"bot{i}", c, 0.18, emit=c, estr=0.55, spec=0.6) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
 # ---- rock: broad soft strata bands + faint fine striations ----
@@ -295,7 +295,7 @@ def list_screen_img():
 def console_img():
     cv = Canvas(64, 40, (0.01, 0.02, 0.06))
     cv.rect(3, 30, 61, 36, (0.05, 0.15, 0.4)); cv.textbars(4, 4, 40, 26, (0.4, 0.6, 0.9), rh=2, gap=3, rnd=rr)
-    cv.rect(46, 6, 58, 22, (0.8, 0.12, 0.08))
+    cv.rect(50, 8, 58, 14, (0.8, 0.12, 0.08))
     return cv.image("console_img")
 
 def dial_panel_img():
@@ -416,7 +416,6 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 for k in range(9):
     zz = -0.9 - k*1.05
     box("wl", (XC-0.36, -B-0.47, zz), (0.12, 0.05, 0.18), M_lamp)
-    box("wl", (A+0.12, EY+0.95, zz), (0.05, 0.16, 0.22), M_lamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -578,7 +577,7 @@ cyl("tank", (0.5, -5.3, FZ_BOT+0.62), 0.58, 2.0, M_tank, 40, rot=(0, math.pi/2, 
 cyl("tankfan", (1.55, -5.3, FZ_BOT+0.62), 0.6, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.62, -5.3+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a
+    o = box("fanblade", (1.62, -5.3+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a - math.pi/2
 cyl("tankband", (0.2, -5.3, FZ_BOT+0.62), 0.6, 0.18, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
 for k in range(3): box("frame", (-0.85+k*0.16, -5.3, FZ_BOT+0.55), (0.04, 0.8, 1.1), M_metal)
 for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
@@ -725,11 +724,11 @@ for xx in (-5.05, -4.15): box("tpost", (xx, -5.6, 0.2), (0.04, 0.04, 0.4), M_met
 # crates, rover, surface bots, rocks
 for k in range(6):
     box("crate", (-2.4+0.42*(k%2), 4.2+0.42*((k//2)%2), 0.2+0.38*(k//4)), (0.4, 0.4, 0.36), M_white, 0.01)
-box("rover", (4.0, 0.3, 0.3), (1.0, 0.55, 0.28), M_white, 0.05)
-box("roverwin", (4.1, 0.3, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
+box("rover", (3.9, 1.0, 0.3), (1.0, 0.55, 0.28), M_white, 0.05)
+box("roverwin", (4.0, 1.0, 0.48), (0.5, 0.5, 0.14), M_dark, 0.03)
 for dx in (-0.35, 0.35):
     for dy in (-0.3, 0.3):
-        cyl("wheel", (4.0+dx, 0.3+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
+        cyl("wheel", (3.9+dx, 1.0+dy, 0.14), 0.14, 0.1, M_dark, 12, rot=(math.pi/2, 0, 0))
 bot(0.9, 0.4, 0.0, M_bots[6], 0.3); bot(1.5, 0.5, 0.0, M_bots[4], 0.3)
 for k in range(40):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
@@ -755,8 +754,8 @@ M_earth = C.materials.new("earth"); M_earth.use_nodes = True
 N = M_earth.node_tree.nodes; L = M_earth.node_tree.links
 be = N["Principled BSDF"]; be.inputs["Roughness"].default_value = 0.5
 ne = N.new("ShaderNodeTexNoise"); ne.inputs["Scale"].default_value = 2.2; ne.inputs["Detail"].default_value = 8
-re = N.new("ShaderNodeValToRGB"); re.color_ramp.elements[0].color = (0.01,0.06,0.3,1); re.color_ramp.elements[1].color = (0.15,0.3,0.08,1)
-re.color_ramp.elements[0].position = 0.55; re.color_ramp.elements[1].position = 0.58
+re = N.new("ShaderNodeValToRGB"); re.color_ramp.elements[0].color = (0.01,0.08,0.38,1); re.color_ramp.elements[1].color = (0.2,0.3,0.08,1)
+re.color_ramp.elements[0].position = 0.5; re.color_ramp.elements[1].position = 0.53
 nc = N.new("ShaderNodeTexNoise"); nc.inputs["Scale"].default_value = 5; nc.inputs["Detail"].default_value = 6
 rc = N.new("ShaderNodeValToRGB"); rc.color_ramp.elements[0].position = 0.55; rc.color_ramp.elements[1].position = 0.72
 mxe = N.new("ShaderNodeMixRGB")
@@ -765,11 +764,11 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*1.0 + up*0.3 + back*0.2).normalized()
+ldir = (-right*1.0 + up*0.3 + back*0.5).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.08; tm.inputs["From Max"].default_value = 0.22
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.15; tm.inputs["From Max"].default_value = 0.3
 tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
@@ -825,14 +824,6 @@ sc.render.resolution_percentage = int(os.environ.get("PCT", 100))
 sc.render.image_settings.file_format = "PNG"
 out = os.environ.get("OUT", "../out/moon_hero.png")
 os.makedirs(os.path.dirname(out), exist_ok=True)
-bpy.context.view_layer.update()
-from bpy_extras.object_utils import world_to_camera_view
-for o in C.objects:
-    if o.type in ('MESH','FONT'):
-        for vtx in ([o.matrix_world.translation] + [o.matrix_world @ Vector(c) for c in o.bound_box]):
-            q = world_to_camera_view(sc, co, vtx); u = q.x*720; v = (1-q.y)*900
-            if any(abs(u-a_) < 18 and abs(v-b_) < 18 for a_, b_ in [(563,47),(687,197),(153,653)]):
-                print("NEAR", o.name, tuple(round(c_,2) for c_ in o.matrix_world.translation), round(u), round(v)); break
 print("BUILD_SECONDS %.1f objects %d" % (time.time()-T0, len(C.objects)))
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(out), "moonbase.blend"))
 sc.render.filepath = out
