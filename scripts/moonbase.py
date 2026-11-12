@@ -830,10 +830,14 @@ def swoosh(name, p0, p1, bulge, thick, m, width=0.04, frame=None, n=24):
 # vertical SPACEX on the body, facing camera (wide letter spacing like the logo)
 Xv = Vector((0,0,1)); Zv = cd.copy(); Yv = Zv.cross(Xv)
 FR = Matrix.Translation(Vector((PX, PY, 2.75)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
-t = text("SPACEX", (0,0,0), 0.56, M_dark, extrude=0.004, align='LEFT', spacing=1.35)
-t.scale = (1.15, 1, 1); t.matrix_world = FR @ Matrix.Diagonal((1.15, 1, 1, 1))
+t = text("SPACEX", (0,0,0), 0.52, M_dark, extrude=0.004, align='LEFT', spacing=1.12)
+t.matrix_world = FR
 t.data.align_y = 'CENTER'
-swoosh("rswoosh", (2.24, -0.36), (3.8, 0.62), 0.25, 0.1, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
+bpy.context.view_layer.update()
+Wt = t.dimensions.x; Ht = t.dimensions.y
+print("rocket text dims", Wt, Ht)
+# small logo swoosh: from the middle of the X out past its upper-right arm
+swoosh("rswoosh", (Wt-0.42*Ht*1.4, -0.12*Ht), (Wt+0.55*Ht, 0.95*Ht), 0.12*Ht, 0.16*Ht, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
 # giant SPACEX sign on the back edge: custom logotype glyphs (thin strokes, A without bar) on a light scaffold
 def rounded(pts, r, n=6):
     out = [pts[0]]
