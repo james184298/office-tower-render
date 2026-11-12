@@ -131,7 +131,10 @@ wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.12; wn.in
 mpw = N.new("ShaderNodeMapping"); mpw.inputs["Scale"].default_value = (1.0, 1.0, 0.25)
 L.new(tc.outputs["Object"], mpw.inputs["Vector"]); L.new(mpw.outputs["Vector"], wn.inputs["Vector"])
 wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 1.6); wsc.inputs[2].default_value = -0.8
-zl = mnode('MULTIPLY', sx_.outputs["Z"], None, None, 3.6)
+# layer coordinate: z tilted so strata read flatter on screen than the slab edges (as in the ref)
+zdot = N.new("ShaderNodeVectorMath"); zdot.operation = 'DOT_PRODUCT'; zdot.inputs[1].default_value = (-0.245, 0.245, 1.0)
+L.new(tc.outputs["Object"], zdot.inputs[0]); ZQ = zdot.outputs["Value"]
+zl = mnode('MULTIPLY', ZQ, None, None, 3.6)
 zw = mnode('ADD', zl.outputs[0], wsc.outputs[0])
 lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
@@ -144,10 +147,12 @@ _e = tr_.elements.new(0.7); _e.color = (0.28,0.28,0.29,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
-mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (1.3, 1.3, 16.0)
-L.new(tc.outputs["Object"], mps.inputs["Vector"]); L.new(mps.outputs["Vector"], sn.inputs["Vector"])
+cxyz = N.new("ShaderNodeCombineXYZ")
+_mx = mnode('MULTIPLY', sx_.outputs["X"], None, None, 1.3); _my = mnode('MULTIPLY', sx_.outputs["Y"], None, None, 1.3); _mz = mnode('MULTIPLY', ZQ, None, None, 16.0)
+L.new(_mx.outputs[0], cxyz.inputs[0]); L.new(_my.outputs[0], cxyz.inputs[1]); L.new(_mz.outputs[0], cxyz.inputs[2])
+L.new(cxyz.outputs[0], sn.inputs["Vector"])
 smr = N.new("ShaderNodeMapRange"); smr.inputs["From Min"].default_value = 0.3; smr.inputs["From Max"].default_value = 0.7
-smr.inputs["To Min"].default_value = 0.78; smr.inputs["To Max"].default_value = 1.2
+smr.inputs["To Min"].default_value = 0.85; smr.inputs["To Max"].default_value = 1.15
 L.new(sn.outputs["Fac"], smr.inputs["Value"])
 # grain
 gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 28; gn.inputs["Detail"].default_value = 8; gn.inputs["Roughness"].default_value = 0.7
@@ -165,7 +170,12 @@ L.new(pn.outputs["Fac"], pmr.inputs["Value"])
 edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.06
 edg.inputs["To Min"].default_value = 0.55; edg.inputs["To Max"].default_value = 1.0
 L.new(lfr.outputs[0], edg.inputs["Value"])
-m1 = mnode('MULTIPLY', smr.outputs["Result"], gmr.outputs["Result"])
+zf2 = mnode('MULTIPLY', ZQ, None, None, 11.0); zf2w = mnode('ADD', zf2.outputs[0], wsc.outputs[0])
+lid2 = mnode('FLOOR', zf2w.outputs[0]); wh2 = N.new("ShaderNodeTexWhiteNoise"); wh2.noise_dimensions = '1D'; L.new(lid2.outputs[0], wh2.inputs["W"])
+f2 = N.new("ShaderNodeMapRange"); f2.inputs["To Min"].default_value = 0.8; f2.inputs["To Max"].default_value = 1.12
+L.new(wh2.outputs["Value"], f2.inputs["Value"])
+m0 = mnode('MULTIPLY', smr.outputs["Result"], f2.outputs["Result"])
+m1 = mnode('MULTIPLY', m0.outputs[0], gmr.outputs["Result"])
 m2 = mnode('MULTIPLY', m1.outputs[0], pmr.outputs["Result"])
 m3 = mnode('MULTIPLY', m2.outputs[0], edg.outputs["Result"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
@@ -378,9 +388,9 @@ M_aiimg = imgmat("aip", ai_panel_img(), 0.9)
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
-ZB, ZT = -16.9, -9.3         # rock bottom tip / start of taper
+ZB, ZT = -16.9, -8.0         # rock bottom tip / start of taper
 # taper (measured off the ref silhouette): scale about a centre offset toward +x+y, so the left side tapers more
-TAPER = [(-16.9, 0.18), (-16.5, 0.3), (-15.8, 0.5), (-14.8, 0.7), (-13.5, 0.8), (-11.9, 0.9), (-10.5, 0.96), (-9.3, 1.0)]
+TAPER = [(-16.9, 0.15), (-16.5, 0.25), (-15.8, 0.42), (-14.8, 0.72), (-13.5, 0.85), (-11.9, 0.93), (-10.5, 0.96), (-9.3, 0.985), (-8.0, 1.0)]
 TCX, TCY = 2.5, 2.5
 def taper_s(z):
     if z <= TAPER[0][0]: return TAPER[0][1]
@@ -411,7 +421,7 @@ for v in bm.verts:
     if edge:
         n = noise.noise(Vector((x*0.18+3, y*0.18, z*0.45)))
         n2 = noise.noise(Vector((x*0.6, y*0.6, z*1.2)))
-        layer = math.floor(z/0.85 + 0.5*noise.noise(Vector((x*0.12, y*0.12, 7.0))))
+        layer = math.floor((z+0.245*(y-x))/0.85 + 0.5*noise.noise(Vector((x*0.12, y*0.12, 7.0))))
         led = 0.13*noise.noise(Vector((layer*1.73, 0.5, 2.0)))
         off = 0.2*n + 0.05*n2 + led + 0.1
         if z > -0.6: off *= max(0.0, -z/0.6)
@@ -460,7 +470,7 @@ for k in range(26):
     if rb.random() < 0.55: xr = rb.uniform(-A, A); yr = -B - rb.uniform(0.0, 0.25)/max(sc_, 0.3)
     else: xr = A + rb.uniform(0.0, 0.25)/max(sc_, 0.3); yr = rb.uniform(-B, B)
     x = TCX + (xr-TCX)*sc_*0.97; y = TCY + (yr-TCY)*sc_*0.97
-    o = ico("boulder", (x, y, z), rb.uniform(0.18, 0.5), M_boul, 2)
+    o = ico("boulder", (x, y, z), rb.uniform(0.12, 0.32), M_boul, 2)
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
@@ -490,7 +500,7 @@ _nt.links.new(_mix.outputs[0], _o.inputs[0])
 try: M_glow.surface_render_method = 'BLENDED'
 except Exception: pass
 
-def bot(x, y, z, m, s=0.235, glow=True):
+def bot(x, y, z, m, s=0.28, glow=True):
     cone("botb", (x, y, z+s*0.42), s*1.08, s*0.72, s*0.84, m, 32)
     sph("bot", (x, y, z+s*0.95), s*0.8, m, (1,1,0.95), 24)
     cd = Vector((0.707, -0.707, 0)); side = Vector((0.707, 0.707, 0))
@@ -901,8 +911,8 @@ lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math
 # solar field
 _nt = M_solar.node_tree; _b = _nt.nodes["Principled BSDF"]
 _br = _nt.nodes.new("ShaderNodeTexBrick"); _br.offset = 0.0
-_br.inputs["Color1"].default_value = (0.01,0.015,0.04,1); _br.inputs["Color2"].default_value = (0.015,0.022,0.05,1)
-_br.inputs["Mortar"].default_value = (0.5,0.52,0.56,1); _br.inputs["Scale"].default_value = 4.0
+_br.inputs["Color1"].default_value = (0.006,0.008,0.016,1); _br.inputs["Color2"].default_value = (0.009,0.011,0.022,1)
+_br.inputs["Mortar"].default_value = (0.16,0.17,0.2,1); _br.inputs["Scale"].default_value = 3.0
 _br.inputs["Mortar Size"].default_value = 0.012; _br.inputs["Brick Width"].default_value = 0.5; _br.inputs["Row Height"].default_value = 0.42
 _tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"], _br.inputs["Vector"])
 _nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
@@ -911,7 +921,7 @@ for i in range(6):
         x = 0.55 + j*0.64; y = 1.95 + i*0.5
         if x > 4.2 and y < 3.3: continue
         h0 = TH(x, y)
-        o = box("panel", (x, y, h0+0.42), (0.58, 0.42, 0.025), M_solar); o.rotation_euler.x = 0.38
+        o = box("panel", (x, y, h0+0.42), (0.6, 0.45, 0.025), M_solar); o.rotation_euler.x = 0.38
         box("pframe", (x, y-0.215, h0+0.34), (0.58, 0.02, 0.02), M_metal)
         cyl("post", (x, y, h0+0.1), 0.02, 0.6, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
@@ -993,7 +1003,7 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*1.0 + up*0.08 + back*0.55).normalized()
+ldir = (-right*1.0 + up*0.1 + back*0.3).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
@@ -1010,7 +1020,7 @@ rm = N.new("ShaderNodeMath"); rm.operation = 'MULTIPLY'; L.new(rp_.outputs[0], r
 e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.55,0.9,1.7,1); L.new(rm.outputs[0], e2.inputs["Strength"])
 ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
 L.new(ad.outputs[0], eo.inputs["Surface"])
-earth = sph("earth", target + R @ Vector((229*k, 308*k, -40)), 64*k, M_earth, seg=64)
+earth = sph("earth", target + R @ Vector((221*k, 313*k, -40)), 53*k, M_earth, seg=64)
 EARTH_IMG = os.environ.get("EARTH", "/tmp/earth_land.jpg"); CLOUD_IMG = os.environ.get("CLOUDS", "/tmp/earth_cloud.jpg")
 if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     print("EARTH texture", EARTH_IMG)
@@ -1034,7 +1044,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -12)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -46)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(14); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
