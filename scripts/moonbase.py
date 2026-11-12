@@ -83,15 +83,15 @@ M_screen = emis("screen", (0.06,0.22,0.9), 1.3)
 M_big = C.materials.new("bigscreen"); M_big.use_nodes = True
 nt = M_big.node_tree; nt.nodes.clear()
 _o = nt.nodes.new("ShaderNodeOutputMaterial"); _e = nt.nodes.new("ShaderNodeEmission"); _t = nt.nodes.new("ShaderNodeTexCoord")
-_w = nt.nodes.new("ShaderNodeTexWave"); _w.inputs["Scale"].default_value = 1.2; _w.inputs["Distortion"].default_value = 6; _w.bands_direction = 'X'
-_n = nt.nodes.new("ShaderNodeTexNoise"); _n.inputs["Scale"].default_value = 9
-_r = nt.nodes.new("ShaderNodeValToRGB"); _r.color_ramp.elements[0].position = 0.55; _r.color_ramp.elements[0].color = (0.005,0.02,0.09,1)
-_r.color_ramp.elements[1].position = 0.75; _r.color_ramp.elements[1].color = (0.35,0.75,1.0,1)
+_w = nt.nodes.new("ShaderNodeTexWave"); _w.inputs["Scale"].default_value = 1.2; _w.inputs["Distortion"].default_value = 2; _w.bands_direction = 'X'
+_n = nt.nodes.new("ShaderNodeTexNoise"); _n.inputs["Scale"].default_value = 3
+_r = nt.nodes.new("ShaderNodeValToRGB"); _r.color_ramp.elements[0].position = 0.74; _r.color_ramp.elements[0].color = (0.005,0.02,0.09,1)
+_r.color_ramp.elements[1].position = 0.8; _r.color_ramp.elements[1].color = (0.35,0.75,1.0,1)
 _m = nt.nodes.new("ShaderNodeMath"); _m.operation = 'MAXIMUM'
 nt.links.new(_t.outputs["Object"], _w.inputs["Vector"]); nt.links.new(_t.outputs["Object"], _n.inputs["Vector"])
 nt.links.new(_w.outputs["Fac"], _m.inputs[0]); nt.links.new(_n.outputs["Fac"], _m.inputs[1])
 nt.links.new(_m.outputs[0], _r.inputs["Fac"]); nt.links.new(_r.outputs["Color"], _e.inputs["Color"])
-_e.inputs["Strength"].default_value = 2.2; nt.links.new(_e.outputs[0], _o.inputs[0])
+_e.inputs["Strength"].default_value = 1.6; nt.links.new(_e.outputs[0], _o.inputs[0])
 M_screenG = emis("screenG", (0.1,0.7,0.25), 1.0)
 M_screenP = emis("screenP", (0.35,0.15,0.9), 1.0)
 M_red = emis("redposter", (1.0,0.25,0.1), 1.5)
@@ -115,13 +115,13 @@ tc = N.new("ShaderNodeTexCoord")
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
 wav.inputs["Scale"].default_value = 0.32; wav.inputs["Distortion"].default_value = 1.6
 wav.inputs["Detail"].default_value = 3; wav.inputs["Detail Scale"].default_value = 0.5
-mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.25, 0.25, 7.0)
+mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.12, 0.12, 1.3)
 wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inputs["Detail"].default_value = 4
 L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
-mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.4
+mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.55
 ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
 r.elements[0].position = 0.0; r.elements[0].color = (0.05,0.05,0.055,1)
-r.elements[1].position = 1.0; r.elements[1].color = (0.2,0.2,0.21,1)
+r.elements[1].position = 1.0; r.elements[1].color = (0.16,0.16,0.17,1)
 for p, v in [(0.22,0.12),(0.38,0.24),(0.5,0.08),(0.66,0.3),(0.82,0.14)]:
     e = r.elements.new(p); e.color = (v,v,v*1.02,1)
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
@@ -138,7 +138,7 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.6; n2.inputs["Detail"].default_value = 8
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.3; er[0].color = (0.2,0.2,0.205,1); er[1].position = 0.7; er[1].color = (0.42,0.42,0.43,1)
+er[0].position = 0.3; er[0].color = (0.13,0.13,0.135,1); er[1].position = 0.7; er[1].color = (0.32,0.32,0.33,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -243,6 +243,11 @@ def console(x, y, z, scr=M_screen):
     box("back", (x, y-0.8, z+0.65), (0.38, 0.05, 0.42), M_chair)
     cyl("cpost", (x, y-0.62, z+0.2), 0.03, 0.4, M_chair, 6, smooth=False)
 
+def chair(x, y, z, face=1):
+    box("seat", (x, y, z+0.44), (0.42, 0.42, 0.07), M_chair)
+    box("back", (x, y-face*0.2, z+0.7), (0.42, 0.06, 0.48), M_chair)
+    cyl("cpost", (x, y, z+0.22), 0.03, 0.44, M_chair, 6, smooth=False)
+
 def stool(x, y, z, m=M_white):
     cyl("stool", (x, y, z+0.42), 0.14, 0.05, m, 12); cyl("sl", (x, y, z+0.21), 0.025, 0.42, M_metal, 6, smooth=False)
 
@@ -262,7 +267,7 @@ for i in range(NF):
     box("rtA", (cx, y0+0.04, zf+0.5), (W, 0.04, 0.03), M_metal)
     box("rtB", (x1-0.04, cy, zf+0.5), (0.04, D, 0.03), M_metal)
     # light for the floor
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 160 if i else 80; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 120 if i else 70; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.92, 0.82)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + FH - 0.35)
     zt = zf
@@ -284,57 +289,67 @@ for i in range(NF):
                 if xx < x1 - 0.7 and yy > y0 + 0.5: console(xx, yy, zt, M_screen if random.random() < 0.8 else M_screenG)
         plant(XC+0.35, YC-0.35, zt, 1.1, True); plant(x1-0.4, YC-0.4, zt, 1.0, True); plant(XC+0.35, y0+0.5, zt, 0.8)
         bots = [(0.2,-2.1),(1.4,-1.0),(2.3,-2.1),(3.9,-3.2),(1.0,-4.3)]
-    elif i == 1:  # ---- engineering: long table ----
-        box("poster", (XC+0.03, -1.6, zt+1.15), (0.03, 0.8, 1.1), M_red)
-        box("poster2", (XC+0.03, -3.0, zt+1.15), (0.03, 0.8, 1.1), M_panel)
-        box("wscr", (2.5, YC-0.01, zt+1.2), (2.0, 0.03, 0.8), M_screenP)
-        box("table", (2.0, -2.9, zt+0.72), (5.2, 0.9, 0.06), M_wood)
-        for k in range(5):
-            box("tleg", (-0.4+k*1.2, -2.9, zt+0.36), (0.06, 0.7, 0.7), M_dark)
-            box("laptop", (-0.4+k*1.2, -2.75, zt+0.82), (0.36, 0.25, 0.14), M_screen if k%2 else M_screenG)
-            stool(-0.2+k*1.2, -2.2, zt); stool(-0.2+k*1.2, -3.6, zt)
-        cyl("engbase", (4.3, -1.5, zt+0.06), 0.8, 0.12, M_dark, 32)
-        cyl("engine", (4.3, -1.5, zt+0.75), 0.25, 1.3, M_white, 24)
-        cone("bell", (4.3, -1.5, zt+0.35), 0.45, 0.2, 0.5, M_dark)
-        plant(XC+0.4, -4.6, zt, 1.0, True); plant(x1-0.4, -1.0, zt, 0.9)
-        bots = [(0.4,-1.4),(1.4,-1.6),(2.9,-4.2),(3.6,-3.4),(-0.4,-4.4)]
+    elif i == 1:  # ---- engineering: long workbench + desks ----
+        box("poster", (XC+0.03, -1.6, zt+1.2), (0.03, 0.8, 1.1), M_red)
+        box("poster2", (XC+0.03, -3.0, zt+1.2), (0.03, 0.8, 1.1), M_panel)
+        box("wscr", (2.5, YC-0.01, zt+1.3), (2.6, 0.03, 0.9), M_big)
+        box("table", (1.9, -2.2, zt+0.76), (5.4, 0.95, 0.07), M_wood)
+        for k in range(6):
+            xx = -0.4 + k*0.92
+            box("tleg", (xx, -2.2, zt+0.38), (0.06, 0.75, 0.74), M_dark)
+            box("laptop", (xx, -2.05, zt+0.86), (0.4, 0.28, 0.14), M_screen if k%2 else M_screenG)
+            chair(xx+0.1, -1.4, zt, 1); chair(xx-0.1, -3.0, zt, -1)
+        for k in range(4): console(-0.2+k*1.2, -4.6, zt, M_screen)
+        cyl("engbase", (4.6, -1.3, zt+0.06), 0.7, 0.12, M_dark, 32)
+        cyl("engine", (4.6, -1.3, zt+0.85), 0.25, 1.5, M_white, 24)
+        cone("bell", (4.6, -1.3, zt+0.4), 0.45, 0.2, 0.6, M_dark)
+        plant(XC+0.45, -5.3, zt, 1.1, True); plant(x1-0.45, -5.2, zt, 0.9); plant(XC+0.4, -1.0, zt, 0.9)
+        bots = [(0.4,-1.0),(1.8,-3.4),(2.9,-1.0),(3.8,-3.6),(-0.3,-3.8)]
     elif i == 2:  # ---- lounge: purple carpet + bar + servers ----
-        box("carpet", (0.4, -2.8, zt+0.01), (2.6, 3.2, 0.02), M_purple)
-        for k in range(3):
-            box("sofa", (-0.4, -1.9-k*0.9, zt+0.25), (0.55, 0.75, 0.38), mat("sofa",(0.12,0.12,0.14),0.8))
-        box("ctable", (0.6, -2.8, zt+0.3), (0.8, 1.6, 0.06), M_wood)
-        box("chartscr", (XC+0.03, -1.8, zt+1.1), (0.03, 1.2, 0.8), M_screenP)
-        box("bar", (3.2, -3.9, zt+0.5), (3.2, 0.5, 1.0), M_white, 0.03)
-        box("bartop", (3.2, -3.9, zt+1.02), (3.3, 0.6, 0.05), M_wood)
-        for k in range(5): stool(1.9+k*0.65, -4.5, zt)
+        box("carpet", (0.6, -3.4, zt+0.01), (3.0, 4.2, 0.02), M_purple)
+        M_sofa = mat("sofa",(0.07,0.07,0.08),0.8)
         for k in range(4):
-            box("rack", (2.6+k*0.65, YC-0.35, zt+0.85), (0.55, 0.5, 1.7), M_dark)
-            for j in range(5): box("rl", (2.6+k*0.65, YC-0.61, zt+0.4+j*0.3), (0.4, 0.02, 0.03), M_screen if j%2 else M_screenG)
-        plant(x1-0.4, -1.2, zt, 1.0, True); plant(XC+0.35, -4.7, zt, 0.8)
-        bots = [(0.0,-2.2),(1.2,-3.3),(2.4,-2.2),(3.8,-1.7)]
+            box("sofa", (-0.5, -1.9-k*0.95, zt+0.24), (0.6, 0.85, 0.42), M_sofa)
+            box("sofab", (-0.75, -1.9-k*0.95, zt+0.5), (0.14, 0.85, 0.5), M_sofa)
+        box("sofa2", (0.7, -5.3, zt+0.24), (1.8, 0.6, 0.42), M_sofa)
+        box("ctable", (0.6, -3.3, zt+0.32), (0.9, 1.8, 0.07), M_wood)
+        box("chartscr", (XC+0.03, -2.0, zt+1.2), (0.03, 1.6, 1.0), M_screenP)
+        box("bar", (3.6, -3.4, zt+0.5), (3.0, 0.55, 1.0), M_white, 0.03)
+        box("bartop", (3.6, -3.4, zt+1.02), (3.1, 0.7, 0.06), M_wood)
+        for k in range(5): stool(2.4+k*0.6, -4.1, zt)
+        for k in range(4):
+            box("rack", (2.6+k*0.65, YC-0.35, zt+0.9), (0.55, 0.5, 1.8), M_dark)
+            for j in range(5): box("rl", (2.6+k*0.65, YC-0.61, zt+0.4+j*0.32), (0.4, 0.02, 0.03), M_screen if j%2 else M_screenG)
+        plant(x1-0.45, -1.4, zt, 1.1, True); plant(x1-0.45, -5.2, zt, 0.9); plant(2.0, -1.2, zt, 0.9, True)
+        bots = [(0.0,-2.3),(1.3,-4.4),(1.6,-2.0),(3.4,-2.4),(4.5,-4.7)]
     elif i == 3:  # ---- cafe / lab: wooden tables + plants ----
-        box("wpanel", (XC+0.03, -2.2, zt+1.0), (0.03, 1.6, 1.3), M_dark)
-        box("wpanel2", (XC+0.04, -2.2, zt+1.0), (0.02, 1.4, 1.1), M_panel)
-        for row, yy in enumerate([-2.0, -3.6]):
-            box("wtable", (1.8, yy, zt+0.72), (4.4, 0.8, 0.06), M_wood)
-            for k in range(4):
-                box("wleg", (0.0+k*1.2, yy, zt+0.36), (0.06, 0.6, 0.7), M_dark)
-                stool(0.2+k*1.2, yy-0.6, zt)
-        # round glass room on the right
-        cyl("groom", (3.9, -1.5, zt+0.8), 0.8, 1.6, M_glass, 32)
-        cyl("groomb", (3.9, -1.5, zt+0.02), 0.82, 0.04, M_dark, 32)
-        for p in [(XC+0.4,-1.0,1.2,True),(XC+0.5,-4.4,1.1,True),(4.6,-3.2,0.9,False),(2.8,-1.0,0.8,False)]:
+        box("wpanel", (XC+0.03, -2.2, zt+1.1), (0.03, 1.6, 1.3), M_dark)
+        box("wpanel2", (XC+0.04, -2.2, zt+1.1), (0.02, 1.4, 1.1), M_panel)
+        for row, yy in enumerate([-1.9, -4.0]):
+            box("wtable", (1.6, yy, zt+0.76), (4.6, 0.9, 0.07), M_wood)
+            for k in range(5):
+                xx = -0.3 + k*0.95
+                box("wleg", (xx, yy, zt+0.38), (0.06, 0.7, 0.74), M_dark)
+                chair(xx, yy-0.75, zt, -1); chair(xx, yy+0.75, zt, 1)
+                if k % 2: box("lap", (xx, yy-0.15, zt+0.85), (0.38, 0.26, 0.12), M_screen)
+        cyl("groom", (4.6, -1.6, zt+0.85), 0.8, 1.7, M_glass, 32)
+        cyl("groomb", (4.6, -1.6, zt+0.02), 0.82, 0.04, M_dark, 32)
+        cyl("groomt", (4.6, -1.6, zt+0.5), 0.35, 0.05, M_white, 24)
+        for p in [(XC+0.45,-1.0,1.2,True),(XC+0.5,-5.2,1.2,True),(4.8,-3.4,1.0,True),(4.9,-5.1,0.9,False),(3.6,-3.0,0.8,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
-        bots = [(0.4,-2.8),(2.5,-2.8),(3.4,-3.5),(1.4,-4.5)]
+        bots = [(0.4,-3.0),(2.3,-3.0),(3.4,-5.0),(1.2,-5.2)]
     else:         # ---- bottom: workshop + garden ----
-        box("bench", (1.0, -1.6, zt+0.5), (2.6, 0.7, 1.0), M_white, 0.02)
-        box("tool", (1.0, -1.6, zt+1.1), (2.0, 0.3, 0.2), M_dark)
-        box("mat", (1.2, -4.0, zt+0.01), (2.0, 0.8, 0.02), M_dark)
-        text("SPACEX", (1.2, -4.0, zt+0.025), 0.35, M_white, rot=(0, 0, 0))
-        for p in [(XC+0.5,-1.0,1.3,True),(3.4,-1.5,1.2,True),(0.0,-3.0,1.0,True),(3.8,-3.8,0.9,False),(2.4,-3.0,0.8,False)]:
+        box("bench", (0.9, -1.5, zt+0.5), (3.0, 0.75, 1.0), M_white, 0.02)
+        box("tool", (0.9, -1.5, zt+1.1), (2.4, 0.3, 0.2), M_dark)
+        for k in range(3):
+            cyl("robarm", (0.0+k*0.9, -1.1, zt+1.3), 0.08, 0.6, M_dark, 12)
+        box("mat", (1.6, -4.6, zt+0.01), (2.4, 0.9, 0.02), M_dark)
+        text("SPACEX", (1.6, -4.75, zt+0.025), 0.42, M_white, rot=(0, 0, 0))
+        for p in [(XC+0.5,-1.0,1.4,True),(3.3,-1.5,1.3,True),(-0.2,-3.0,1.2,True),(4.6,-3.6,1.0,True),(2.4,-3.0,0.9,False),(XC+0.5,-5.3,1.1,True),(3.6,-5.2,0.8,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
-        box("server2", (XC+0.4, -3.6, zt+0.8), (0.5, 0.6, 1.6), M_dark)
-        bots = [(0.9,-2.6),(2.2,-4.6),(3.0,-2.2),(-0.2,-4.8)]
+        for k in range(2): box("server2", (XC+0.4, -3.4-k*0.65, zt+0.85), (0.5, 0.6, 1.7), M_dark)
+        for k in range(3): box("bench2", (4.6, -1.0-k*0.0, zt+0.3), (0.9, 0.5, 0.6), M_desk)
+        bots = [(0.9,-2.5),(2.2,-5.3),(3.0,-2.2),(0.2,-5.0)]
     for k, (bx, by) in enumerate(bots):
         if bx < x1 - 0.3 and by > y0 + 0.3:
             bot(bx, by, zt, M_bots[(i*5+k) % len(M_bots)])
@@ -359,9 +374,8 @@ for k in range(7):
     box("eh1", (EX, EY-0.575, zz), (1.15, 0.05, 0.05), M_metal); box("eh2", (EX+0.575, EY, zz), (0.05, 1.15, 0.05), M_metal)
 box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.1,emit=(1,0.3,0.6),estr=0.4, alpha=0.3))
 box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
-eL = C.lights.new("elight", 'POINT'); eL.energy = 60; eL.color = (1,0.85,0.7)
-for zz in (Z0-0.8, Z0-FH*2.5, Z0-FH*4.2):
-    _lo = C.objects.new("el", eL); sc.collection.objects.link(_lo); _lo.location = (EX, EY, zz)
+for zz in range(5):
+    box("estrip", (EX+0.5, EY+0.5, Z0-zz*FH+1.2), (0.04, 0.04, 0.5), M_lamp)
 bot(EX, EY, Z0-2*FH+0.05, M_bots[4], 0.25)
 # top glass box on the surface
 box("etop", (EX-0.2, EY-0.2, 0.75), (1.7, 1.7, 1.5), M_glass)
@@ -379,7 +393,7 @@ bpy.context.object.data.materials.append(M_white)
 bpy.ops.mesh.primitive_torus_add(major_radius=1.25, minor_radius=0.02, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
 # rocket (Starship-like)
-RB = 1.0; RR = 1.08
+RB = 1.0; RR = 1.2
 cone("skirt", (PX, PY, RB-0.2), RR*0.75, RR, 0.5, M_dark, 48)
 cyl("rocket", (PX, PY, RB+3.9), RR, 7.8, M_white, 64)
 cyl("band", (PX, PY, RB+7.3), RR+0.01, 1.0, M_dark, 64)
@@ -407,7 +421,7 @@ t.matrix_world = Matrix.Translation(Vector((PX, PY, RB+4.6)) + cd*(RR+0.012)) @ 
 t.data.align_y = 'CENTER'
 # giant SPACEX sign on the back edge
 sgn = text("SPACEX", (-0.9, B-0.6, 0.6), 2.0, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.25)
-sgn.scale = (1.45, 0.62, 1)
+sgn.scale = (1.35, 0.6, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
 for xx in (-4.6, -1.5, 1.5, 4.0):
     box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
 box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
@@ -415,7 +429,7 @@ box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
 for i in range(6):
     for j in range(8):
         x = 0.4 + j*0.62; y = 1.2 + i*0.5
-        o = box("panel", (x, y, 0.38), (0.58, 0.44, 0.03), M_solar); o.rotation_euler.x = 0.3
+        o = box("panel", (x, y, 0.38), (0.52, 0.4, 0.03), M_solar); o.rotation_euler.x = 0.15
         cyl("post", (x, y+0.05, 0.2), 0.02, 0.4, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
 for dx, dy in [(5.7, 3.3), (6.0, 4.4), (5.2, 5.3)]:
@@ -508,7 +522,7 @@ try:
     sc.eevee.use_raytracing = True; sc.eevee.ray_tracing_method = 'SCREEN'
     sc.eevee.use_shadows = True; sc.eevee.shadow_ray_count = 2; sc.eevee.shadow_step_count = 8
 except Exception as ex: print("rt", ex)
-sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = 'AgX - Medium High Contrast'
+sc.view_settings.view_transform = 'AgX'; sc.view_settings.look = os.environ.get('LOOK', 'AgX - Punchy')
 sc.view_settings.exposure = float(os.environ.get("EXP", 0.0))
 sc.render.resolution_x, sc.render.resolution_y = 1080, 1350
 sc.render.resolution_percentage = int(os.environ.get("PCT", 100))
