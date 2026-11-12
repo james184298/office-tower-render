@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.66,0.67,0.69), 0.28)
+M_slab = mat("slab", (0.46,0.47,0.49), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -515,13 +515,13 @@ for i in range(NF):
         plane("dialp", (XC+0.04, -1.9, zt+0.9), 2.4, 0.95, M_dialimg, '+X')
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.36,0.37,0.39),0.4))
-        for gx in (0.9, 4.0):
-            for r_, yy in enumerate([-1.8, -3.0, -4.2]):
-                console_row(gx, yy, zt+0.04, 5)
+        for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
+            for r_, yy in enumerate([-1.7, -3.05, -4.4]):
+                console_row(gx, yy+gy, zt+0.04, 4, seg=0.56)
         box("frontdesk", (5.3, -5.3, zt+0.35), (1.2, 0.45, 0.7), M_wood)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
-        bots = [(0.1,-2.3,2),(1.1,-1.1,1),(2.4,-1.2,0),(4.5,-2.4,3),(2.6,-3.6,7)]
+        bots = [(0.0,-2.4,2),(1.2,-1.05,1),(2.45,-2.0,0),(4.1,-3.75,3),(2.5,-3.75,7),(5.6,-2.2,5)]
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
         box("wtable", (2.0, -4.55, zt+0.5), (4.8, 0.45, 0.04), M_wood)
@@ -532,11 +532,14 @@ for i in range(NF):
             chair(xx+0.1, -5.05, zt, -1, M_white); chair(xx-0.05, -4.05, zt, 1, M_white)
         for k in range(6):
             chair(4.5+ (k % 2)*0.7, -3.4 - (k//2)*0.7, zt, 1, M_white)
+        cyl("rug", (5.0, -2.9, zt+0.008), 0.95, 0.012, mat("rug",(0.18,0.18,0.19),0.9), 48)
+        cyl("rtable", (5.0, -2.9, zt+0.42), 0.38, 0.04, M_dark, 32); cyl("rtleg", (5.0, -2.9, zt+0.21), 0.04, 0.42, M_dark, 8)
+        for k in range(5): box("tmon", (0.15+k*1.06, -4.38, zt+0.66), (0.3, 0.02, 0.2), M_dark); plane("tmons", (0.15+k*1.06, -4.395, zt+0.66), 0.27, 0.17, M_conimg)
         box("gpart", (4.1, -2.4, zt+0.5), (0.02, 1.6, 1.0), M_glass)
         box("lounge", (5.5, -1.7, zt+0.18), (0.8, 0.5, 0.36), M_dark)
         cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_dark, 32)
         plant(XC+0.3, -5.5, zt, 0.7); plant(6.0, -5.5, zt, 0.7)
-        bots = [(1.1,-3.9,0),(2.6,-4.0,4),(5.2,-4.6,5)]
+        bots = [(1.1,-3.85,0),(2.7,-3.9,4),(5.2,-4.6,7),(4.4,-3.4,1)]
     elif i == 2:  # ---- lounge: purple carpet + wood bar ----
         plane("chartp", (XC+0.04, -4.8, zt+1.0), 1.1, 0.9, M_chartimg, '+X')
         box("darkscr", (XC+0.04, -3.6, zt+1.1), (0.02, 0.8, 0.6), M_dark)
@@ -553,6 +556,10 @@ for i in range(NF):
         cyl("groomt", (5.4, -2.6, zt+0.4), 0.3, 0.04, M_white, 24)
         for a in range(5): chair(5.4+0.5*math.cos(a*1.25), -2.6+0.5*math.sin(a*1.25), zt, 1, M_white)
         box("sofa2", (4.6, -5.4, zt+0.17), (0.6, 0.35, 0.3), M_sofa)
+        M_bdesk = mat("bdesk",(0.03,0.06,0.2),0.35)
+        for k in range(3): box("bdesk", (1.9, -3.6-k*0.55, zt+0.3), (0.5, 0.4, 0.6), M_bdesk, 0.01)
+        for p in [(2.4,-5.4),(5.6,-4.4)]:
+            cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
         bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3)]
     else:         # ---- garden / workshop ----
@@ -563,12 +570,15 @@ for i in range(NF):
             plant(p[0], p[1], zt, p[2], p[3])
         for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
             box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
-        box("totem", (2.0, -4.4, zt+0.4), (0.16, 0.16, 0.8), M_dark)
+        box("deck", (3.1, -4.5, zt+0.03), (2.2, 1.7, 0.06), mat("deckw",(0.6,0.45,0.28),0.6))
+        for k in range(6): box("plank", (3.1, -5.3+k*0.3, zt+0.061), (2.2, 0.01, 0.002), M_dark)
+        box("totem", (2.0, -4.4, zt+0.4), (0.16, 0.16, 0.8), M_dark); box("totem2", (0.9, -3.9, zt+0.35), (0.14, 0.14, 0.7), M_dark)
+        for k in range(3): chair(4.0+k*0.4, -3.7, zt, 1, M_white)
         cyl("rbench", (1.2, -5.3, zt+0.12), 0.45, 0.24, M_wood, 32)
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
         cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
         for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
-        bots = [(2.8,-4.0,0),(4.6,-5.5,5)]
+        bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6)]
     for bx, by, ci in bots:
         bot(bx, by, zt, M_bots[ci % len(M_bots)])
 
@@ -589,22 +599,22 @@ for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2)
 
 # glass elevator in its slot (white frame grid)
 eh_top = 1.4
-box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (1.15, 1.15, eh_top-FZ_BOT), M_glass)
-for dx in (-0.575, 0.575):
-    for dy in (-0.575, 0.575):
+box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (0.95, 0.95, eh_top-FZ_BOT), M_glass)
+for dx in (-0.475, 0.475):
+    for dy in (-0.475, 0.475):
         box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.06, 0.06, eh_top-FZ_BOT), M_white)
 zz = FZ_BOT + 0.1
 while zz < eh_top:
-    box("eh1", (EX, EY-0.575, zz), (1.15, 0.04, 0.04), M_white); box("eh2", (EX+0.575, EY, zz), (0.04, 1.15, 0.04), M_white)
-    box("ev1", (EX, EY-0.575, zz+0.5), (0.03, 0.03, 1.0), M_white); box("ev2", (EX+0.575, EY, zz+0.5), (0.03, 0.03, 1.0), M_white)
+    box("eh1", (EX, EY-0.475, zz), (0.95, 0.04, 0.04), M_white); box("eh2", (EX+0.475, EY, zz), (0.04, 0.95, 0.04), M_white)
+    box("ev1", (EX, EY-0.475, zz+0.5), (0.03, 0.03, 1.0), M_white); box("ev2", (EX+0.475, EY, zz+0.5), (0.03, 0.03, 1.0), M_white)
     zz += 1.05
 # cab: glass with white frame, pink glow and a bot inside
 cz = Z0 - 2*FH
-box("ecab", (EX, EY, cz+0.55), (0.92, 0.92, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
-for dx in (-0.46, 0.46):
-    for dy in (-0.46, 0.46):
+box("ecab", (EX, EY, cz+0.55), (0.82, 0.82, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
+for dx in (-0.41, 0.41):
+    for dy in (-0.41, 0.41):
         box("cabf", (EX+dx, EY+dy, cz+0.55), (0.04, 0.04, 1.0), M_white)
-box("cabfl", (EX, EY, cz+0.04), (0.95, 0.95, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.95, 0.95, 0.06), M_white)
+box("cabfl", (EX, EY, cz+0.04), (0.85, 0.85, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.85, 0.85, 0.06), M_white)
 pl = C.lights.new("cabl", 'POINT'); pl.energy = 25; pl.color = (1, 0.4, 0.7); pl.shadow_soft_size = 0.3
 plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location = (EX, EY, cz+0.85)
 box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
@@ -625,6 +635,9 @@ bot(EX-0.2, EY-0.2, 0.0, M_bots[1], 0.25, glow=False)
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
+box("colR", (A+0.1, EY+1.05, (FZ_BOT-0.2)/2), (0.75, 0.6, -FZ_BOT-0.2), mat("colr",(0.07,0.07,0.075),0.5))
+for k in range(9):
+    box("wlr", (A+0.49, EY+1.05, -0.9 - k*1.05), (0.05, 0.12, 0.18), M_lamp)
 # dark structural column on the rock face left of the cutaway
 box("colL", (XC-0.32, -B-0.075, (FZ_BOT)/2), (0.64, 0.75, -FZ_BOT), mat("col",(0.09,0.09,0.095),0.5))
 box("colLs", (XC-0.12, -B-0.47, (FZ_BOT)/2), (0.05, 0.04, -FZ_BOT), M_metal)
