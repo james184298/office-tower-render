@@ -107,37 +107,43 @@ M_solar = mat("solar", (0.015,0.02,0.045), 0.12, 0.5)
 M_eye = emis("eye", (1,1,1), 2.0)
 M_pad = mat("pad", (0.07,0.07,0.075), 0.6)
 BOT_COLS = [(0.1,0.9,0.2),(1.0,0.45,0.03),(0.12,0.35,1.0),(0.55,0.12,1.0),(1.0,0.12,0.45),(0.05,0.8,0.85),(1.0,0.82,0.05),(0.95,0.95,0.97)]
-M_bots = [mat(f"bot{i}", tuple(v*0.55 for v in c), 0.3, emit=c, estr=0.18, spec=0.2) for i,c in enumerate(BOT_COLS)]
+M_bots = [mat(f"bot{i}", c, 0.18, emit=c, estr=0.35, spec=0.6) for i,c in enumerate(BOT_COLS)]
 M_pupil = mat("pupil",(0.01,0.01,0.01),0.2)
 
-# ---- rock with soft horizontal strata ----
+# ---- rock: broad soft strata bands + faint fine striations ----
 M_rock = C.materials.new("rock"); M_rock.use_nodes = True
 nt = M_rock.node_tree; N = nt.nodes; L = nt.links
 bsdf = N["Principled BSDF"]; bsdf.inputs["Roughness"].default_value = 0.92
 tc = N.new("ShaderNodeTexCoord")
+# broad bands: noise stretched along x/y so it varies mostly with z
+mpB = N.new("ShaderNodeMapping"); mpB.inputs["Scale"].default_value = (0.09, 0.09, 0.75)
+nB = N.new("ShaderNodeTexNoise"); nB.inputs["Scale"].default_value = 1.0; nB.inputs["Detail"].default_value = 3; nB.inputs["Roughness"].default_value = 0.45
+L.new(tc.outputs["Object"], mpB.inputs["Vector"]); L.new(mpB.outputs["Vector"], nB.inputs["Vector"])
+# fine striations
 wav = N.new("ShaderNodeTexWave"); wav.wave_type = 'BANDS'; wav.bands_direction = 'Z'
-wav.inputs["Scale"].default_value = 0.2; wav.inputs["Distortion"].default_value = 1.8
-wav.inputs["Detail"].default_value = 3; wav.inputs["Detail Scale"].default_value = 0.5
-mp = N.new("ShaderNodeMapping"); mp.inputs["Scale"].default_value = (0.12, 0.12, 1.3)
-wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 1.0; wn.inputs["Detail"].default_value = 4
-L.new(tc.outputs["Object"], mp.inputs["Vector"]); L.new(mp.outputs["Vector"], wn.inputs["Vector"])
-mx = N.new("ShaderNodeMix"); mx.data_type = 'FLOAT'; mx.inputs["Factor"].default_value = 0.3
-ramp = N.new("ShaderNodeValToRGB"); r = ramp.color_ramp
-r.elements[0].position = 0.0; r.elements[0].color = (0.04,0.04,0.045,1)
-r.elements[1].position = 1.0; r.elements[1].color = (0.12,0.12,0.125,1)
-for p, v in [(0.2,0.19),(0.33,0.07),(0.45,0.26),(0.56,0.05),(0.68,0.22),(0.8,0.08),(0.9,0.2)]:
-    e = r.elements.new(p); e.color = (v,v,v*1.02,1)
+wav.inputs["Scale"].default_value = 0.55; wav.inputs["Distortion"].default_value = 3.0
+wav.inputs["Detail"].default_value = 4; wav.inputs["Detail Scale"].default_value = 0.6
 L.new(tc.outputs["Object"], wav.inputs["Vector"])
-L.new(wav.outputs["Fac"], mx.inputs["A"]); L.new(wn.outputs["Fac"], mx.inputs["B"])
-L.new(mx.outputs["Result"], ramp.inputs["Fac"])
+rB = N.new("ShaderNodeValToRGB"); r = rB.color_ramp
+r.elements[0].position = 0.3; r.elements[0].color = (0.035,0.035,0.04,1)
+r.elements[1].position = 0.72; r.elements[1].color = (0.34,0.34,0.35,1)
+e = r.elements.new(0.48); e.color = (0.11,0.11,0.115,1)
+e = r.elements.new(0.58); e.color = (0.24,0.24,0.25,1)
+L.new(nB.outputs["Fac"], rB.inputs["Fac"])
+fineR = N.new("ShaderNodeMapRange"); fineR.inputs["To Min"].default_value = 0.72; fineR.inputs["To Max"].default_value = 1.18
+L.new(wav.outputs["Fac"], fineR.inputs["Value"])
+mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
+L.new(rB.outputs["Color"], mulc.inputs["Color1"]); L.new(fineR.outputs["Result"], mulc.inputs["Color2"])
 sxyz = N.new("ShaderNodeSeparateXYZ"); L.new(tc.outputs["Object"], sxyz.inputs[0])
-mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.1; mr.inputs["From Max"].default_value = -0.25
+mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.0; mr.inputs["From Max"].default_value = -0.2
 L.new(sxyz.outputs["Z"], mr.inputs["Value"])
 crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.3,0.3,0.31,1)
-L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(ramp.outputs["Color"], crust.inputs["Color1"])
+L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
-bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.25
-fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 8; fn.inputs["Detail"].default_value = 6
+bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35
+fn = N.new("ShaderNodeTexNoise"); fn.inputs["Scale"].default_value = 5; fn.inputs["Detail"].default_value = 6
+mpF = N.new("ShaderNodeMapping"); mpF.inputs["Scale"].default_value = (0.5, 0.5, 2.0)
+L.new(tc.outputs["Object"], mpF.inputs["Vector"]); L.new(mpF.outputs["Vector"], fn.inputs["Vector"])
 L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 
 # ---- regolith ----
@@ -152,12 +158,192 @@ bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
 L.new(n3.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.inputs["Normal"])
 
+
+# ================= procedural raster images (UI screens, posters) =================
+import array
+class Canvas:
+    def __init__(s, w, h, bg):
+        s.w, s.h = w, h
+        s.px = array.array('f', [0.0]) * (w*h*4)
+        s.rect(0, 0, w, h, bg)
+    def rect(s, x0, y0, x1, y1, c):
+        w, h, px = s.w, s.h, s.px
+        x0 = max(0, int(x0)); x1 = min(w, int(x1)); y0 = max(0, int(y0)); y1 = min(h, int(y1))
+        for yy in range(y0, y1):
+            b = yy*w
+            for xx in range(x0, x1):
+                i = (b+xx)*4; px[i] = c[0]; px[i+1] = c[1]; px[i+2] = c[2]; px[i+3] = 1.0
+    def dot(s, x, y, r, c):
+        s.rect(x-r, y-r, x+r+1, y+r+1, c)
+    def circle(s, cx, cy, r, c, th=1.5, fill=None):
+        for yy in range(int(cy-r-2), int(cy+r+3)):
+            for xx in range(int(cx-r-2), int(cx+r+3)):
+                if 0 <= xx < s.w and 0 <= yy < s.h:
+                    d = math.hypot(xx-cx, yy-cy)
+                    if fill is not None and d < r-th: s.rect(xx, yy, xx+1, yy+1, fill)
+                    elif abs(d-r) < th: s.rect(xx, yy, xx+1, yy+1, c)
+    def curve(s, f, x0, x1, c, th=1):
+        for xx in range(int(x0), int(x1)):
+            y = f(xx); s.dot(xx, y, th, c)
+    def textbars(s, x0, y0, x1, y1, c, rows=None, rh=3, gap=3, rnd=None):
+        rnd = rnd or random
+        y = y1 - rh
+        while y >= y0:
+            x = x0
+            while x < x1 - 4:
+                wl = rnd.randint(3, 14)
+                if x + wl > x1: break
+                s.rect(x, y, x+wl, y+rh, c); x += wl + rnd.randint(2, 4)
+                if rnd.random() < 0.25: break
+            y -= rh + gap
+    def image(s, name):
+        img = C.images.new(name, s.w, s.h, float_buffer=False)
+        img.pixels.foreach_set(s.px)
+        try: img.pack()
+        except Exception as ex: print("pack", ex)
+        return img
+
+def imgmat(name, img, strength=1.4, emissive=True):
+    m = C.materials.new(name); m.use_nodes = True; nt = m.node_tree
+    t = nt.nodes.new("ShaderNodeTexImage"); t.image = img
+    if emissive:
+        nt.nodes.clear(); o = nt.nodes.new("ShaderNodeOutputMaterial"); e = nt.nodes.new("ShaderNodeEmission")
+        t = nt.nodes.new("ShaderNodeTexImage"); t.image = img
+        nt.links.new(t.outputs["Color"], e.inputs["Color"]); e.inputs["Strength"].default_value = strength
+        nt.links.new(e.outputs[0], o.inputs[0])
+    else:
+        b = nt.nodes["Principled BSDF"]; nt.links.new(t.outputs["Color"], b.inputs["Base Color"])
+        b.inputs["Roughness"].default_value = 0.5
+    return m
+
+def plane(name, loc, w, h, m, face='-Y'):
+    """vertical image plane; face '-Y' (back wall, u along +x) or '+X' (left wall, u along +y);
+    'Z' lies flat (u along +x)"""
+    bpy.ops.mesh.primitive_plane_add(size=1, location=loc)
+    o = bpy.context.object; o.name = name
+    o.scale = (w, h, 1)
+    if face == '-Y': o.rotation_euler = (math.radians(90), 0, 0)
+    elif face == '+X': o.rotation_euler = (math.radians(90), 0, math.radians(90))
+    o.data.materials.append(m); return o
+
+NAVY = (0.006, 0.016, 0.05); PANEL = (0.012, 0.03, 0.085); EDGE = (0.05, 0.11, 0.26)
+WHT = (0.85, 0.9, 1.0); CYAN = (0.25, 0.8, 1.0); ORG = (1.0, 0.45, 0.08); GRN = (0.15, 0.95, 0.35); RED = (1.0, 0.15, 0.1)
+rr = random.Random(11)
+
+def big_screen_img():
+    cv = Canvas(960, 200, NAVY)
+    W, H = cv.w, cv.h
+    # header strip
+    cv.rect(0, H-14, W, H, (0.02, 0.05, 0.14))
+    cv.textbars(6, H-11, 300, H-4, WHT, rh=3, gap=2, rnd=rr)
+    panels = [(4, 200), (204, 420), (424, 590), (594, 820), (824, 956)]
+    for x0, x1 in panels:
+        cv.rect(x0, 4, x1, H-18, EDGE); cv.rect(x0+2, 6, x1-2, H-20, PANEL)
+    # A: countdown digits + small gauges + text rows
+    x0 = 10
+    for k in range(6):
+        xx = x0 + k*24
+        if k in (2, 4): cv.rect(xx+6, 150, xx+10, 154, WHT); cv.rect(xx+6, 138, xx+10, 142, WHT); continue
+        cv.rect(xx, 132, xx+16, 135, WHT); cv.rect(xx, 145, xx+16, 148, WHT); cv.rect(xx, 158, xx+16, 161, WHT)
+        cv.rect(xx, 132, xx+3, 161, WHT); cv.rect(xx+13, 132, xx+16, 161, WHT)
+    for k in range(3):
+        cv.circle(40+k*55, 95, 18, CYAN, 2.0)
+        a = rr.uniform(0.3, 2.6); cv.curve(lambda x, k=k: 95 + 0*x, 40+k*55, 40+k*55+1, CYAN)
+        cv.rect(40+k*55-1, 95, 40+k*55+1, 95+14, ORG if k == 1 else WHT)
+    cv.textbars(10, 12, 190, 70, (0.6, 0.75, 0.95), rh=3, gap=4, rnd=rr)
+    # B: trajectory over the earth limb
+    cx, cy, R = 312, -260, 300
+    for yy in range(6, H-20):
+        for xx in range(206, 418):
+            d = math.hypot(xx-cx, yy-cy)
+            if d < R: 
+                t = max(0.0, min(1.0, (R-d)/40))
+                cv.rect(xx, yy, xx+1, yy+1, (0.02+0.05*(1-t), 0.1+0.15*(1-t), 0.35+0.4*(1-t)))
+    cv.curve(lambda x: 30 + 140*((x-210)/205)**1.6, 212, 410, WHT, 1)
+    cv.curve(lambda x: 30 + 110*((x-210)/205)**2.2, 212, 410, (0.4, 0.6, 1.0), 0)
+    for k in range(5): cv.dot(230+k*40, 30 + 140*((20+k*40)/205)**1.6, 2, ORG)
+    cv.textbars(214, H-34, 400, H-22, WHT, rh=3, gap=2, rnd=rr)
+    # C: launch photo — dusk gradient + rocket + plume
+    for yy in range(6, H-20):
+        t = (yy-6)/(H-26)
+        col = (1.0*(1-t)**2 + 0.02, 0.45*(1-t)**2.5 + 0.04*t, 0.1*(1-t) + 0.25*t)
+        cv.rect(426, yy, 588, yy+1, col)
+    cv.rect(426, 6, 588, 20, (0.03, 0.03, 0.05))
+    cv.rect(503, 40, 511, 140, WHT); cv.rect(505, 140, 509, 150, WHT)
+    for yy in range(20, 40): cv.rect(507-(40-yy)//3, yy, 508+(40-yy)//3, yy+1, (1.0, 0.85, 0.5))
+    # D: telemetry charts
+    for g in range(6): cv.rect(600, 20+g*26, 816, 21+g*26, (0.04, 0.09, 0.2))
+    for g in range(9): cv.rect(600+g*26, 8, 601+g*26, H-24, (0.04, 0.09, 0.2))
+    cv.curve(lambda x: 20 + 140/(1+math.exp(-(x-700)/18)), 600, 816, CYAN, 1)
+    cv.curve(lambda x: 100 + 40*math.sin((x-600)/20) * math.exp(-(x-600)/150), 600, 816, ORG, 1)
+    for k in range(18): cv.rect(604+k*12, 8, 612+k*12, 8+rr.randint(4, 22), (0.2, 0.55, 1.0))
+    # E: status list
+    y = H-32
+    while y > 12:
+        cv.dot(832, y+1, 2, GRN if rr.random() < 0.75 else ORG)
+        cv.textbars(840, y, 950, y+3, WHT, rh=3, gap=99, rnd=rr); y -= 11
+    return cv.image("bigscreen_img")
+
+def list_screen_img():
+    cv = Canvas(160, 120, (0.01, 0.03, 0.03))
+    cv.rect(0, 108, 160, 120, (0.03, 0.12, 0.08)); cv.textbars(4, 111, 120, 117, WHT, rh=3, rnd=rr)
+    y = 100
+    while y > 6:
+        cv.dot(8, y+1, 2, GRN); cv.textbars(16, y, 150, y+3, (0.4, 1.0, 0.55), rh=3, gap=99, rnd=rr); y -= 9
+    return cv.image("list_img")
+
+def console_img():
+    cv = Canvas(64, 40, (0.01, 0.02, 0.06))
+    cv.rect(3, 30, 61, 36, (0.05, 0.15, 0.4)); cv.textbars(4, 4, 40, 26, (0.4, 0.6, 0.9), rh=2, gap=3, rnd=rr)
+    cv.rect(46, 6, 58, 22, (0.8, 0.12, 0.08))
+    return cv.image("console_img")
+
+def dial_panel_img():
+    cv = Canvas(220, 90, (0.82, 0.83, 0.86))
+    for k in range(3): cv.circle(130+k*30, 62, 11, (0.1, 0.1, 0.12), 2.0, fill=(0.95, 0.95, 0.97))
+    for r_ in range(2):
+        for k in range(5):
+            col = [(0.1, 0.12, 0.2), (0.7, 0.15, 0.25), (0.15, 0.2, 0.5)][(k+r_) % 3]
+            cv.rect(8+k*20, 50-r_*22, 24+k*20, 66-r_*22, col)
+    cv.rect(120, 8, 212, 40, (0.03, 0.03, 0.05)); cv.textbars(124, 12, 200, 36, (0.4, 0.8, 1.0), rh=2, gap=4, rnd=rr)
+    return cv.image("dial_img")
+
+def poster_img():   # dark launch poster
+    cv = Canvas(60, 100, (0.03, 0.03, 0.04))
+    for yy in range(5, 60):
+        t = (yy-5)/55; cv.rect(5, yy, 55, yy+1, (0.9*(1-t)+0.1, 0.35*(1-t)+0.03, 0.05))
+    cv.rect(28, 20, 32, 62, (0.9, 0.9, 0.9))
+    cv.rect(10, 72, 50, 84, (0.92, 0.92, 0.92)); cv.textbars(10, 64, 50, 69, (0.7, 0.7, 0.7), rh=2, rnd=rr)
+    return cv.image("poster_img")
+
+def chart_panel_img():  # white panel with purple charts
+    cv = Canvas(120, 100, (0.85, 0.85, 0.9))
+    cv.rect(6, 82, 60, 90, (0.25, 0.1, 0.55))
+    for k in range(7): cv.rect(10+k*14, 10, 20+k*14, 10+rr.randint(10, 55), (0.35+0.05*k, 0.2, 0.85))
+    cv.rect(70, 76, 112, 92, (0.03, 0.03, 0.05))
+    return cv.image("chart_img")
+
+def ai_panel_img():   # black panel with large white glyph bars
+    cv = Canvas(80, 100, (0.02, 0.02, 0.025))
+    for k, (x, h) in enumerate([(10, 70), (22, 70), (40, 70), (55, 40), (64, 70)]):
+        cv.rect(x, 15, x+6, 15+h, (0.9, 0.9, 0.9))
+    cv.rect(10, 50, 28, 56, (0.9, 0.9, 0.9)); cv.rect(10, 82, 28, 85, (0.9, 0.9, 0.9))
+    return cv.image("ai_img")
+
+M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
+M_listimg = imgmat("listscr", list_screen_img(), 1.4)
+M_conimg = imgmat("conscr", console_img(), 1.3)
+M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
+M_poster = imgmat("poster", poster_img(), 1.1)
+M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
+M_aiimg = imgmat("aip", ai_panel_img(), 0.9)
+
 # ================= layout constants =================
 A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
 ZB, ZT = -19.0, -13.6        # rock bottom tip / start of taper
-FZ_BOT = -11.7               # recess floor
-NF = 5; Z0 = -1.6; FH = 2.2  # top slab level and floor pitch
+FZ_BOT = -10.2               # recess floor
+NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
 EX, EY = A - 0.8, YC + 1.25  # elevator centre (in a slot on the +x face)
 CRATERS = [(-4.6,1.8,1.0),(-1.5,3.0,0.7),(-5.0,4.6,0.5),(2.0,0.6,0.45),(-0.6,0.9,0.35),(4.6,-0.0,0.3),(-3.2,5.3,0.4)]
 
@@ -173,9 +359,11 @@ for v in bm.verts:
     ontop = z > -0.001
     edge = max(abs(x)/A, abs(y)/B) > 0.999
     if edge:
-        n = noise.fractal(Vector((x*0.22+3, y*0.22, z*0.9)), 0.7, 2.0, 5)
-        led = 0.12*math.sin(z*2.6 + 2*noise.noise(Vector((x*0.3, y*0.3, z*0.2))))
-        off = 0.28*n + led + 0.1
+        n = noise.fractal(Vector((x*0.14+3, y*0.14, z*0.35)), 0.6, 2.0, 4)
+        n2 = noise.noise(Vector((x*0.5, y*0.5, z*1.4)))
+        led = 0.16*math.sin(z*1.5 + 2.5*noise.noise(Vector((x*0.2, y*0.2, z*0.15))))
+        off = 0.42*n + 0.1*n2 + led + 0.15
+        if z > -0.6: off *= max(0.0, -z/0.6)
         if abs(x)/A >= abs(y)/B: v.co.x += math.copysign(off, x)
         else: v.co.y += math.copysign(off, y)
     if ontop:
@@ -209,55 +397,89 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
+# rubble / boulders around the tapered bottom of the rock
+M_boul = mat("boulder",(0.13,0.13,0.135),0.95)
+rb = random.Random(5)
+for k in range(46):
+    z = rb.uniform(ZB+0.6, ZT+1.5)
+    f = (z - ZB)/(ZT - ZB); sc_ = 0.28 + 0.72*smooth(min(1, f))**0.6
+    if rb.random() < 0.55: x = rb.uniform(-A, A)*sc_; y = -B*sc_ - rb.uniform(0.0, 0.25)
+    else: x = A*sc_ + rb.uniform(0.0, 0.25); y = rb.uniform(-B, B)*sc_
+    o = ico("boulder", (x, y, z), rb.uniform(0.25, 0.75), M_boul, 2)
+    o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
+    md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
 box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("ledge",(0.16,0.16,0.17),0.9))
 
 # warm lights along the rock edges of the cutaway
-for k in range(10):
+for k in range(9):
     zz = -0.9 - k*1.05
-    box("wl", (XC-0.35, -B-0.12, zz), (0.16, 0.05, 0.22), M_lamp)
+    box("wl", (XC-0.45, -B-0.47, zz), (0.14, 0.05, 0.2), M_lamp)
     box("wl", (A+0.12, EY+0.95, zz), (0.05, 0.16, 0.22), M_lamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
 
 # ================= interior =================
-def bot(x, y, z, m, s=0.38):
-    cone("botb", (x, y, z+s*0.45), s*1.05, s*0.75, s*0.9, m, 24)
-    sph("bot", (x, y, z+s*0.95), s*0.78, m, (1,1,0.95), 20)
-    cd = Vector((0.707, -0.707, 0))
-    side = Vector((0.707, 0.707, 0))
+M_glow = C.materials.new("glow"); M_glow.use_nodes = True
+_nt = M_glow.node_tree; _nt.nodes.clear()
+_o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
+_tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 3.0
+_tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
+_mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
+_pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
+_nt.links.new(_tc.outputs["Object"], _gr.inputs["Vector"]); _nt.links.new(_gr.outputs["Fac"], _pw.inputs[0])
+_nt.links.new(_pw.outputs[0], _mix.inputs["Fac"]); _nt.links.new(_tr.outputs[0], _mix.inputs[1]); _nt.links.new(_em.outputs[0], _mix.inputs[2])
+_nt.links.new(_mix.outputs[0], _o.inputs[0])
+try: M_glow.surface_render_method = 'BLENDED'
+except Exception: pass
+
+def bot(x, y, z, m, s=0.27, glow=True):
+    cone("botb", (x, y, z+s*0.42), s*1.08, s*0.72, s*0.84, m, 32)
+    sph("bot", (x, y, z+s*0.95), s*0.8, m, (1,1,0.95), 24)
+    cd = Vector((0.707, -0.707, 0)); side = Vector((0.707, 0.707, 0))
     for sgn in (-1, 1):
-        p = Vector((x, y, z+s*1.02)) + cd*(s*0.66) + side*(sgn*s*0.27)
-        sph("eye", p, s*0.17, M_eye, (1,1,1.35), 12)
-        sph("pup", p + cd*(s*0.12), s*0.07, M_pupil, (1,1,1.3), 8)
+        p = Vector((x, y, z+s*1.02)) + cd*(s*0.7) + side*(sgn*s*0.25)
+        sph("eye", p, s*0.15, M_eye, (1,1,1.4), 12)
+    if glow:
+        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.6, s*2.6, 1)
+        g.visible_shadow = False
 
 def plant(x, y, z, s=1.0, tall=False):
-    cyl("pot", (x, y, z+0.16*s), 0.16*s, 0.32*s, M_pot)
-    hh = (1.0 if tall else 0.55)*s
-    if tall: cyl("stem", (x, y, z+0.32*s+hh*0.4), 0.025, hh*0.8, mat("stem",(0.2,0.12,0.05),0.8), 6, smooth=False)
-    for i in range(14 if tall else 9):
-        a = random.random()*6.28; rr = random.random()*0.22*s
-        zz = z + 0.32*s + (hh*0.55 if tall else 0.12*s) + random.random()*hh*0.45
-        ico("leaf", (x+math.cos(a)*rr, y+math.sin(a)*rr, zz), (0.11+random.random()*0.07)*s, random.choice((M_leaf, M_leaf2)), 1)
+    cyl("pot", (x, y, z+0.13*s), 0.12*s, 0.26*s, M_pot, 16)
+    hh = (0.95 if tall else 0.45)*s
+    if tall: cyl("stem", (x, y, z+0.26*s+hh*0.35), 0.018, hh*0.7, mat("stem",(0.2,0.12,0.05),0.8), 6, smooth=False)
+    for i in range(16 if tall else 9):
+        a = random.random()*6.28; r_ = random.random()*(0.24 if tall else 0.14)*s
+        zz = z + 0.26*s + (hh*0.5 if tall else 0.08*s) + random.random()*hh*0.5
+        o = ico("leaf", (x+math.cos(a)*r_, y+math.sin(a)*r_, zz), (0.08+random.random()*0.06)*s, random.choice((M_leaf, M_leaf2)), 1)
+        o.scale = (1.3, 0.8, 0.5); o.rotation_euler = (random.random(), random.random(), a)
 
-def console(x, y, z, scr=M_screen):
-    box("cbase", (x, y, z+0.33), (0.95, 0.42, 0.66), M_desk)
-    box("ctop", (x, y-0.05, z+0.68), (1.05, 0.62, 0.05), M_desk)
-    for dx in (-0.25, 0.25):
-        box("mon", (x+dx, y+0.16, z+0.88), (0.36, 0.03, 0.22), scr)
-        box("monb", (x+dx, y+0.19, z+0.88), (0.4, 0.03, 0.26), M_dark)
-    box("seat", (x, y-0.62, z+0.42), (0.38, 0.38, 0.07), M_chair)
-    box("back", (x, y-0.8, z+0.65), (0.38, 0.05, 0.42), M_chair)
-    cyl("cpost", (x, y-0.62, z+0.2), 0.03, 0.4, M_chair, 6, smooth=False)
-
-def chair(x, y, z, face=1):
-    box("seat", (x, y, z+0.44), (0.42, 0.42, 0.07), M_chair)
-    box("back", (x, y-face*0.2, z+0.7), (0.42, 0.06, 0.48), M_chair)
-    cyl("cpost", (x, y, z+0.22), 0.03, 0.44, M_chair, 6, smooth=False)
+def chair(x, y, z, face=1, m=None):
+    m = m or M_chair
+    box("seat", (x, y, z+0.3), (0.26, 0.26, 0.04), m)
+    box("back", (x, y-face*0.12, z+0.46), (0.26, 0.03, 0.3), m)
+    cyl("cpost", (x, y, z+0.15), 0.02, 0.3, M_dark, 6, smooth=False)
+    cyl("cbase", (x, y, z+0.015), 0.1, 0.03, M_dark, 8)
 
 def stool(x, y, z, m=M_white):
-    cyl("stool", (x, y, z+0.42), 0.14, 0.05, m, 12); cyl("sl", (x, y, z+0.21), 0.025, 0.42, M_metal, 6, smooth=False)
+    cyl("stool", (x, y, z+0.36), 0.1, 0.04, m, 12); cyl("sl", (x, y, z+0.18), 0.018, 0.36, M_metal, 6, smooth=False)
+
+def console_row(cx, cy, z, n, R=7.0, seg=0.5):
+    """curved row of mission-control workstations; centre of curvature toward +y (the big screen)"""
+    for k in range(n):
+        th = (k-(n-1)/2)*seg/R
+        px = cx + R*math.sin(th); py = cy + R - R*math.cos(th)
+        rot = th
+        def P(dx, dy):   # local -> world (rotated about z by rot)
+            return (px + dx*math.cos(rot) - dy*math.sin(rot), py + dx*math.sin(rot) + dy*math.cos(rot))
+        o = box("cdesk", (*P(0, 0), z+0.4), (seg-0.02, 0.36, 0.05), M_desk); o.rotation_euler.z = rot
+        o = box("cbody", (*P(0, 0.05), z+0.2), (seg-0.06, 0.24, 0.38), M_dark); o.rotation_euler.z = rot
+        for dx in (-0.12, 0.12):
+            o = box("cmonb", (*P(dx, 0.13), z+0.56), (0.2, 0.025, 0.14), M_dark); o.rotation_euler.z = rot
+            o = plane("cmon", (*P(dx, 0.115), z+0.56), 0.18, 0.12, M_conimg); o.rotation_euler.z = rot
+        cx_, cy_ = P(0, -0.33); chair(cx_, cy_, z, 1)
 
 slabs = []
 for i in range(NF):
@@ -267,143 +489,141 @@ for i in range(NF):
     y0, y1 = -B + d, YC
     W, D = x1-x0, y1-y0
     cx, cy = (x0+x1)/2, (y0+y1)/2
-    box(f"slab{i}", (cx, cy, zf-0.11), (W, D, 0.22), M_white, 0.01)
+    box(f"slab{i}", (cx, cy, zf-0.07), (W, D, 0.14), M_white, 0.01)
     box(f"floor{i}", (cx, cy, zf+0.002), (W-0.06, D-0.06, 0.004), M_slab)
-    # glass railing on the two open edges + top rail
-    box("railA", (cx, y0+0.04, zf+0.25), (W, 0.03, 0.5), M_glass)
-    box("railB", (x1-0.04, cy, zf+0.25), (0.03, D, 0.5), M_glass)
-    box("rtA", (cx, y0+0.04, zf+0.5), (W, 0.04, 0.03), M_metal)
-    box("rtB", (x1-0.04, cy, zf+0.5), (0.04, D, 0.03), M_metal)
-    # light for the floor
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 170 if i else 80; Lg.shape = 'RECTANGLE'
-    Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.92, 0.82)
-    lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + FH - 0.35)
+    # thin glass railing on the two open edges
+    box("railA", (cx, y0+0.03, zf+0.18), (W, 0.015, 0.36), M_glass)
+    box("railB", (x1-0.03, cy, zf+0.18), (0.015, D, 0.36), M_glass)
+    box("rtA", (cx, y0+0.03, zf+0.36), (W, 0.02, 0.015), M_white)
+    box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
+    # side wall panels (white) on the x=XC wall
+    box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_panel)
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 150 if i else 90; Lg.shape = 'RECTANGLE'
+    Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
+    lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
-    _before = set(C.objects.keys())
     if i == 0:   # ---- mission control ----
-        # big wall screen (several panels)
-        for k, (xa, xb, m) in enumerate([(0.6, 2.5, M_screen), (2.6, 4.4, M_screen), (4.5, 5.6, M_screen)]):
-            box("bezel", ((xa+xb)/2, YC+0.03, zt+1.0), (xb-xa+0.08, 0.04, 1.28), M_dark)
-            box("big", ((xa+xb)/2, YC-0.0, zt+1.0), (xb-xa, 0.03, 1.2), M_navy)
-            for q in range(3):
-                box("chart", (xa+0.3+q*(xb-xa-0.6)/2.0, YC-0.03, zt+0.75+0.35*(q%2)), ((xb-xa)*0.22, 0.01, 0.05), M_cyan)
-            box("graph", ((xa+xb)/2, YC-0.03, zt+1.3), ((xb-xa)*0.7, 0.01, 0.03), M_cyan)
-            box("bar", (xa+0.25, YC-0.03, zt+1.0), (0.08, 0.01, 0.7), M_orange)
-        box("bigtrim", (3.1, YC-0.02, zt+0.36), (5.0, 0.02, 0.04), M_lamp)
-        for k in range(3):
-            box("smallscr", (XC+0.45+k*0.45, YC-0.01, zt+1.1), (0.4, 0.03, 0.9), M_big if k != 1 else M_screenG)
-        # dial panel on left wall
-        box("dialpanel", (XC+0.03, -2.4, zt+1.05), (0.03, 2.2, 0.9), M_panel)
-        for k in range(4):
-            cyl("dial", (XC+0.06, -3.2+k*0.5, zt+1.1), 0.17, 0.02, M_dark, 20, rot=(0, math.pi/2, 0))
-        for row, yy in enumerate([-1.55, -2.7, -3.85, -5.0]):
-            for s_ in range(5):
-                xx = XC + 1.1 + s_*1.15 + (row%2)*0.2
-                if xx < x1 - 0.7 and yy > y0 + 0.5: console(xx, yy, zt, M_screen if random.random() < 0.8 else M_screenG)
-        plant(XC+0.35, YC-0.35, zt, 1.1, True); plant(x1-0.4, YC-0.4, zt, 1.0, True); plant(XC+0.35, y0+0.5, zt, 0.8)
-        bots = [(0.2,-2.1),(1.4,-1.0),(2.3,-2.1),(3.9,-3.2),(1.0,-4.3)]
-    elif i == 1:  # ---- engineering: long workbench + desks ----
-        box("poster", (XC+0.03, -1.6, zt+1.2), (0.03, 0.8, 1.1), M_red)
-        box("poster2", (XC+0.03, -3.0, zt+1.2), (0.03, 0.8, 1.1), M_panel)
-        box("wscr", (2.5, YC-0.01, zt+1.3), (2.6, 0.03, 0.9), M_big)
-        box("table", (1.9, -2.2, zt+0.76), (5.4, 0.95, 0.07), M_wood)
+        box("bezel", (3.45, YC-0.01, zt+0.86), (5.3, 0.04, 1.08), M_dark)
+        plane("big", (3.45, YC-0.035, zt+0.86), 5.2, 1.0, M_bigimg)
+        box("lsbez", (0.25, YC-0.01, zt+0.95), (1.0, 0.04, 0.8), M_dark)
+        plane("lscr", (0.25, YC-0.035, zt+0.95), 0.92, 0.72, M_listimg)
+        box("ldesk", (0.3, YC-0.35, zt+0.35), (1.2, 0.45, 0.7), M_desk)
+        plane("dialp", (XC+0.04, -1.9, zt+0.9), 2.4, 0.95, M_dialimg, '+X')
+        # darker raised platform under the consoles
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.36,0.37,0.39),0.4))
+        for gx in (0.9, 4.0):
+            for r_, yy in enumerate([-1.8, -3.0, -4.2]):
+                console_row(gx, yy, zt+0.04, 5)
+        box("frontdesk", (5.3, -5.3, zt+0.35), (1.2, 0.45, 0.7), M_wood)
+        cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
+        plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
+        bots = [(0.1,-2.3,2),(1.1,-1.1,1),(2.4,-1.2,0),(4.5,-2.4,3),(2.6,-3.6,7)]
+    elif i == 1:  # ---- engineering: long workbench ----
+        plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
+        box("wtable", (2.0, -4.55, zt+0.5), (4.8, 0.45, 0.04), M_wood)
+        for k in range(9):
+            xx = -0.1 + k*0.53
+            box("tleg", (xx, -4.55, zt+0.25), (0.03, 0.35, 0.5), M_dark)
+            if k % 2 == 0: box("lap", (xx+0.2, -4.5, zt+0.57), (0.26, 0.18, 0.1), M_dark)
+            chair(xx+0.1, -5.05, zt, -1, M_white); chair(xx-0.05, -4.05, zt, 1, M_white)
         for k in range(6):
-            xx = -0.4 + k*0.92
-            box("tleg", (xx, -2.2, zt+0.38), (0.06, 0.75, 0.74), M_dark)
-            box("laptop", (xx, -2.05, zt+0.86), (0.4, 0.28, 0.14), M_screen if k%2 else M_screenG)
-            chair(xx+0.1, -1.4, zt, 1); chair(xx-0.1, -3.0, zt, -1)
-        for k in range(4): console(-0.2+k*1.2, -4.6, zt, M_screen)
-        cyl("engbase", (4.6, -1.3, zt+0.06), 0.7, 0.12, M_dark, 32)
-        cyl("engine", (4.6, -1.3, zt+0.85), 0.25, 1.5, M_white, 24)
-        cone("bell", (4.6, -1.3, zt+0.4), 0.45, 0.2, 0.6, M_dark)
-        plant(XC+0.45, -5.3, zt, 1.1, True); plant(x1-0.45, -5.2, zt, 0.9); plant(XC+0.4, -1.0, zt, 0.9)
-        bots = [(0.4,-1.0),(1.8,-3.4),(2.9,-1.0),(3.8,-3.6),(-0.3,-3.8)]
-    elif i == 2:  # ---- lounge: purple carpet + bar + servers ----
-        box("carpet", (0.6, -3.4, zt+0.01), (3.0, 4.2, 0.02), M_purple)
-        M_sofa = mat("sofa",(0.07,0.07,0.08),0.8)
-        for k in range(4):
-            box("sofa", (-0.5, -1.9-k*0.95, zt+0.24), (0.6, 0.85, 0.42), M_sofa)
-            box("sofab", (-0.75, -1.9-k*0.95, zt+0.5), (0.14, 0.85, 0.5), M_sofa)
-        box("sofa2", (0.7, -5.3, zt+0.24), (1.8, 0.6, 0.42), M_sofa)
-        box("ctable", (0.6, -3.3, zt+0.32), (0.9, 1.8, 0.07), M_wood)
-        box("chartscr", (XC+0.03, -2.0, zt+1.2), (0.03, 1.6, 1.0), M_screenP)
-        box("bar", (3.6, -3.4, zt+0.5), (3.0, 0.55, 1.0), M_white, 0.03)
-        box("bartop", (3.6, -3.4, zt+1.02), (3.1, 0.7, 0.06), M_wood)
-        for k in range(5): stool(2.4+k*0.6, -4.1, zt)
-        for k in range(4):
-            box("rack", (2.6+k*0.65, YC-0.35, zt+0.9), (0.55, 0.5, 1.8), M_dark)
-            for j in range(5): box("rl", (2.6+k*0.65, YC-0.61, zt+0.4+j*0.32), (0.4, 0.02, 0.03), M_screen if j%2 else M_screenG)
-        plant(x1-0.45, -1.4, zt, 1.1, True); plant(x1-0.45, -5.2, zt, 0.9); plant(2.0, -1.2, zt, 0.9, True)
-        bots = [(0.0,-2.3),(1.3,-4.4),(1.6,-2.0),(3.4,-2.4),(4.5,-4.7)]
-    elif i == 3:  # ---- cafe / lab: wooden tables + plants ----
-        box("wpanel", (XC+0.03, -2.2, zt+1.1), (0.03, 1.6, 1.3), M_dark)
-        box("wpanel2", (XC+0.04, -2.2, zt+1.1), (0.02, 1.4, 1.1), M_panel)
-        for row, yy in enumerate([-1.9, -4.0]):
-            box("wtable", (1.6, yy, zt+0.76), (4.6, 0.9, 0.07), M_wood)
-            for k in range(5):
-                xx = -0.3 + k*0.95
-                box("wleg", (xx, yy, zt+0.38), (0.06, 0.7, 0.74), M_dark)
-                chair(xx, yy-0.75, zt, -1); chair(xx, yy+0.75, zt, 1)
-                if k % 2: box("lap", (xx, yy-0.15, zt+0.85), (0.38, 0.26, 0.12), M_screen)
-        cyl("groom", (4.6, -1.6, zt+0.85), 0.8, 1.7, M_glass, 32)
-        cyl("groomb", (4.6, -1.6, zt+0.02), 0.82, 0.04, M_dark, 32)
-        cyl("groomt", (4.6, -1.6, zt+0.5), 0.35, 0.05, M_white, 24)
-        for p in [(XC+0.45,-1.0,1.2,True),(XC+0.5,-5.2,1.2,True),(4.8,-3.4,1.0,True),(4.9,-5.1,0.9,False),(3.6,-3.0,0.8,False)]:
+            chair(4.5+ (k % 2)*0.7, -3.4 - (k//2)*0.7, zt, 1, M_white)
+        box("gpart", (4.1, -2.4, zt+0.5), (0.02, 1.6, 1.0), M_glass)
+        box("lounge", (5.5, -1.7, zt+0.18), (0.8, 0.5, 0.36), M_dark)
+        cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_dark, 32)
+        plant(XC+0.3, -5.5, zt, 0.7); plant(6.0, -5.5, zt, 0.7)
+        bots = [(1.1,-3.9,0),(2.6,-4.0,4),(5.2,-4.6,5)]
+    elif i == 2:  # ---- lounge: purple carpet + wood bar ----
+        plane("chartp", (XC+0.04, -4.8, zt+1.0), 1.1, 0.9, M_chartimg, '+X')
+        box("darkscr", (XC+0.04, -3.6, zt+1.1), (0.02, 0.8, 0.6), M_dark)
+        box("carpet", (0.5, -4.7, zt+0.01), (2.4, 2.0, 0.02), M_purple)
+        box("ltable", (0.4, -4.6, zt+0.2), (1.3, 0.5, 0.04), M_wood)
+        for k in range(3): box("cube", (-0.3+k*0.55, -5.3, zt+0.13), (0.28, 0.28, 0.26), M_white, 0.01)
+        M_sofa = mat("sofa",(0.03,0.03,0.035),0.8)
+        box("sofa", (-0.55, -4.4, zt+0.17), (0.4, 1.0, 0.3), M_sofa)
+        box("bar", (3.5, -4.2, zt+0.25), (2.8, 0.7, 0.5), mat("lwood",(0.72,0.58,0.4),0.5), 0.02)
+        for k in range(7): stool(2.3+k*0.4, -4.75, zt, M_white)
+        for k in range(3): box("pc", (2.6+k*0.8, -4.1, zt+0.56), (0.24, 0.04, 0.16), M_dark)
+        cyl("groom", (5.4, -2.6, zt+0.75), 0.75, 1.5, M_glass, 40)
+        cyl("groomb", (5.4, -2.6, zt+0.01), 0.77, 0.02, M_dark, 40)
+        cyl("groomt", (5.4, -2.6, zt+0.4), 0.3, 0.04, M_white, 24)
+        for a in range(5): chair(5.4+0.5*math.cos(a*1.25), -2.6+0.5*math.sin(a*1.25), zt, 1, M_white)
+        box("sofa2", (4.6, -5.4, zt+0.17), (0.6, 0.35, 0.3), M_sofa)
+        plant(6.0, -4.9, zt, 0.7, True)
+        bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3)]
+    else:         # ---- garden / workshop ----
+        plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
+        box("mat", (2.4, -5.25, zt+0.01), (1.6, 0.6, 0.015), M_dark)
+        tx = text("SPACEX", (2.4, -5.3, zt+0.02), 0.25, M_white, extrude=0.0); tx.data.space_character = 1.4
+        for p in [(0.2,-4.4,1.1,True),(1.9,-3.7,1.0,True),(3.8,-4.6,1.2,True),(5.6,-3.0,1.0,True),(XC+0.4,-3.8,0.8,False),(4.9,-5.4,0.8,False),(3.0,-4.4,0.7,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
-        bots = [(0.4,-3.0),(2.3,-3.0),(3.4,-5.0),(1.2,-5.2)]
-    else:         # ---- bottom: workshop + garden ----
-        box("bench", (0.9, -1.5, zt+0.5), (3.0, 0.75, 1.0), M_white, 0.02)
-        box("tool", (0.9, -1.5, zt+1.1), (2.4, 0.3, 0.2), M_dark)
-        for k in range(3):
-            cyl("robarm", (0.0+k*0.9, -1.1, zt+1.3), 0.08, 0.6, M_dark, 12)
-        box("mat", (1.6, -4.6, zt+0.01), (2.4, 0.9, 0.02), M_dark)
-        text("SPACEX", (1.6, -4.75, zt+0.025), 0.42, M_white, rot=(0, 0, 0))
-        for p in [(XC+0.5,-1.0,1.4,True),(3.3,-1.5,1.3,True),(-0.2,-3.0,1.2,True),(4.6,-3.6,1.0,True),(2.4,-3.0,0.9,False),(XC+0.5,-5.3,1.1,True),(3.6,-5.2,0.8,False)]:
-            plant(p[0], p[1], zt, p[2], p[3])
-        for k in range(2): box("server2", (XC+0.4, -3.4-k*0.65, zt+0.85), (0.5, 0.6, 1.7), M_dark)
-        for k in range(3): box("bench2", (4.6, -1.0-k*0.0, zt+0.3), (0.9, 0.5, 0.6), M_desk)
-        bots = [(0.9,-2.5),(2.2,-5.3),(3.0,-2.2),(0.2,-5.0)]
-    if i > 0:
-        bots = [(bx, -B+0.55+(by+B-0.55)*0.55) for bx, by in bots]
-        for nm in set(C.objects.keys()) - _before:
-            o = C.objects[nm]
-            if o.location.y < YC - 0.75 and o.location.x > XC + 0.1:
-                o.location.y = -B + 0.55 + (o.location.y + B - 0.55)*0.55
-                if o.type == 'MESH' and o.dimensions.y > 1.2 and not o.name.startswith("groom"): o.scale.y *= 0.55
-    for k, (bx, by) in enumerate(bots):
-        if bx < x1 - 0.3 and by > y0 + 0.3:
-            bot(bx, by, zt, M_bots[(i*5+k) % len(M_bots)])
+        for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
+            box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
+        box("totem", (2.0, -4.4, zt+0.4), (0.16, 0.16, 0.8), M_dark)
+        cyl("rbench", (1.2, -4.9, zt+0.12), 0.45, 0.24, M_wood, 32)
+        box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
+        cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
+        for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
+        bots = [(2.8,-4.0,0),(4.6,-5.5,5)]
+    for bx, by, ci in bots:
+        bot(bx, by, zt, M_bots[ci % len(M_bots)])
 
 # under the lowest floor: tank, pillars, crates
-zb = Z0 - (NF-1)*FH - 0.22
-for px, py in [(XC+0.4,-B+2.1+0.2),(1.5,-B+2.1),(A-2.5,-B+2.1),(A-2.3,-2.0),(A-2.3,YC-0.4)]:
+zb = Z0 - (NF-1)*FH - 0.14
+for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
-cyl("tank", (0.8, -5.2, FZ_BOT+0.66), 0.62, 2.3, mat("tank",(0.02,0.02,0.025),0.2,0.3), 32, rot=(0, math.pi/2, 0))
-cyl("tankfan", (2.0, -5.2, FZ_BOT+0.66), 0.56, 0.06, M_metal, 16, rot=(0, math.pi/2, 0))
-for k in range(3): box("frame", (-0.6+k*0.18, -5.2, FZ_BOT+0.55), (0.05, 0.7, 1.1), M_metal)
-for k in range(3): box("crate", (3.6+k*0.5, -5.2, FZ_BOT+0.18), (0.45, 0.4, 0.32), M_white)
+M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
+cyl("tank", (0.5, -4.9, FZ_BOT+0.62), 0.58, 2.0, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.55, -4.9, FZ_BOT+0.62), 0.6, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+for k in range(8):
+    a = k*math.pi/4
+    o = box("fanblade", (1.62, -4.9+0.3*math.cos(a), FZ_BOT+0.62+0.3*math.sin(a)), (0.02, 0.08, 0.5), M_metal); o.rotation_euler.x = a
+cyl("tankband", (0.2, -4.9, FZ_BOT+0.62), 0.6, 0.18, mat("yellow",(0.9,0.6,0.02),0.4), 40, rot=(0, math.pi/2, 0))
+for k in range(3): box("frame", (-0.85+k*0.16, -4.9, FZ_BOT+0.55), (0.04, 0.8, 1.1), M_metal)
+for k in range(4): box("crate", (4.2+k*0.42, -5.4, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white)
+for k in range(3): box("crate", (4.4+k*0.42, -5.4, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white)
 
-# glass elevator in its slot
+# glass elevator in its slot (white frame grid)
 eh_top = 1.4
 box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (1.15, 1.15, eh_top-FZ_BOT), M_glass)
 for dx in (-0.575, 0.575):
     for dy in (-0.575, 0.575):
-        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.07, 0.07, eh_top-FZ_BOT), M_metal)
-for k in range(7):
-    zz = FZ_BOT + 0.2 + k*FH
-    box("eh1", (EX, EY-0.575, zz), (1.15, 0.05, 0.05), M_metal); box("eh2", (EX+0.575, EY, zz), (0.05, 1.15, 0.05), M_metal)
-box("ecab", (EX, EY, Z0-2*FH+0.55), (0.95, 0.95, 1.0), mat("ecab",(0.9,0.6,0.8),0.1,emit=(1,0.3,0.6),estr=0.25, alpha=0.18))
+        box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.06, 0.06, eh_top-FZ_BOT), M_white)
+zz = FZ_BOT + 0.1
+while zz < eh_top:
+    box("eh1", (EX, EY-0.575, zz), (1.15, 0.04, 0.04), M_white); box("eh2", (EX+0.575, EY, zz), (0.04, 1.15, 0.04), M_white)
+    box("ev1", (EX, EY-0.575, zz+0.5), (0.03, 0.03, 1.0), M_white); box("ev2", (EX+0.575, EY, zz+0.5), (0.03, 0.03, 1.0), M_white)
+    zz += 1.05
+# cab: glass with white frame, pink glow and a bot inside
+cz = Z0 - 2*FH
+box("ecab", (EX, EY, cz+0.55), (0.92, 0.92, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
+for dx in (-0.46, 0.46):
+    for dy in (-0.46, 0.46):
+        box("cabf", (EX+dx, EY+dy, cz+0.55), (0.04, 0.04, 1.0), M_white)
+box("cabfl", (EX, EY, cz+0.04), (0.95, 0.95, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.95, 0.95, 0.06), M_white)
+pl = C.lights.new("cabl", 'POINT'); pl.energy = 25; pl.color = (1, 0.4, 0.7); pl.shadow_soft_size = 0.3
+plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location = (EX, EY, cz+0.85)
 box("eback", (EX+0.3, EY+0.62, (FZ_BOT+0.3)/2), (0.6, 0.04, -FZ_BOT), mat("slotwall",(0.18,0.18,0.19),0.6))
-for zz in range(5):
+for zz in range(NF):
     box("estrip", (EX+0.5, EY+0.5, Z0-zz*FH+1.2), (0.04, 0.04, 0.5), M_lamp)
-bot(EX, EY, Z0-2*FH+0.05, M_bots[4], 0.25)
+bot(EX, EY, cz+0.07, M_bots[4], 0.22, glow=False)
 # top glass box on the surface
 box("etop", (EX-0.2, EY-0.2, 0.75), (1.7, 1.7, 1.5), M_glass)
 for dx in (-0.85, 0.85):
     for dy in (-0.85, 0.85):
-        box("etf", (EX-0.2+dx, EY-0.2+dy, 0.75), (0.06, 0.06, 1.5), M_dark)
+        box("etf", (EX-0.2+dx, EY-0.2+dy, 0.75), (0.05, 0.05, 1.5), M_white)
+for zz in (0.02, 0.75):
+    box("eth1", (EX-0.2, EY-1.05, zz), (1.7, 0.04, 0.04), M_white); box("eth2", (EX+0.65, EY-0.2, zz), (0.04, 1.7, 0.04), M_white)
 box("etroof", (EX-0.2, EY-0.2, 1.52), (1.75, 1.75, 0.05), M_white)
-bot(EX-0.2, EY-0.2, 0.0, M_bots[1], 0.25)
+bot(EX-0.2, EY-0.2, 0.0, M_bots[1], 0.25, glow=False)
+
+# dark structural rim around the top of the cutaway
+M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
+box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
+box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
+# dark structural column on the rock face left of the cutaway
+box("colL", (XC-0.45, -B-0.075, (FZ_BOT)/2), (0.9, 0.75, -FZ_BOT), M_rim)
+box("colLs", (XC-0.12, -B-0.47, (FZ_BOT)/2), (0.05, 0.04, -FZ_BOT), M_metal)
 
 # ================= surface =================
 PX, PY = -3.5, -1.6
@@ -412,38 +632,78 @@ bpy.ops.mesh.primitive_torus_add(major_radius=1.95, minor_radius=0.035, location
 bpy.context.object.data.materials.append(M_white)
 bpy.ops.mesh.primitive_torus_add(major_radius=1.25, minor_radius=0.02, location=(PX, PY, 0.13), major_segments=64)
 bpy.context.object.data.materials.append(M_white)
-# rocket (Starship-like)
-RB = 1.0; RR = 1.2
-cone("skirt", (PX, PY, RB-0.2), RR*0.75, RR, 0.5, M_dark, 48)
-cyl("rocket", (PX, PY, RB+3.9), RR, 7.8, M_white, 64)
-cyl("band", (PX, PY, RB+7.3), RR+0.01, 1.0, M_dark, 64)
-cd = Vector((0.707, -0.707, 0))
-for k in range(6):
-    a = -math.pi/4 + (k-2.5)*0.22
-    box("win", (PX+math.cos(a)*(RR+0.02), PY+math.sin(a)*(RR+0.02), RB+7.3), (0.07, 0.07, 0.1), M_lamp)
-bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, location=(PX, PY, RB+7.8))
-n = bpy.context.object; n.scale.z = 2.7; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
-for k in range(4):
-    a = k*math.pi/2 + math.pi/4
-    pass
+# rocket (Starship-like), sized off the ref: r~1.0, ~11.6 tall
+RB = 0.9; RR = 1.0; BH = 8.2
+cd = Vector((0.707, -0.707, 0)); sd = Vector((0.707, 0.707, 0))
+cone("skirt", (PX, PY, RB-0.15), RR*0.8, RR, 0.4, M_dark, 48)
+cyl("rocket", (PX, PY, RB+BH/2), RR, BH, M_white, 64)
+cyl("band", (PX, PY, RB+BH-0.7), RR+0.008, 1.4, M_dark, 64)
+cyl("ring", (PX, PY, RB+2.2), RR+0.006, 0.05, mat("seam",(0.55,0.56,0.58),0.4), 64)
+for k in range(5):
+    a = -math.pi/4 + (k-2)*0.2
+    box("win", (PX+math.cos(a)*(RR+0.01), PY+math.sin(a)*(RR+0.01), RB+BH-1.2), (0.12, 0.12, 0.08), mat("winw",(0.9,0.9,0.92),0.2), rz=a)
+bpy.ops.mesh.primitive_uv_sphere_add(segments=64, ring_count=32, radius=RR, location=(PX, PY, RB+BH))
+n = bpy.context.object; n.scale.z = 2.6; n.data.materials.append(M_white); bpy.ops.object.shade_smooth()
+# delete lower hemisphere of the nose (inside body anyway)
+# forward + aft flaps on the left/right sides of the silhouette
+M_flap = mat("flap",(0.08,0.08,0.09),0.4)
+for sgn in (-1, 1):
+    base = Vector((PX, PY, 0)) + sd*(sgn*(RR+0.12))
+    o = box("fflap", (base.x, base.y, RB+BH+0.5), (0.42, 0.05, 1.0), M_flap); o.rotation_euler.z = math.radians(45)
+    o.scale = (1, 1, 1); o.rotation_euler.x = 0
+    o2 = box("aflap", (base.x + sd.x*sgn*0.05, base.y + sd.y*sgn*0.05, RB+0.9), (0.6, 0.06, 1.5), M_flap); o2.rotation_euler.z = math.radians(45)
+    for z_ in (RB+BH-0.25,):
+        for dz in (0.0,):
+            gf = box("gridfin", (base.x, base.y, z_+dz), (0.36, 0.04, 0.3), M_metal); gf.rotation_euler.z = math.radians(45)
+# small dark hatches under the band (visible in ref)
+for k in (-0.35, 0.35):
+    p = Vector((PX, PY, RB+BH-1.55)) + cd*(RR+0.005) + sd*k
+    o = box("hatch", (p.x, p.y, p.z), (0.2, 0.02, 0.1), M_dark); o.rotation_euler.z = math.radians(45)
 for k in range(6):
     a = k*math.pi/3 + 0.3
-    p0 = Vector((PX+math.cos(a)*RR*0.9, PY+math.sin(a)*RR*0.9, RB+1.4)); p1 = Vector((PX+math.cos(a)*1.75, PY+math.sin(a)*1.75, 0.12))
+    p0 = Vector((PX+math.cos(a)*RR*0.9, PY+math.sin(a)*RR*0.9, RB+1.3)); p1 = Vector((PX+math.cos(a)*1.65, PY+math.sin(a)*1.65, 0.12))
     mid = (p0+p1)/2; dv = p0-p1
-    lg = cyl("leg", mid, 0.045, dv.length, M_metal, 8)
+    lg = cyl("leg", mid, 0.04, dv.length, M_metal, 8)
     lg.rotation_euler = dv.to_track_quat('Z','Y').to_euler()
-    cyl("foot", p1, 0.12, 0.05, M_metal, 12)
-# vertical SPACEX on the body, facing camera
+    cyl("foot", p1, 0.11, 0.05, M_metal, 12)
+
+def swoosh(name, p0, p1, bulge, thick, m, width=0.04, frame=None, n=24):
+    """crescent swoosh from p0 to p1 (2D in the frame's x/y), bulging by `bulge`, thickness tapering"""
+    bm = bmesh.new(); top = []; bot = []
+    for k in range(n+1):
+        t = k/n
+        x = p0[0] + (p1[0]-p0[0])*t; y = p0[1] + (p1[1]-p0[1])*t + bulge*math.sin(math.pi*t)
+        th = thick*math.sin(math.pi*min(1, t*1.1))**0.7 + 0.004
+        top.append(bm.verts.new((x, y + th/2, 0))); bot.append(bm.verts.new((x, y - th/2, 0)))
+    for k in range(n):
+        bm.faces.new((bot[k], bot[k+1], top[k+1], top[k]))
+    bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=width)
+    me = C.meshes.new(name); bm.to_mesh(me); bm.free()
+    o = C.objects.new(name, me); sc.collection.objects.link(o); o.data.materials.append(m)
+    if frame is not None: o.matrix_world = frame
+    return o
+
+# vertical SPACEX on the body, facing camera (wide letter spacing like the logo)
 Xv = Vector((0,0,1)); Zv = cd.copy(); Yv = Zv.cross(Xv)
-t = text("SPACEX", (0,0,0), 0.55, M_dark, extrude=0.005)
-t.matrix_world = Matrix.Translation(Vector((PX, PY, RB+4.6)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
+FR = Matrix.Translation(Vector((PX, PY, RB+3.1)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
+t = text("SPACEX", (0,0,0), 0.5, M_dark, extrude=0.004, align='LEFT', spacing=1.35)
+t.scale = (1.15, 1, 1); t.matrix_world = FR @ Matrix.Diagonal((1.15, 1, 1, 1))
 t.data.align_y = 'CENTER'
-# giant SPACEX sign on the back edge
-sgn = text("SPACEX", (-0.9, B-0.6, 0.55), 1.7, M_white, rot=(math.radians(90), 0, 0), extrude=0.07, spacing=1.2)
-sgn.scale = (1.55, 0.8, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
+swoosh("rswoosh", (2.0, -0.32), (3.4, 0.55), 0.22, 0.09, M_dark, 0.004, FR @ Matrix.Translation((0, 0, 0.004)))
+# giant SPACEX sign on the back edge: chunky extruded letters + swoosh on the X
+sgn = text("SPACEX", (-0.9, B-0.6, 0.55), 1.55, M_white, rot=(math.radians(90), 0, 0), extrude=0.22, spacing=1.15)
+sgn.data.bevel_depth = 0.03; sgn.data.bevel_resolution = 2
+sgn.scale = (1.5, 1.0, 1); sgn.rotation_euler = (math.radians(90), 0, math.radians(22))
+bpy.context.view_layer.update()
+SF = sgn.matrix_world.copy()
+# swoosh in the sign's local frame (text units before scale): from inside the X out to the right
+sw = swoosh("sswoosh", (2.6, 0.1), (5.0, 0.9), -0.2, 0.22, M_white, 0.12, SF @ Matrix.Translation((0, 0, 0.05)))
 for xx in (-4.6, -1.5, 1.5, 4.0):
     box("signpost", (xx, B-0.45, 0.3), (0.08, 0.08, 0.6), M_metal)
 box("signbar", (-0.4, B-0.45, 0.55), (9.5, 0.08, 0.08), M_metal)
+# LANDING ZONE 1 painted on the pad (reads along the camera's right axis)
+lz = text("LANDING ZONE 1", (0,0,0), 0.2, M_white, extrude=0.0, spacing=1.1)
+lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math.radians(45)); lz.data.align_y = 'CENTER'
 # solar field
 for i in range(6):
     for j in range(8):
@@ -505,6 +765,25 @@ mxe = N.new("ShaderNodeMixRGB")
 L.new(ne.outputs["Fac"], re.inputs["Fac"]); L.new(nc.outputs["Fac"], rc.inputs["Fac"])
 L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.inputs[1]); mxe.inputs[2].default_value = (0.9,0.9,0.9,1)
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
+# self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
+eo = N["Material Output"]
+ldir = (-right*0.85 + up*0.35 + back*0.55).normalized()
+geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
+dp.inputs[1].default_value = ldir
+L.new(geo.outputs["Normal"], dp.inputs[0])
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.12; tm.inputs["From Max"].default_value = 0.3
+tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1.0
+L.new(dp.outputs["Value"], tm.inputs["Value"])
+cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
+L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tm.outputs["Result"], cm.inputs["Color2"])
+e1 = N.new("ShaderNodeEmission"); e1.inputs["Strength"].default_value = 1.15; L.new(cm.outputs["Color"], e1.inputs["Color"])
+lw = N.new("ShaderNodeLayerWeight"); lw.inputs["Blend"].default_value = 0.25
+rp_ = N.new("ShaderNodeMath"); rp_.operation = 'POWER'; rp_.inputs[1].default_value = 2.5
+L.new(lw.outputs["Facing"], rp_.inputs[0])
+rm = N.new("ShaderNodeMath"); rm.operation = 'MULTIPLY'; L.new(rp_.outputs[0], rm.inputs[0]); L.new(tm.outputs["Result"], rm.inputs[1])
+e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.35,0.6,1.0,1); L.new(rm.outputs[0], e2.inputs["Strength"])
+ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
+L.new(ad.outputs[0], eo.inputs["Surface"])
 earth = sph("earth", target + R @ Vector((220*k, 315*k, -40)), 55*k, M_earth, seg=64)
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
