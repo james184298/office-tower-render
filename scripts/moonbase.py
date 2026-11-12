@@ -137,23 +137,23 @@ lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
 wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
 tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
-tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.13,0.13,0.135,1)
-tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.36,0.36,0.37,1)
-_e = tr_.elements.new(0.3); _e.color = (0.2,0.2,0.205,1)
-_e = tr_.elements.new(0.75); _e.color = (0.27,0.27,0.28,1)
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.09,0.09,0.095,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.42,0.42,0.43,1)
+_e = tr_.elements.new(0.3); _e.color = (0.17,0.17,0.175,1)
+_e = tr_.elements.new(0.7); _e.color = (0.28,0.28,0.29,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
-mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (0.3, 0.3, 30.0)
+mps = N.new("ShaderNodeMapping"); mps.inputs["Scale"].default_value = (1.3, 1.3, 16.0)
 L.new(tc.outputs["Object"], mps.inputs["Vector"]); L.new(mps.outputs["Vector"], sn.inputs["Vector"])
 smr = N.new("ShaderNodeMapRange"); smr.inputs["From Min"].default_value = 0.3; smr.inputs["From Max"].default_value = 0.7
-smr.inputs["To Min"].default_value = 0.7; smr.inputs["To Max"].default_value = 1.3
+smr.inputs["To Min"].default_value = 0.78; smr.inputs["To Max"].default_value = 1.2
 L.new(sn.outputs["Fac"], smr.inputs["Value"])
 # grain
-gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 90; gn.inputs["Detail"].default_value = 3
+gn = N.new("ShaderNodeTexNoise"); gn.inputs["Scale"].default_value = 28; gn.inputs["Detail"].default_value = 8; gn.inputs["Roughness"].default_value = 0.7
 L.new(tc.outputs["Object"], gn.inputs["Vector"])
 gmr = N.new("ShaderNodeMapRange"); gmr.inputs["From Min"].default_value = 0.3; gmr.inputs["From Max"].default_value = 0.7
-gmr.inputs["To Min"].default_value = 0.72; gmr.inputs["To Max"].default_value = 1.25
+gmr.inputs["To Min"].default_value = 0.62; gmr.inputs["To Max"].default_value = 1.35
 L.new(gn.outputs["Fac"], gmr.inputs["Value"])
 # broad patches
 pn = N.new("ShaderNodeTexNoise"); pn.inputs["Scale"].default_value = 0.35; pn.inputs["Detail"].default_value = 3
@@ -993,7 +993,7 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*1.0 + up*0.3 + back*0.5).normalized()
+ldir = (-right*1.0 + up*0.08 + back*0.55).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
@@ -1002,12 +1002,12 @@ tm.inputs["To Min"].default_value = 0.025; tm.inputs["To Max"].default_value = 1
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
 L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tm.outputs["Result"], cm.inputs["Color2"])
-e1 = N.new("ShaderNodeEmission"); e1.inputs["Strength"].default_value = 1.15; L.new(cm.outputs["Color"], e1.inputs["Color"])
+e1 = N.new("ShaderNodeEmission"); e1.inputs["Strength"].default_value = 1.4; L.new(cm.outputs["Color"], e1.inputs["Color"])
 lw = N.new("ShaderNodeLayerWeight"); lw.inputs["Blend"].default_value = 0.25
 rp_ = N.new("ShaderNodeMath"); rp_.operation = 'POWER'; rp_.inputs[1].default_value = 2.5
 L.new(lw.outputs["Facing"], rp_.inputs[0])
 rm = N.new("ShaderNodeMath"); rm.operation = 'MULTIPLY'; L.new(rp_.outputs[0], rm.inputs[0]); L.new(tm.outputs["Result"], rm.inputs[1])
-e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.35,0.6,1.0,1); L.new(rm.outputs[0], e2.inputs["Strength"])
+e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.55,0.9,1.7,1); L.new(rm.outputs[0], e2.inputs["Strength"])
 ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
 L.new(ad.outputs[0], eo.inputs["Surface"])
 earth = sph("earth", target + R @ Vector((229*k, 308*k, -40)), 64*k, M_earth, seg=64)
@@ -1018,7 +1018,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li = N.new("ShaderNodeTexImage"); li.image = bpy.data.images.load(EARTH_IMG); li.projection = 'SPHERE'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.15; hsv.inputs["Value"].default_value = 1.1
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.45; hsv.inputs["Value"].default_value = 1.2
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
@@ -1034,9 +1034,9 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -65)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -12)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    W1 = back.normalized(); Wz = up.normalized(); W3 = Wz.cross(W1)
+    TL = math.radians(14); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     earth.rotation_euler = (Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
