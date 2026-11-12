@@ -155,9 +155,9 @@ L.new(fn.outputs["Fac"], bump.inputs["Height"]); L.new(bump.outputs["Normal"], b
 M_reg = C.materials.new("regolith"); M_reg.use_nodes = True
 nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
-n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.6; n2.inputs["Detail"].default_value = 8
+n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.35; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.3; er[0].color = (0.13,0.13,0.135,1); er[1].position = 0.7; er[1].color = (0.32,0.32,0.33,1)
+er[0].position = 0.32; er[0].color = (0.1,0.1,0.105,1); er[1].position = 0.68; er[1].color = (0.34,0.34,0.35,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -622,7 +622,7 @@ for dx in (-0.35, 0.35):
 box("cabfl", (EX, EY, cz+0.04), (0.72, 0.72, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.72, 0.72, 0.06), M_white)
 pl = C.lights.new("cabl", 'POINT'); pl.energy = 25; pl.color = (1, 0.4, 0.7); pl.shadow_soft_size = 0.3
 plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location = (EX, EY, cz+0.85)
-box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.1,0.1,0.11),0.6))
+box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.32,0.32,0.34),0.6))
 bot(EX, EY, cz+0.07, M_bots[4], 0.2, glow=False)
 # top station: glass box recessed into a notch at mission-floor level (ref: ~1.1 x 2.6, top flush with the surface)
 TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, -0.15
@@ -759,6 +759,8 @@ for k in range(4):
 box("tboard", (-4.6, -5.6, 0.55), (1.0, 0.05, 0.45), M_white)
 box("tred", (-4.6, -5.63, 0.45), (0.8, 0.02, 0.12), emis("red2",(0.9,0.05,0.05),1.0))
 for xx in (-5.05, -4.15): box("tpost", (xx, -5.6, 0.2), (0.04, 0.04, 0.4), M_metal)
+text("TRANQUILITY BASE", (-4.6, -5.632, 0.6), 0.085, M_dark, rot=(math.radians(90), 0, 0), extrude=0.0)
+text("DO NOT TOUCH", (-4.6, -5.645, 0.42), 0.07, M_white, rot=(math.radians(90), 0, 0), extrude=0.0)
 M_srock = mat("srock",(0.16,0.16,0.17),0.9)
 # crates, rover, surface bots, rocks
 for k in range(6):
@@ -850,7 +852,7 @@ def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
 sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
-fill = C.lights.new("fill", 'SUN'); fill.energy = 0.3; fill.angle = math.radians(20)
+fill = C.lights.new("fill", 'SUN'); fill.energy = 0.15; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
