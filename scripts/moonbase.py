@@ -534,7 +534,17 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # v69: ground porch in front of the floors (ref recess ground runs out in front of the lowest floor; tank sits on it)
 PORCH = float(os.environ.get("PORCH", 1.1))
 if PORCH > 0:
-    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.11,0.11,0.113),0.95,spec=0.1), 0.0)
+    # v74: a rock wedge (rock strata on the sides, regolith-grey top) whose front face slopes back into the block,
+    # so the ground reads as a ledge of the block rather than a floating slab
+    PD = float(os.environ.get("PORCHD", 2.4)); z0p = FZ_BOT+0.04; z1p = FZ_BOT-PD
+    xl0, xr0, yf0, yb0 = XC-1.3, A, -B-PORCH, -B+0.4
+    xl1, xr1, yf1 = XC-0.6, A-0.5, -B+0.25
+    vs = [(xl0,yb0,z0p),(xr0,yb0,z0p),(xr0,yf0,z0p),(xl0,yf0,z0p),(xl1,yb0,z1p),(xr1,yb0,z1p),(xr1,yf1,z1p),(xl1,yf1,z1p)]
+    fs = [(0,3,2,1),(4,5,6,7),(3,7,6,2),(2,6,5,1),(0,4,7,3),(1,5,4,0)]
+    pm = bpy.data.meshes.new("porch"); pm.from_pydata(vs, [], fs); pm.update()
+    po = bpy.data.objects.new("porch", pm); sc.collection.objects.link(po)
+    pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.15)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
+    for f_ in pm.polygons: f_.material_index = 0 if f_.index == 0 else 1
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
