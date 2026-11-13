@@ -610,13 +610,15 @@ for i in range(NF):
     y0, y1 = -B + d, YC
     W, D = x1-x0, y1-y0
     cx, cy = (x0+x1)/2, (y0+y1)/2
-    box(f"slab{i}", (cx, cy, zf-0.11), (W, D, 0.22), M_white, 0.01)
+    ST_ = float(os.environ.get("SLABT", 0.16))
+    box(f"slab{i}", (cx, cy, zf-ST_/2), (W, D, ST_), M_white, 0.01)
     box(f"floor{i}", (cx, cy, zf+0.002), (W-0.06, D-0.06, 0.004), M_slab)
     # thin glass railing on the two open edges
-    box("railA", (cx, y0+0.03, zf+0.18), (W, 0.015, 0.36), M_glass)
-    box("railB", (x1-0.03, cy, zf+0.18), (0.015, D, 0.36), M_glass)
-    box("rtA", (cx, y0+0.03, zf+0.36), (W, 0.02, 0.015), M_white)
-    box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
+    if os.environ.get("GRAIL"):   # v66: off - the glass read as a solid band hiding the floors (ref floors are open)
+        box("railA", (cx, y0+0.03, zf+0.18), (W, 0.015, 0.36), M_glass)
+        box("railB", (x1-0.03, cy, zf+0.18), (0.015, D, 0.36), M_glass)
+        box("rtA", (cx, y0+0.03, zf+0.36), (W, 0.02, 0.015), M_white)
+        box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     if i == 0: box("lwall", (XC+0.02, cy, zf+0.72), (0.03, D, 1.4), M_lwall)
     else:   # lower floors: light grey walls on both closed sides, full height (ref)
