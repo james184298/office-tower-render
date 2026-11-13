@@ -224,14 +224,21 @@ r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
 er[0].position = 0.3; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.7; er[1].color = (0.25,0.25,0.26,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"])
 _tcr = N.new("ShaderNodeTexCoord")
-_gs = N.new("ShaderNodeTexNoise"); _gs.inputs["Scale"].default_value = 45; _gs.inputs["Detail"].default_value = 10; _gs.inputs["Roughness"].default_value = 0.75
+_gs = N.new("ShaderNodeTexNoise"); _gs.inputs["Scale"].default_value = 9; _gs.inputs["Detail"].default_value = 6; _gs.inputs["Roughness"].default_value = 0.75
 L.new(_tcr.outputs["Object"], _gs.inputs["Vector"])
 _gsr = N.new("ShaderNodeMapRange"); _gsr.inputs["From Min"].default_value = 0.3; _gsr.inputs["From Max"].default_value = 0.7
-_gsr.inputs["To Min"].default_value = 0.6; _gsr.inputs["To Max"].default_value = 1.25
+_gsr.inputs["To Min"].default_value = 0.55; _gsr.inputs["To Max"].default_value = 1.3
 L.new(_gs.outputs["Fac"], _gsr.inputs["Value"])
 _gm = N.new("ShaderNodeMixRGB"); _gm.blend_type = 'MULTIPLY'; _gm.inputs["Fac"].default_value = 1.0
 L.new(r2.outputs["Color"], _gm.inputs["Color1"]); L.new(_gsr.outputs["Result"], _gm.inputs["Color2"])
-L.new(_gm.outputs["Color"], b2.inputs["Base Color"])
+_lf = N.new("ShaderNodeTexNoise"); _lf.inputs["Scale"].default_value = 0.22; _lf.inputs["Detail"].default_value = 2
+L.new(_tcr.outputs["Object"], _lf.inputs["Vector"])
+_lfr = N.new("ShaderNodeMapRange"); _lfr.inputs["From Min"].default_value = 0.35; _lfr.inputs["From Max"].default_value = 0.62
+_lfr.inputs["To Min"].default_value = 0.5; _lfr.inputs["To Max"].default_value = 1.1
+L.new(_lf.outputs["Fac"], _lfr.inputs["Value"])
+_gm2 = N.new("ShaderNodeMixRGB"); _gm2.blend_type = 'MULTIPLY'; _gm2.inputs["Fac"].default_value = 1.0
+L.new(_gm.outputs["Color"], _gm2.inputs["Color1"]); L.new(_lfr.outputs["Result"], _gm2.inputs["Color2"])
+L.new(_gm2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.4
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
 L.new(n3.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.inputs["Normal"])
