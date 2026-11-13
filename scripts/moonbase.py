@@ -77,7 +77,7 @@ M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
 M_lwall = mat("lwallm", (0.58,0.585,0.6), 0.5)
-M_slabL = mat("slabL", (0.5,0.505,0.515), 0.45)
+M_slabL = mat("slabL", (float(os.environ.get("SLABL", 0.38)),)*3, 0.45)   # v89: ref floor2 ~121 lum, ours 166 at 0.5
 M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
 M_metal = mat("metal", (0.62,0.64,0.67), 0.35, 0.2)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
@@ -766,10 +766,10 @@ for i in range(NF):
 
 # v88: small rocks / pebbles on the ground apron (ref ground has scattered debris)
 import random as _rnd
-_rg = _rnd.Random(7); M_peb = mat("pebble", (0.2,0.2,0.21), 0.9)
+_rg = _rnd.Random(7); M_peb = mat("pebble", (0.12,0.12,0.125), 0.9)
 if os.environ.get("PEBBLES", "1") == "1":
-    for _k in range(int(os.environ.get("NPEB", 22))):
-        _x = _rg.uniform(XC-1.2, A-0.3); _y = _rg.uniform(-B-0.85, -B+0.2); _r = _rg.uniform(0.04, 0.13)
+    for _k in range(int(os.environ.get("NPEB", 30))):
+        _x = _rg.uniform(XC-1.2, A-0.3); _y = _rg.uniform(-B-0.85, -B+0.2); _r = _rg.uniform(0.05, 0.16)
         if abs(_y-float(os.environ.get("TANKY", -6.1))) < 0.7 and -1.0 < _x < 2.6: continue
         _o = ico("peb", (_x, _y, FZ_BOT+0.04+_r*0.2), _r, M_peb, 1); _o.scale = (1, _rg.uniform(0.7,1.2), _rg.uniform(0.45,0.7)); _o.rotation_euler.z = _rg.uniform(0, 3)
 # under the lowest floor: tank, pillars, crates
@@ -854,7 +854,7 @@ if os.environ.get("RRAIL"): box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC,
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.27), (A-XC, 0.36, 0.58), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.27), (0.36, B+YC, 0.58), M_rim)
-box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(float(os.environ.get("COLRC",0.16)),)*3,0.5))
+box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(float(os.environ.get("COLRC",0.3)),)*3,0.5))
 for k in range(8):
     box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
@@ -1213,17 +1213,22 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = float(os.environ.get("ESAT", 1.35)); hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.55))
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = float(os.environ.get("ESAT", 1.6)); hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.55))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
-    gm_ = N.new("ShaderNodeGamma"); gm_.inputs["Gamma"].default_value = float(os.environ.get("EGAM", 0.8))   # v88: lift dark greens (ref SA green/tan)
+    gm_ = N.new("ShaderNodeGamma"); gm_.inputs["Gamma"].default_value = float(os.environ.get("EGAM", 0.9))   # v88: lift dark greens (ref SA green/tan)
     L.new(land_col, gm_.inputs["Color"]); land_col = gm_.outputs["Color"]
-    if os.environ.get("EWARM", "1") == "1":   # v88: tame orange deserts -> tan
-        cr_ = N.new("ShaderNodeHueSaturation"); cr_.inputs["Saturation"].default_value = 1.0; cr_.inputs["Hue"].default_value = 0.5
+    if os.environ.get("ELAND", "1") != "0":   # v89: stylised land like the ref: land mask ((R+G)/2 - B), dark land -> green, bright land -> tan (kills the orange Sahara, greens SA)
         sep_ = N.new("ShaderNodeSeparateColor"); L.new(land_col, sep_.inputs[0])
-        sub_ = N.new("ShaderNodeMath"); sub_.operation = 'SUBTRACT'; L.new(sep_.outputs[0], sub_.inputs[0]); L.new(sep_.outputs[2], sub_.inputs[1])
-        msk_ = N.new("ShaderNodeMapRange"); msk_.inputs["From Min"].default_value = 0.15; msk_.inputs["From Max"].default_value = 0.45; msk_.inputs["To Max"].default_value = float(os.environ.get("ETAN", 0.75)); L.new(sub_.outputs[0], msk_.inputs["Value"])
-        tan_ = N.new("ShaderNodeMixRGB"); tan_.inputs["Color2"].default_value = (0.55,0.5,0.3,1)
-        L.new(msk_.outputs["Result"], tan_.inputs["Fac"]); L.new(land_col, tan_.inputs["Color1"]); land_col = tan_.outputs["Color"]
+        rg_ = N.new("ShaderNodeMath"); rg_.operation = 'ADD'; L.new(sep_.outputs[0], rg_.inputs[0]); L.new(sep_.outputs[1], rg_.inputs[1])
+        rgh_ = N.new("ShaderNodeMath"); rgh_.operation = 'MULTIPLY_ADD'; rgh_.inputs[1].default_value = 0.5; L.new(rg_.outputs[0], rgh_.inputs[0])
+        nb_ = N.new("ShaderNodeMath"); nb_.operation = 'MULTIPLY'; nb_.inputs[1].default_value = -1; L.new(sep_.outputs[2], nb_.inputs[0]); L.new(nb_.outputs[0], rgh_.inputs[2])
+        msk_ = N.new("ShaderNodeMapRange"); msk_.inputs["From Min"].default_value = float(os.environ.get("ELM0", 0.0)); msk_.inputs["From Max"].default_value = float(os.environ.get("ELM1", 0.12))
+        msk_.inputs["To Max"].default_value = float(os.environ.get("ELAND", 0.85)); L.new(rgh_.outputs[0], msk_.inputs["Value"])
+        bw_ = N.new("ShaderNodeRGBToBW"); L.new(land_col, bw_.inputs[0])
+        rp_ = N.new("ShaderNodeValToRGB"); L.new(bw_.outputs[0], rp_.inputs[0])
+        rp_.color_ramp.elements[0].position = float(os.environ.get("ELG", 0.12)); rp_.color_ramp.elements[0].color = (0.13,0.33,0.08,1)
+        rp_.color_ramp.elements[1].position = float(os.environ.get("ELT", 0.5)); rp_.color_ramp.elements[1].color = (0.62,0.54,0.33,1)
+        tan_ = N.new("ShaderNodeMixRGB"); L.new(msk_.outputs["Result"], tan_.inputs["Fac"]); L.new(land_col, tan_.inputs["Color1"]); L.new(rp_.outputs["Color"], tan_.inputs["Color2"]); land_col = tan_.outputs["Color"]
     if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
         ci.image.colorspace_settings.name = 'Non-Color'
@@ -1246,9 +1251,9 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -28)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -42)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 14))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     ROLL = math.radians(float(os.environ.get("EROLL", 10)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
@@ -1290,10 +1295,10 @@ so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, 
 fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = True
-UND = float(os.environ.get("UNDER", 1.2))   # v88: weak light from below-front-left: ref lights the tapered underside (ours went ~25 lum, ref ~100)
+UND = float(os.environ.get("UNDER", 1.4))   # v88: weak light from below-front-left: ref lights the tapered underside (ours went ~25 lum, ref ~100)
 if UND > 0:
     ul = C.lights.new("under", 'SUN'); ul.energy = UND; ul.angle = math.radians(25); ul.color = (0.9, 0.92, 1.0)
-    uo = C.objects.new("under", ul); sc.collection.objects.link(uo); aim(uo, (-0.7, -0.8, -0.5))
+    uo = C.objects.new("under", ul); sc.collection.objects.link(uo); aim(uo, (-0.35, -0.45, -1.0))
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
 wd.node_tree.nodes["Background"].inputs["Color"].default_value = (0.02,0.022,0.026,1)
 wd.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0
