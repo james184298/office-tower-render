@@ -419,7 +419,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 0.1)
+M_conimg = imgmat("conscr", console_img(), 0.6)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -556,7 +556,7 @@ _nt.links.new(_mix.outputs[0], _o.inputs[0])
 try: M_glow.surface_render_method = 'BLENDED'
 except Exception: pass
 
-def bot(x, y, z, m, s=0.25, glow=True):
+def bot(x, y, z, m, s=0.3, glow=True):
     cone("botb", (x, y, z+s*0.42), s*1.08, s*0.72, s*0.84, m, 32)
     sph("bot", (x, y, z+s*0.95), s*0.8, m, (1,1,0.95), 24)
     cd = Vector((0.707, -0.707, 0)); side = Vector((0.707, 0.707, 0))
