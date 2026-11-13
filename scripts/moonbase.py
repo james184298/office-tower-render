@@ -624,14 +624,14 @@ for i in range(NF):
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
     if i == 0:   # ---- mission control ----
-        box("bezel", (2.3, YC-0.01, zt+0.8), (6.2, 0.04, 1.12), M_dark)
-        plane("big", (2.3, YC-0.035, zt+0.8), 6.1, 1.04, M_bigimg)
+        box("bezel", (2.3, YC-0.01, zt+0.74), (6.2, 0.04, 1.38), M_dark)
+        plane("big", (2.3, YC-0.035, zt+0.74), 6.1, 1.3, M_bigimg)
         box("lsbez", (XC+0.03, -1.85, zt+1.0), (0.04, 1.85, 0.66), M_dark)
         plane("lscr", (XC+0.055, -1.85, zt+1.0), 1.75, 0.58, M_listimg, '+X')
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.4,0.405,0.42),0.8,spec=0.2))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.14,0.143,0.15),0.8,spec=0.2))
         for gx, gy, nn in ((0.55, -1.7, 6), (0.85, -3.15, 5), (0.4, -4.6, 4), (4.2, -2.0, 5), (4.5, -3.7, 4)):
             console_row(gx, gy, zt+0.04, nn, seg=0.5)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
