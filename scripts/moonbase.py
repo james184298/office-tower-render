@@ -666,10 +666,11 @@ for i in range(NF):
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.19,0.193,0.2),0.8,spec=0.2))
         # v65: dense mission-control rows (ref ~6 rows x 2 blocks of small desks with lit monitors)
-        MCH = float(os.environ.get("MCH", 0.7))   # v77: lower desks so the bots read over them (ref)
+        MCH = float(os.environ.get("MCH", 0.7)); MCDK = float(os.environ.get("MCDK", 0.65))   # v82: slimmer desks, floor visible between rows (ref)
+          # v77: lower desks so the bots read over them (ref)
         for gy in (-1.6, -2.6, -3.6, -4.6):   # v67: 4 rows, 1.0 pitch (6 rows hid the floor and bots)
-            console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85, h=MCH)
-            console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=0.85, h=MCH)
+            console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=MCDK, h=MCH)
+            console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=MCDK, h=MCH)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
         bots = [(0.0,-3.15,2),(1.2,-2.15,1),(2.75,-2.6,0),(4.1,-3.15,3),(2.75,-4.0,7),(5.6,-2.15,5),(3.6,-5.2,4)]
@@ -760,7 +761,7 @@ for i in range(NF):
             cyl("planter", (p[0], p[1], zt+0.2), 0.22, 0.4, M_white, 20)
         bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
-        bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.34)) if i == 0 else 0.3)
+        bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.27)) if i == 0 else 0.3)
 
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
