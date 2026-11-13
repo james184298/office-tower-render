@@ -529,7 +529,7 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.085,0.085,0.09),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.12,0.12,0.125),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -1072,11 +1072,11 @@ for dx in (-0.35, 0.35):
         cyl("wheel", (RVX+dx, RVY+dy, 0.12), 0.12, 0.08, M_dark, 12, rot=(math.pi/2, 0, 0))
 bot(1.3, 1.25, 0.0, M_bots[6], 0.27, glow=False); bot(1.85, 1.05, 0.0, M_bots[4], 0.27, glow=False)
 _rtex = C.textures.new("rtex", 'CLOUDS'); _rtex.noise_scale = 0.12
-for k in range(190):
+for k in range(110):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
     if (x > XC-0.3 and y < YC+0.3) or (x > EX-0.8 and y < EY+2.5) or math.hypot(x-PX, y-PY) < 2.4: continue
-    o = ico("rock", (x, y, 0.02+TH(x, y)), random.uniform(0.04, 0.16), M_srock, 2)
-    o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.5,0.8)); o.rotation_euler = (random.random(), random.random(), random.random()*6)
+    o = ico("rock", (x, y, 0.0+TH(x, y)), random.uniform(0.04, 0.15), M_srock, 2)
+    o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.3,0.55)); o.rotation_euler = (random.random(), random.random(), random.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); md.texture = _rtex; md.strength = 0.06
 # dark rock clusters along the back-left and left edges of the surface (ref)
 for (cx0, cy0, nn) in [(-5.6, 5.2, 9), (-5.9, 2.6, 7), (-3.6, 5.6, 7), (-6.0, -0.6, 6), (-5.2, -3.6, 5), (-0.8, 5.6, 5)]:
@@ -1158,9 +1158,9 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -60)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 0))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     ROLL = math.radians(float(os.environ.get("EROLL", 25)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
