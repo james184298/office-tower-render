@@ -807,15 +807,15 @@ plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location =
 box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.32,0.32,0.34),0.6))
 bot(EX, EY, cz+0.07, M_bots[4], 0.2, glow=False)
 # top station: glass box recessed into a notch at mission-floor level (ref: ~1.1 x 2.6, top flush with the surface)
-TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, -0.73
+TX0, TX1, TY0, TY1, TZ0, TZ1 = EX-0.45, A+0.05, EY-0.45, EY+2.15, Z0, float(os.environ.get("TZ1", -0.2))   # v79: ref station is taller, roof ~0.5 higher
 box("tfloor", ((TX0+TX1)/2, (TY0+TY1)/2, TZ0-0.05), (TX1-TX0, TY1-TY0, 0.1), M_white)
 box("tglass", ((TX0+TX1)/2, (TY0+TY1)/2, (TZ0+TZ1)/2), (TX1-TX0, TY1-TY0, TZ1-TZ0), M_glass)
 for xx in (TX0, TX1):
     for yy in (TY0, TY1):
-        box("tf", (xx, yy, (TZ0+TZ1)/2), (0.04, 0.04, TZ1-TZ0), M_efr)
-for zz in (TZ0, TZ1):
-    box("tfx", ((TX0+TX1)/2, TY0, zz), (TX1-TX0, 0.04, 0.04), M_efr); box("tfx", ((TX0+TX1)/2, TY1, zz), (TX1-TX0, 0.04, 0.04), M_efr)
-    box("tfy", (TX0, (TY0+TY1)/2, zz), (0.04, TY1-TY0, 0.04), M_efr); box("tfy", (TX1, (TY0+TY1)/2, zz), (0.04, TY1-TY0, 0.04), M_efr)
+        box("tf", (xx, yy, (TZ0+TZ1)/2), (0.06, 0.06, TZ1-TZ0), M_efr)
+for zz in (TZ0, TZ1, TZ0+0.62*(TZ1-TZ0)):   # v79: + mid band like the ref
+    box("tfx", ((TX0+TX1)/2, TY0, zz), (TX1-TX0, 0.06, 0.06), M_efr); box("tfx", ((TX0+TX1)/2, TY1, zz), (TX1-TX0, 0.06, 0.06), M_efr)
+    box("tfy", (TX0, (TY0+TY1)/2, zz), (0.06, TY1-TY0, 0.06), M_efr); box("tfy", (TX1, (TY0+TY1)/2, zz), (0.06, TY1-TY0, 0.06), M_efr)
 box("tfm", (TX1, (TY0+TY1)/2, (TZ0+TZ1)/2), (0.03, 0.03, TZ1-TZ0), M_efr)
 box("tfm2", ((TX0+TX1)/2, TY0, (TZ0+TZ1)/2), (0.03, 0.03, TZ1-TZ0), M_efr)
 box("tpart", (TX0+0.5, EY+0.9, (TZ0+TZ1)/2), (0.03, 0.9, TZ1-TZ0), M_glass)
