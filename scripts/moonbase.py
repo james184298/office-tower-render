@@ -131,20 +131,20 @@ def mnode(op, a_=None, b_=None, v0=None, v1=None):
 wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.12; wn.inputs["Detail"].default_value = 2
 mpw = N.new("ShaderNodeMapping"); mpw.inputs["Scale"].default_value = (1.0, 1.0, 0.25)
 L.new(tc.outputs["Object"], mpw.inputs["Vector"]); L.new(mpw.outputs["Vector"], wn.inputs["Vector"])
-wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 2.6); wsc.inputs[2].default_value = -1.3
+wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 3.6); wsc.inputs[2].default_value = -1.8
 # layer coordinate: z tilted so strata read flatter on screen than the slab edges (as in the ref)
 zdot = N.new("ShaderNodeVectorMath"); zdot.operation = 'DOT_PRODUCT'; zdot.inputs[1].default_value = (-0.19, 0.19, 1.0)
 L.new(tc.outputs["Object"], zdot.inputs[0]); ZQ = zdot.outputs["Value"]
-zl = mnode('MULTIPLY', ZQ, None, None, 3.6)
+zl = mnode('MULTIPLY', ZQ, None, None, 4.6)
 zw = mnode('ADD', zl.outputs[0], wsc.outputs[0])
 lid = mnode('FLOOR', zw.outputs[0])
 lfr = mnode('FRACT', zw.outputs[0])
 wh = N.new("ShaderNodeTexWhiteNoise"); wh.noise_dimensions = '1D'; L.new(lid.outputs[0], wh.inputs["W"])
 tone = N.new("ShaderNodeValToRGB"); tr_ = tone.color_ramp; tr_.interpolation = 'LINEAR'
-tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.1,0.1,0.105,1)
-tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.27,0.27,0.28,1)
-_e = tr_.elements.new(0.3); _e.color = (0.155,0.155,0.16,1)
-_e = tr_.elements.new(0.7); _e.color = (0.21,0.21,0.22,1)
+tr_.elements[0].position = 0.0; tr_.elements[0].color = (0.085,0.085,0.09,1)
+tr_.elements[1].position = 1.0; tr_.elements[1].color = (0.24,0.24,0.25,1)
+_e = tr_.elements.new(0.3); _e.color = (0.135,0.135,0.14,1)
+_e = tr_.elements.new(0.7); _e.color = (0.185,0.185,0.195,1)
 L.new(wh.outputs["Value"], tone.inputs["Fac"])
 # sub-layer streaks: noise heavily stretched horizontally
 sn = N.new("ShaderNodeTexNoise"); sn.inputs["Scale"].default_value = 1.0; sn.inputs["Detail"].default_value = 6; sn.inputs["Roughness"].default_value = 0.65
@@ -168,7 +168,7 @@ pmr = N.new("ShaderNodeMapRange"); pmr.inputs["From Min"].default_value = 0.35; 
 pmr.inputs["To Min"].default_value = 0.75; pmr.inputs["To Max"].default_value = 1.2
 L.new(pn.outputs["Fac"], pmr.inputs["Value"])
 # dark crisp line at the base of each layer
-edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.08
+edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.05
 edg.inputs["To Min"].default_value = 0.45; edg.inputs["To Max"].default_value = 1.0
 L.new(lfr.outputs[0], edg.inputs["Value"])
 zf2 = mnode('MULTIPLY', ZQ, None, None, 11.0); zf2w = mnode('ADD', zf2.outputs[0], wsc.outputs[0])
@@ -412,7 +412,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 0.45)
+M_conimg = imgmat("conscr", console_img(), 0.22)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -538,7 +538,7 @@ M_glow = C.materials.new("glow"); M_glow.use_nodes = True
 _nt = M_glow.node_tree; _nt.nodes.clear()
 _o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
 _tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
-_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 3.2
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 2.6
 _tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
 _mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
 _pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
@@ -556,7 +556,7 @@ def bot(x, y, z, m, s=0.25, glow=True):
         p = Vector((x, y, z+s*1.02)) + cd*(s*0.7) + side*(sgn*s*0.25)
         sph("eye", p, s*0.15, M_eye, (1,1,1.4), 12)
     if glow:
-        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*3.0, s*3.0, 1)
+        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.6, s*2.6, 1)
         g.visible_shadow = False
 
 def plant(x, y, z, s=1.0, tall=False):
@@ -624,9 +624,8 @@ for i in range(NF):
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.3,0.305,0.32),0.8,spec=0.2))
-        for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
-            for r_, yy in enumerate([-1.7, -3.1, -4.5]):
-                console_row(gx + (0.25 if r_ == 1 else 0), yy+gy, zt+0.04, 6 if r_ != 2 else 5, seg=0.5)
+        for gx, gy, nn in ((0.55, -1.7, 6), (0.85, -3.15, 5), (0.4, -4.6, 4), (4.2, -2.0, 5), (4.5, -3.7, 4)):
+            console_row(gx, gy, zt+0.04, nn, seg=0.5)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
         bots = [(0.0,-2.12,2),(1.2,-1.1,1),(2.45,-2.05,0),(4.1,-3.55,3),(2.5,-3.15,7),(5.6,-2.2,5),(3.3,-5.3,4)]
@@ -685,6 +684,7 @@ for i in range(NF):
     else:         # ---- garden / workshop ----
         plane("aip", (XC+0.04, -5.0, zt+0.95), 0.7, 0.95, M_aiimg, '+X')
         box("mat", (2.4, -5.25, zt+0.01), (2.0, 0.62, 0.015), M_dark)
+        box("deck", (1.3, -3.2, zt+0.04), (2.8, 1.5, 0.08), mat("deckw",(0.62,0.5,0.34),0.6), 0.01)
         bpy.ops.mesh.primitive_torus_add(major_radius=1.0, minor_radius=0.025, location=(2.6, -4.2, zt+0.01), major_segments=64)
         _t = bpy.context.object; _t.location.z = zt+0.075; _t.scale.z = 0.2; _t.data.materials.append(M_white)
         tx = text("SPACEX", (2.4, -5.3, zt+0.02), 0.25, M_white, extrude=0.0); tx.data.space_character = 1.4
@@ -1151,9 +1151,9 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -55)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -68)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 15))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 6))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     ROLL = math.radians(float(os.environ.get("EROLL", 20)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
@@ -1194,7 +1194,7 @@ except Exception as ex: print("shadow", ex)
 so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, -1.0, 0.8))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
-fill.use_shadow = False
+fill.use_shadow = True
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
 wd.node_tree.nodes["Background"].inputs["Color"].default_value = (0.02,0.022,0.026,1)
 wd.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0
