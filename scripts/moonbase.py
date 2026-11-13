@@ -75,7 +75,8 @@ M_desk = mat("desk", (0.012,0.013,0.016), 0.6, spec=0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
-M_lwall = mat("lwallm", (0.36,0.36,0.375), 0.5)
+M_lwall = mat("lwallm", (0.58,0.585,0.6), 0.5)
+M_slabL = mat("slabL", (0.5,0.505,0.515), 0.45)
 M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
 M_metal = mat("metal", (0.62,0.64,0.67), 0.35, 0.2)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
@@ -601,7 +602,7 @@ def chair(x, y, z, face=1, m=None, s=0.85):
 def stool(x, y, z, m=M_white):
     cyl("stool", (x, y, z+0.36), 0.1, 0.04, m, 12); cyl("sl", (x, y, z+0.18), 0.018, 0.36, M_metal, 6, smooth=False)
 
-def console_row(cx, cy, z, n, R=7.0, seg=0.5, dk=1.0):
+def console_row(cx, cy, z, n, R=7.0, seg=0.5, dk=1.0, h=1.0):
     """curved row of mission-control workstations; centre of curvature toward +y (the big screen)"""
     for k in range(n):
         th = (k-(n-1)/2)*seg/R
@@ -609,12 +610,12 @@ def console_row(cx, cy, z, n, R=7.0, seg=0.5, dk=1.0):
         rot = th
         def P(dx, dy):   # local -> world (rotated about z by rot)
             return (px + dx*math.cos(rot) - dy*math.sin(rot), py + dx*math.sin(rot) + dy*math.cos(rot))
-        o = box("cdesk", (*P(0, 0), z+0.36), (seg-0.03, 0.3*dk, 0.04), M_desk); o.rotation_euler.z = rot
-        o = box("cbody", (*P(0, 0.05*dk), z+0.18), (seg-0.08, 0.18*dk, 0.34), M_dark); o.rotation_euler.z = rot
+        o = box("cdesk", (*P(0, 0), z+0.36*h), (seg-0.03, 0.3*dk, 0.04), M_desk); o.rotation_euler.z = rot
+        o = box("cbody", (*P(0, 0.05*dk), z+0.18*h), (seg-0.08, 0.18*dk, 0.34*h), M_dark); o.rotation_euler.z = rot
         for dx in (-0.25*seg, 0.25*seg):
-            o = box("cmonb", (*P(dx, 0.11*dk), z+0.52), (0.4*seg, 0.02, 0.135), M_dark); o.rotation_euler.z = rot
-            o = plane("cmon", (*P(dx, 0.11*dk-0.012), z+0.52), 0.37*seg, 0.12, M_conimg); o.rotation_euler.z = rot
-        cx_, cy_ = P(0, -0.3*dk); chair(cx_, cy_, z, 1, s=0.8*dk)
+            o = box("cmonb", (*P(dx, 0.11*dk), z+0.36*h+0.16*h), (0.4*seg, 0.02, 0.135*h), M_dark); o.rotation_euler.z = rot
+            o = plane("cmon", (*P(dx, 0.11*dk-0.012), z+0.36*h+0.16*h), 0.37*seg, 0.12*h, M_conimg); o.rotation_euler.z = rot
+        cx_, cy_ = P(0, -0.3*dk); chair(cx_, cy_, z, 1, s=0.8*dk*h)
 
 slabs = []
 for i in range(NF):
@@ -626,7 +627,7 @@ for i in range(NF):
     cx, cy = (x0+x1)/2, (y0+y1)/2
     ST_ = float(os.environ.get("SLABT", 0.16))
     box(f"slab{i}", (cx, cy, zf-ST_/2), (W, D, ST_), M_white, 0.01)
-    box(f"floor{i}", (cx, cy, zf+0.002), (W-0.06, D-0.06, 0.004), M_slab)
+    box(f"floor{i}", (cx, cy, zf+0.002), (W-0.06, D-0.06, 0.004), M_slab if i == 0 else M_slabL)
     # thin glass railing on the two open edges
     if os.environ.get("GRAIL"):   # v66: off - the glass read as a solid band hiding the floors (ref floors are open)
         box("railA", (cx, y0+0.03, zf+0.18), (W, 0.015, 0.36), M_glass)
@@ -638,9 +639,13 @@ for i in range(NF):
     else:   # lower floors: light grey walls on both closed sides, full height (ref)
         box("lwall", (XC+0.02, cy, zf+FH/2-0.11), (0.03, D, FH-0.22), M_lwall)
         box("bwall", (cx, YC-0.02, zf+FH/2-0.11), (W, 0.03, FH-0.22), M_lwall)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else (float(os.environ.get("GLE", 45)) if i == NF-1 else 25); Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else (float(os.environ.get("GLE", 45)) if i == NF-1 else float(os.environ.get("LFE", 38))); Lg.shape = 'RECTANGLE'
     Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
+    if i > 0:   # v77: back fill so the lower floors' back corner is bright and open like the ref
+        Lb = C.lights.new(f"flb{i}", 'AREA'); Lb.energy = float(os.environ.get("LBE", 22)); Lb.shape = 'RECTANGLE'; Lb.size = W*0.8; Lb.size_y = 1.0
+        Lb.color = (1, 0.97, 0.93); Lb.use_shadow = False
+        lb = C.objects.new(f"flb{i}", Lb); sc.collection.objects.link(lb); lb.location = (cx, YC-0.7, zf + FH - 0.3)
     zt = zf
     if i == 0:   # ---- mission control ----
         box("bezel", (2.3, YC-0.01, zt+0.74), (6.2, 0.04, 1.38), M_dark)
@@ -652,9 +657,10 @@ for i in range(NF):
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.19,0.193,0.2),0.8,spec=0.2))
         # v65: dense mission-control rows (ref ~6 rows x 2 blocks of small desks with lit monitors)
+        MCH = float(os.environ.get("MCH", 0.7))   # v77: lower desks so the bots read over them (ref)
         for gy in (-1.6, -2.6, -3.6, -4.6):   # v67: 4 rows, 1.0 pitch (6 rows hid the floor and bots)
-            console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85)
-            console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=0.85)
+            console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85, h=MCH)
+            console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=0.85, h=MCH)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
         bots = [(0.0,-3.15,2),(1.2,-2.15,1),(2.75,-2.6,0),(4.1,-3.15,3),(2.75,-4.0,7),(5.6,-2.15,5),(3.6,-5.2,4)]
@@ -745,7 +751,7 @@ for i in range(NF):
             cyl("planter", (p[0], p[1], zt+0.2), 0.22, 0.4, M_white, 20)
         bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
-        bot(bx, by, zt, M_bots[ci % len(M_bots)])
+        bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.34)) if i == 0 else 0.3)
 
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
@@ -1144,8 +1150,8 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = 0.0; tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.65))
-tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.22)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.6))
+tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
 L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tm.outputs["Result"], cm.inputs["Color2"])
@@ -1163,9 +1169,12 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     print("EARTH texture", EARTH_IMG)
     tci = N.new("ShaderNodeTexCoord")
     li = N.new("ShaderNodeTexImage"); li.image = bpy.data.images.load(EARTH_IMG); li.projection = 'SPHERE'
+    _er = int(os.environ.get("ERES", 360))
+    if _er > 0: li.image.scale(_er, _er//2)   # v77: low-res texture = the ref's soft, slightly blurred earth
+    li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = 1.45
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
@@ -1178,6 +1187,14 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
         L.new(cal.outputs[0], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
         L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
+    ECL = float(os.environ.get("ECLD", 0.65))
+    if ECL > 0:   # v77: chunky procedural clouds (the cloud texture never downloads on runners)
+        ncl = N.new("ShaderNodeTexNoise"); ncl.inputs["Scale"].default_value = 2.6; ncl.inputs["Detail"].default_value = 4; ncl.inputs["Distortion"].default_value = 0.8
+        L.new(tci.outputs["Object"], ncl.inputs["Vector"])
+        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.52; rcl.inputs["From Max"].default_value = 0.64
+        rcl.inputs["To Max"].default_value = ECL; L.new(ncl.outputs["Fac"], rcl.inputs["Value"])
+        cmx2 = N.new("ShaderNodeMixRGB"); cmx2.inputs["Color2"].default_value = (0.92,0.94,0.97,1)
+        L.new(rcl.outputs["Result"], cmx2.inputs["Fac"]); L.new(land_col, cmx2.inputs["Color1"]); land_col = cmx2.outputs["Color"]
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
