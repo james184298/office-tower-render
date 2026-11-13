@@ -204,9 +204,9 @@ L.new(bh3.outputs[0], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf
 M_reg = C.materials.new("regolith"); M_reg.use_nodes = True
 nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
-n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.35; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
+n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.8; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.32; er[0].color = (0.12,0.12,0.125,1); er[1].position = 0.68; er[1].color = (0.38,0.38,0.39,1)
+er[0].position = 0.3; er[0].color = (0.09,0.09,0.095,1); er[1].position = 0.7; er[1].color = (0.33,0.33,0.34,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -489,7 +489,7 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.07,0.07,0.075),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.15,0.15,0.155),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -688,7 +688,7 @@ for i in range(NF):
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
-    cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.09, zb-FZ_BOT, M_white, 12)
+    cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.06, zb-FZ_BOT, M_metal, 12)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
 cyl("tank", (0.2, -5.25, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
 cyl("tankfan", (1.55, -5.25, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
@@ -700,8 +700,8 @@ cyl("tankband", (-1.05, -5.25, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, mat
 box("tlabel", (-0.35, -5.25-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
 for k in range(3): box("frame", (-1.75+k*0.18, -5.3, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
 for j in range(2):
-    for k in range(4): box("crate", (4.6+k*0.42, -5.35+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
-    for k in range(3): box("crate", (4.8+k*0.42, -5.35+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
+    for k in range(3): box("crate", (4.45+k*0.42, -5.45+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
+    for k in range(2): box("crate", (4.65+k*0.42, -5.45+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
 Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 36; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
@@ -937,7 +937,8 @@ for ch in "SPACEX":
     xo += GW + 0.47
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
-sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.materials.append(M_white)
+M_signw = mat("signw", (0.9,0.9,0.92), 0.35, emit=(1,1,1), estr=0.12)
+sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.materials.append(M_signw)
 md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.07; md_.segments = 3; md_.limit_method = 'ANGLE'
 SIGN_W = xo - 0.47
 # frame: x along the sign (rotated 22 deg toward the camera), y up, z toward the camera
@@ -946,7 +947,7 @@ ex_ = Vector((math.cos(SA), math.sin(SA), 0)); ey_ = Vector((0, 0, 1)); ez_ = ex
 SF = Matrix.Translation(SG0) @ Matrix((ex_, ey_, ez_)).transposed().to_4x4()
 sgn.matrix_world = SF
 # swoosh from inside the X sweeping out to the right
-sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_white, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
+sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_signw, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
 # scaffold behind the letters: posts + two rails + diagonal braces
 M_scaf = mat("scaf",(0.2,0.2,0.22),0.5,0.2)
 def seg_(a_, b_, r_=0.022, m_=M_scaf):
