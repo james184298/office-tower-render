@@ -71,7 +71,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
 M_slab = mat("slab", (0.27,0.275,0.29), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
-M_desk = mat("desk", (0.03,0.032,0.038), 0.55, spec=0.3)
+M_desk = mat("desk", (0.012,0.013,0.016), 0.6, spec=0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
@@ -474,7 +474,7 @@ def cutter(name, x0, x1, y0, y1, z0, z1):
 for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
                  ("slot", cutter("slotbox", EX-0.6, A+4, YC-0.1, EY+0.6, FZ_BOT, 6)),
                  ("notch", cutter("notchbox", EX-0.5, A+4, YC-0.1, EY+2.2, Z0-0.16, 6)),
-                 ("colcut", cutter("colbox", XC-1.25, XC+0.1, -B-4, -B+0.2, FZ_BOT, 6))]:
+                 ("colcut", cutter("colbox", XC-0.62, XC+0.1, -B-4, -B+0.2, FZ_BOT, 6))]:
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
@@ -496,8 +496,8 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wn", (XC-0.95, -B-0.26, zz), (0.24, 0.04, 0.24), M_dark)
-    box("wl", (XC-0.95, -B-0.29, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
+    box("wn", (XC-0.95, -B-0.36, zz), (0.24, 0.04, 0.24), M_dark)
+    box("wl", (XC-0.95, -B-0.39, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -592,7 +592,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.05,0.052,0.06),0.85,spec=0.15))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.3,0.305,0.32),0.8,spec=0.2))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
             for r_, yy in enumerate([-1.55, -2.6, -3.65, -4.7]):
                 console_row(gx, yy+gy, zt+0.04, 5, seg=0.46)
@@ -772,7 +772,7 @@ box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), m
 for k in range(8):
     box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
-box("colL", (XC-0.62, 0.15-B, (FZ_BOT-0.05)/2), (1.24, 0.8, -FZ_BOT-0.05), mat("col",(0.045,0.045,0.05),0.5))
+box("colL", (XC-0.31, 0.15-B, (FZ_BOT-0.05)/2), (0.62, 0.8, -FZ_BOT-0.05), mat("col",(0.07,0.07,0.075),0.5))
 cyl("colLs", (XC-0.22, -B-0.3, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
 
 # ================= surface =================
