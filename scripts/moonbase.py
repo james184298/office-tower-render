@@ -419,7 +419,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 0.22)
+M_conimg = imgmat("conscr", console_img(), 0.1)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -630,7 +630,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.3,0.305,0.32),0.8,spec=0.2))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.4,0.405,0.42),0.8,spec=0.2))
         for gx, gy, nn in ((0.55, -1.7, 6), (0.85, -3.15, 5), (0.4, -4.6, 4), (4.2, -2.0, 5), (4.5, -3.7, 4)):
             console_row(gx, gy, zt+0.04, nn, seg=0.5)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
@@ -1158,11 +1158,11 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -68)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -60)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 6))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 0))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
-    ROLL = math.radians(float(os.environ.get("EROLL", 20)))
+    ROLL = math.radians(float(os.environ.get("EROLL", 25)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
@@ -1198,7 +1198,7 @@ try:
     sun.shadow_maximum_resolution = 0.0005; sun.shadow_filter_radius = 1.5
     sc.eevee.shadow_resolution_scale = 1.0
 except Exception as ex: print("shadow", ex)
-so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, -1.0, 0.8))
+so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, -1.0, 1.25))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = True
