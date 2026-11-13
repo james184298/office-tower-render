@@ -505,7 +505,7 @@ M_glow = C.materials.new("glow"); M_glow.use_nodes = True
 _nt = M_glow.node_tree; _nt.nodes.clear()
 _o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
 _tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
-_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 2.6
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 1.9
 _tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
 _mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
 _pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
@@ -515,7 +515,7 @@ _nt.links.new(_mix.outputs[0], _o.inputs[0])
 try: M_glow.surface_render_method = 'BLENDED'
 except Exception: pass
 
-def bot(x, y, z, m, s=0.28, glow=True):
+def bot(x, y, z, m, s=0.25, glow=True):
     cone("botb", (x, y, z+s*0.42), s*1.08, s*0.72, s*0.84, m, 32)
     sph("bot", (x, y, z+s*0.95), s*0.8, m, (1,1,0.95), 24)
     cd = Vector((0.707, -0.707, 0)); side = Vector((0.707, 0.707, 0))
@@ -915,7 +915,7 @@ def stroke_geom(bm, pts, w, depth):
     for i in range(n_):
         j = (i+1) % n_
         bm.faces.new((fr[i], bk[i], bk[j], fr[j]))
-GW, GH, ST = 1.12, 1.0, 0.27   # glyph width / height / stroke
+GW, GH, ST = 0.95, 0.8, 0.25   # glyph width / height / stroke
 h_ = ST/2
 GLYPHS = {
  'S': [rounded([(GW, GH-h_), (h_, GH-h_), (h_, GH*0.5), (GW-h_, GH*0.5), (GW-h_, h_), (0, h_)], 0.28)],
@@ -930,18 +930,18 @@ GROT = math.radians(float(os.environ.get("GROT", 16)))   # each glyph turned a b
 for ch in "SPACEX":
     nv0 = len(bm.verts)
     for pl in GLYPHS[ch]:
-        stroke_geom(bm, [(x+xo+0.25*y, y) for x, y in pl], ST, 0.36)
+        stroke_geom(bm, [(x+xo+0.12*y, y) for x, y in pl], ST, 0.34)
     bm.verts.ensure_lookup_table()
     gv = [bm.verts[i] for i in range(nv0, len(bm.verts))]
     bmesh.ops.rotate(bm, verts=gv, cent=Vector((xo+GW*0.6, 0, 0)), matrix=Matrix.Rotation(GROT, 3, 'Y'))
-    xo += GW + 0.27
+    xo += GW + 0.47
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 me_ = C.meshes.new("signglyphs"); bm.to_mesh(me_); bm.free()
 sgn = C.objects.new("sign", me_); sc.collection.objects.link(sgn); sgn.data.materials.append(M_white)
-md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.05; md_.segments = 3; md_.limit_method = 'ANGLE'
-SIGN_W = xo - 0.27
+md_ = sgn.modifiers.new("b", 'BEVEL'); md_.width = 0.07; md_.segments = 3; md_.limit_method = 'ANGLE'
+SIGN_W = xo - 0.47
 # frame: x along the sign (rotated 22 deg toward the camera), y up, z toward the camera
-SG0 = Vector(SGN_P); SA = SGN_A
+SG0 = Vector(SGN_P) + Vector((0, 0, 0.2)); SA = SGN_A
 ex_ = Vector((math.cos(SA), math.sin(SA), 0)); ey_ = Vector((0, 0, 1)); ez_ = ex_.cross(ey_)
 SF = Matrix.Translation(SG0) @ Matrix((ex_, ey_, ez_)).transposed().to_4x4()
 sgn.matrix_world = SF
