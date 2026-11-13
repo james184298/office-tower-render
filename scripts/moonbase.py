@@ -71,7 +71,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
 M_slab = mat("slab", (0.27,0.275,0.29), 0.35)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
-M_desk = mat("desk", (0.035,0.038,0.045), 0.25)
+M_desk = mat("desk", (0.03,0.032,0.038), 0.55, spec=0.3)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
@@ -579,8 +579,8 @@ for i in range(NF):
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_lwall)
     Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i else 50; Lg.shape = 'RECTANGLE'
-    Lg.size = W*0.8; Lg.size_y = D*0.8; Lg.color = (1, 0.94, 0.86)
-    lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx, cy, zf + (1.3 if i == 0 else FH - 0.25))
+    Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
+    lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
     if i == 0:   # ---- mission control ----
         box("bezel", (2.3, YC-0.01, zt+0.8), (6.2, 0.04, 1.12), M_dark)
@@ -590,7 +590,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.06,0.062,0.07),0.45))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.05,0.052,0.06),0.85,spec=0.15))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
             for r_, yy in enumerate([-1.55, -2.6, -3.65, -4.7]):
                 console_row(gx, yy+gy, zt+0.04, 5, seg=0.46)
