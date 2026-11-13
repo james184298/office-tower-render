@@ -1,0 +1,117 @@
+name: moonanim
+# Animation renders of scripts/moonanim.py (scene from scripts/moonbase.py + keyframes).
+# Frames FRANGE stepped by FSTEP are split interleaved across `jobs` parallel matrix jobs.
+# Each job uploads its frames as artifact frames-<i>; the collect job encodes an mp4 (+ for JPEG previews,
+# publishes frames + mp4 + per-frame times to branch out-<run_id>).
+on:
+  workflow_dispatch:
+    inputs:
+      frames:
+        description: "frame range a-b (1-2012 = whole 67.05 s @30fps)"
+        default: "1-2012"
+        required: true
+      step:
+        description: "render every Nth frame"
+        default: "15"
+        required: true
+      jobs:
+        description: "parallel jobs (GitHub free: <=20 run at once)"
+        default: "6"
+        required: true
+      pct:
+        description: "resolution percent of 1080x1350 (25 = 270x338)"
+        default: "25"
+        required: true
+      samples:
+        description: "Eevee TAA samples"
+        default: "4"
+        required: true
+      fmt:
+        description: "JPEG (preview) or PNG (final)"
+        default: "JPEG"
+        required: true
+      mp4fps:
+        description: "fps of the assembled mp4 (30/step keeps real time)"
+        default: "2"
+        required: true
+      env:
+        description: "extra env for moonanim.py / moonbase.py, space separated K=V"
+        default: ""
+        required: false
+permissions:
+  contents: write
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      idx: ${{ steps.p.outputs.idx }}
+    steps:
+      - id: p
+        run: echo "idx=$(python3 -c 'import json,sys; print(json.dumps(list(range(int(sys.argv[1])))))' '${{ inputs.jobs }}')" >> "$GITHUB_OUTPUT"
+  render:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        chunk: ${{ fromJSON(needs.plan.outputs.idx) }}
+    env:
+      PYTHONUNBUFFERED: "1"
+      BLENDER: /opt/blender/blender
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - uses: actions/cache@v4
+        with:
+          path: /opt/blender
+          key: blender-4.5.0
+      - name: Install
+        run: |
+          if [ ! -x /opt/blender/blender ]; then
+            sudo mkdir -p /opt/blender && sudo chown $USER /opt/blender
+            curl -fsSL https://mirrors.ocf.berkeley.edu/blender/release/Blender4.5/blender-4.5.0-linux-x64.tar.xz | tar -xJ -C /opt/blender --strip-components=1
+          fi
+          sudo apt-get -qq update && sudo apt-get -qq install -y libegl1 libgl1 libxi6 libxxf86vm1 libxfixes3 libxrender1 libxkbcommon0 libsm6 xvfb mesa-utils >/dev/null
+          T=https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets
+          curl -sfL -m 40 -o /tmp/earth_land.jpg $T/earth_atmos_2048.jpg || true
+          curl -sfL -m 40 -o /tmp/earth_cloud.jpg $T/earth_clouds_1024.png || true
+          ls -la /tmp/earth_* || true
+      - name: Render chunk
+        run: |
+          mkdir -p out/frames
+          env CHUNK=${{ matrix.chunk }} NCHUNK=${{ inputs.jobs }} FRANGE=${{ inputs.frames }} FSTEP=${{ inputs.step }} \
+              PCT=${{ inputs.pct }} PS=${{ inputs.samples }} FMT=${{ inputs.fmt }} OUTDIR=$PWD/out/frames ${{ inputs.env }} \
+              xvfb-run -a $BLENDER -b --python scripts/moonanim.py 2>&1 | grep -v "^Fra:" | grep -E "MOONANIM|FRAME|DRY|SECONDS|Error|Traceback|line [0-9]|EARTH|rror" | tail -400
+          ls out/frames | head; ls out/frames | wc -l
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frames-${{ matrix.chunk }}
+          path: out/frames
+          retention-days: 14
+          if-no-files-found: warn
+  collect:
+    needs: render
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: frames-*
+          merge-multiple: true
+          path: frames
+      - name: Encode + publish
+        run: |
+          sudo apt-get -qq update && sudo apt-get -qq install -y ffmpeg >/dev/null
+          mkdir -p pub && ls frames | wc -l
+          cat frames/times_*.txt 2>/dev/null | sort -n > pub/times.txt || true
+          EXT=jpg; [ "${{ inputs.fmt }}" = "PNG" ] && EXT=png
+          ffmpeg -v error -y -framerate ${{ inputs.mp4fps }} -pattern_type glob -i "frames/f*.$EXT" -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" \
+                 -c:v libx264 -pix_fmt yuv420p -crf 18 pub/moonanim.mp4 || true
+          if [ "$EXT" = "jpg" ]; then cp frames/f*.jpg pub/; fi
+          ls -la pub | tail -5
+          cd pub && git init -q && git checkout -q -b out-${{ github.run_id }} && git add -A
+          git -c user.name=render-bot -c user.email=render-bot@users.noreply.github.com commit -qm "moonanim ${{ github.run_id }}"
+          git push -q https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD
