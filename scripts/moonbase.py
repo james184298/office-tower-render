@@ -413,6 +413,7 @@ def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 SGN_P = (-4.71, 4.2, 0.85); SGN_A = math.radians(22); SGN_L = 8.2
 def TH(x, y):
     h = HH*_sm((x+2)/8.5)*_sm((y-3.8)/2.2)
+    h *= 1.0 - _sm((x-5.0)/0.7)*(1.0 - _sm((y-4.4)/0.9))   # low terrace at the front-right (dishes, station)
     # low berm under the sign so the letters stand on the ground (ref)
     ca, sa = math.cos(SGN_A), math.sin(SGN_A)
     t = (x-SGN_P[0])*ca + (y-SGN_P[1])*sa; tc_ = max(0.0, min(SGN_L, t))
@@ -975,7 +976,7 @@ lz.location = Vector((PX, PY, 0.125)) + cd*1.55; lz.rotation_euler = (0, 0, math
 _nt = M_solar.node_tree; _b = _nt.nodes["Principled BSDF"]
 _br = _nt.nodes.new("ShaderNodeTexBrick"); _br.offset = 0.0
 _br.inputs["Color1"].default_value = (0.006,0.008,0.016,1); _br.inputs["Color2"].default_value = (0.009,0.011,0.022,1)
-_br.inputs["Mortar"].default_value = (0.09,0.1,0.12,1); _br.inputs["Scale"].default_value = 3.2
+_br.inputs["Mortar"].default_value = (0.03,0.032,0.04,1); _br.inputs["Scale"].default_value = 3.2
 _br.inputs["Mortar Size"].default_value = 0.012; _br.inputs["Brick Width"].default_value = 0.5; _br.inputs["Row Height"].default_value = 0.42
 _tcs = _nt.nodes.new("ShaderNodeTexCoord"); _nt.links.new(_tcs.outputs["Object"], _br.inputs["Vector"])
 _nt.links.new(_br.outputs["Color"], _b.inputs["Base Color"])
@@ -984,11 +985,11 @@ for i in range(5):
         x = 0.7 + j*0.6; y = 1.95 + i*0.58
         if x > 4.9 and y < 3.3: continue
         h0 = TH(x, y)
-        o = box("panel", (x, y, h0+0.38), (0.5, 0.46, 0.025), M_solar); o.rotation_euler.x = 0.35
+        o = box("panel", (x, y, h0+0.36), (0.55, 0.5, 0.025), M_solar); o.rotation_euler.x = 0.22
         box("pframe", (x, y-0.22, h0+0.3), (0.48, 0.02, 0.02), M_metal)
         cyl("post", (x, y, h0+0.1), 0.018, 0.55, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
-for dx, dy in [(6.2, 3.4), (6.25, 3.95), (6.3, 4.5)]:
+for dx, dy in [(6.25, 3.35), (6.3, 3.9), (6.35, 4.45)]:
     h0 = TH(dx, dy)
     cyl("dpost", (dx, dy, h0+0.3), 0.035, 0.6, M_metal, 8)
     c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); DN = Vector((0.15, -0.9, 0.42)).normalized(); c.rotation_euler = DN.to_track_quat('Z','Y').to_euler()
@@ -1072,7 +1073,7 @@ ldir = (-right*0.9 + up*0.1 + back*0.44).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.04; tm.inputs["From Max"].default_value = 0.42
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = 0.0; tm.inputs["From Max"].default_value = 0.22
 tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
