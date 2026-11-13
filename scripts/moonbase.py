@@ -131,7 +131,7 @@ def mnode(op, a_=None, b_=None, v0=None, v1=None):
 wn = N.new("ShaderNodeTexNoise"); wn.inputs["Scale"].default_value = 0.12; wn.inputs["Detail"].default_value = 2
 mpw = N.new("ShaderNodeMapping"); mpw.inputs["Scale"].default_value = (1.0, 1.0, 0.25)
 L.new(tc.outputs["Object"], mpw.inputs["Vector"]); L.new(mpw.outputs["Vector"], wn.inputs["Vector"])
-wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 1.6); wsc.inputs[2].default_value = -0.8
+wsc = mnode('MULTIPLY_ADD', wn.outputs["Fac"], None, None, 2.6); wsc.inputs[2].default_value = -1.3
 # layer coordinate: z tilted so strata read flatter on screen than the slab edges (as in the ref)
 zdot = N.new("ShaderNodeVectorMath"); zdot.operation = 'DOT_PRODUCT'; zdot.inputs[1].default_value = (-0.19, 0.19, 1.0)
 L.new(tc.outputs["Object"], zdot.inputs[0]); ZQ = zdot.outputs["Value"]
@@ -173,13 +173,13 @@ edg.inputs["To Min"].default_value = 0.55; edg.inputs["To Max"].default_value = 
 L.new(lfr.outputs[0], edg.inputs["Value"])
 zf2 = mnode('MULTIPLY', ZQ, None, None, 11.0); zf2w = mnode('ADD', zf2.outputs[0], wsc.outputs[0])
 lid2 = mnode('FLOOR', zf2w.outputs[0]); wh2 = N.new("ShaderNodeTexWhiteNoise"); wh2.noise_dimensions = '1D'; L.new(lid2.outputs[0], wh2.inputs["W"])
-f2 = N.new("ShaderNodeMapRange"); f2.inputs["To Min"].default_value = 0.62; f2.inputs["To Max"].default_value = 1.12
+f2 = N.new("ShaderNodeMapRange"); f2.inputs["To Min"].default_value = 0.8; f2.inputs["To Max"].default_value = 1.08
 L.new(wh2.outputs["Value"], f2.inputs["Value"])
 m0 = mnode('MULTIPLY', smr.outputs["Result"], f2.outputs["Result"])
 gn2 = N.new("ShaderNodeTexNoise"); gn2.inputs["Scale"].default_value = 140; gn2.inputs["Detail"].default_value = 2
 L.new(tc.outputs["Object"], gn2.inputs["Vector"])
 g2r = N.new("ShaderNodeMapRange"); g2r.inputs["From Min"].default_value = 0.3; g2r.inputs["From Max"].default_value = 0.7
-g2r.inputs["To Min"].default_value = 0.75; g2r.inputs["To Max"].default_value = 1.2
+g2r.inputs["To Min"].default_value = 0.88; g2r.inputs["To Max"].default_value = 1.1
 L.new(gn2.outputs["Fac"], g2r.inputs["Value"])
 m0b = mnode('MULTIPLY', m0.outputs[0], g2r.outputs["Result"])
 m1 = mnode('MULTIPLY', m0b.outputs[0], gmr.outputs["Result"])
@@ -188,9 +188,9 @@ m3 = mnode('MULTIPLY', m2.outputs[0], edg.outputs["Result"])
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
 L.new(tone.outputs["Color"], mulc.inputs["Color1"]); L.new(m3.outputs[0], mulc.inputs["Color2"])
 # lighter crust just under the surface
-mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -0.9; mr.inputs["From Max"].default_value = -0.25
+mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = -1.5; mr.inputs["From Max"].default_value = -0.7
 L.new(sx_.outputs["Z"], mr.inputs["Value"])
-crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.22,0.22,0.23,1)
+crust = N.new("ShaderNodeMixRGB"); crust.inputs["Color2"].default_value = (0.075,0.075,0.08,1)
 L.new(mr.outputs["Result"], crust.inputs["Fac"]); L.new(mulc.outputs["Color"], crust.inputs["Color1"])
 L.new(crust.outputs["Color"], bsdf.inputs["Base Color"])
 # bump: layer steps + streaks + grain
@@ -465,7 +465,7 @@ blk = C.objects.new("block", me); sc.collection.objects.link(blk)
 blk.data.materials.append(M_rock); blk.data.materials.append(M_reg)
 for p in me.polygons:
     p.use_smooth = True
-    if p.normal.z > 0.6 and p.center.z > -0.6: p.material_index = 1
+    if p.normal.z > 0.2 and p.center.z > -0.6: p.material_index = 1
 def cutter(name, x0, x1, y0, y1, z0, z1):
     bpy.ops.mesh.primitive_cube_add(location=((x0+x1)/2, (y0+y1)/2, (z0+z1)/2))
     c = bpy.context.object; c.name = name; c.scale = ((x1-x0)/2, (y1-y0)/2, (z1-z0)/2)
@@ -475,7 +475,7 @@ def cutter(name, x0, x1, y0, y1, z0, z1):
 for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
                  ("slot", cutter("slotbox", EX-0.6, A+4, YC-0.1, EY+0.6, FZ_BOT, 6)),
                  ("notch", cutter("notchbox", EX-0.5, A+4, YC-0.1, EY+2.2, Z0-0.16, 6)),
-                 ("colcut", cutter("colbox", XC-0.62, XC+0.1, -B-4, -B+0.2, FZ_BOT, 6))]:
+                 ("colcut", cutter("colbox", XC-1.25, XC+0.1, -B-4, -B+0.2, FZ_BOT, 6))]:
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
@@ -497,8 +497,8 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # warm lights along the rock edges of the cutaway
 for k in range(9):
     zz = -0.9 - k*1.05
-    box("wn", (XC-0.95, -B-0.36, zz), (0.24, 0.04, 0.24), M_dark)
-    box("wl", (XC-0.95, -B-0.39, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
+    box("wn", (XC-0.95, -B-0.26, zz), (0.24, 0.04, 0.24), M_dark)
+    box("wl", (XC-0.95, -B-0.29, zz+0.06), (0.14, 0.03, 0.06), M_wlamp)
 for k in range(9):
     box("wl2", (XC-0.06, -B+0.6+k*0.6, -0.12), (0.06, 0.12, 0.06), M_lamp)
     box("wl3", (XC+0.6+k*0.8, YC+0.06, -0.12), (0.12, 0.06, 0.06), M_lamp)
@@ -773,7 +773,7 @@ box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), m
 for k in range(8):
     box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
-box("colL", (XC-0.31, 0.15-B, (FZ_BOT-0.05)/2), (0.62, 0.8, -FZ_BOT-0.05), mat("col",(0.07,0.07,0.075),0.5))
+box("colL", (XC-0.62, 0.15-B, (FZ_BOT-0.05)/2), (1.24, 0.8, -FZ_BOT-0.05), mat("col",(0.065,0.065,0.07),0.5))
 cyl("colLs", (XC-0.22, -B-0.3, (FZ_BOT)/2), 0.04, -FZ_BOT, M_white, 10)
 
 # ================= surface =================
@@ -951,7 +951,7 @@ ex_ = Vector((math.cos(SA), math.sin(SA), 0)); ey_ = Vector((0, 0, 1)); ez_ = ex
 SF = Matrix.Translation(SG0) @ Matrix((ex_, ey_, ez_)).transposed().to_4x4()
 sgn.matrix_world = SF
 # swoosh from inside the X sweeping out to the right
-sw = swoosh("sswoosh", (SIGN_W-0.75, 0.15), (SIGN_W+1.6, 0.85), -0.12, 0.16, M_signw, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
+sw = swoosh("sswoosh", (SIGN_W-0.95, 0.05), (SIGN_W+1.5, 0.95), 0.22, 0.28, M_signw, 0.1, SF @ Matrix.Translation((0, 0, -0.05)))
 # scaffold behind the letters: posts + two rails + diagonal braces
 M_scaf = mat("scaf",(0.2,0.2,0.22),0.5,0.2)
 def seg_(a_, b_, r_=0.022, m_=M_scaf):
@@ -992,7 +992,8 @@ for i in range(5):
 for dx, dy in [(6.25, 3.35), (6.3, 3.9), (6.35, 4.45)]:
     h0 = TH(dx, dy)
     cyl("dpost", (dx, dy, h0+0.3), 0.035, 0.6, M_metal, 8)
-    c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); DN = Vector((0.15, -0.9, 0.42)).normalized(); c.rotation_euler = DN.to_track_quat('Z','Y').to_euler()
+    c = sph("dish", (dx, dy, h0+0.75), 0.4, M_white, (1, 1, 0.28), 24); DN = Vector((-0.1, -0.8, 0.6)).normalized(); c.rotation_euler = DN.to_track_quat('Z','Y').to_euler()
+    cyl("dinner", Vector((dx, dy, h0+0.75)) + DN*0.115, 0.34, 0.01, mat("dishin",(0.45,0.46,0.48),0.5), 24).rotation_euler = DN.to_track_quat('Z','Y').to_euler()
     fp = Vector((dx, dy, h0+0.75)) + DN*0.2; cyl("dfeed", fp, 0.012, 0.36, M_dark, 6).rotation_euler = DN.to_track_quat('Z','Y').to_euler()
 # gold lander (Apollo-style descent stage) + sign, positions measured off the ref
 LX, LY = -4.5, -5.0
@@ -1110,9 +1111,9 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -55)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 12))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 2))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     earth.rotation_euler = (Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
