@@ -69,13 +69,13 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.12,0.123,0.13), 0.45)
+M_slab = mat("slab", (0.3,0.303,0.31), 0.45)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.012,0.013,0.016), 0.6, spec=0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
 M_panel = mat("panel", (0.75,0.76,0.78), 0.4)
-M_lwall = mat("lwallm", (0.42,0.42,0.44), 0.5)
+M_lwall = mat("lwallm", (0.5,0.5,0.52), 0.5)
 M_wood = mat("wood", (0.55,0.4,0.24), 0.45)
 M_metal = mat("metal", (0.62,0.64,0.67), 0.35, 0.2)
 M_gold = mat("gold", (0.95,0.68,0.15), 0.3, 1.0)
@@ -440,7 +440,7 @@ def taper_s(z):
             t = (z-z0)/(z1-z0); t = t*t*(3-2*t); return s0 + (s1-s0)*t
     return 1.0
 # terrain rises toward the back-right corner (ref: the +x face's top edge reaches v~310 at the right corner)
-HH = float(os.environ.get("HILL", 2.6)); BLH = float(os.environ.get("BLH", 0.95))
+HH = float(os.environ.get("HILL", 2.6)); BLH = float(os.environ.get("BLH", 1.4))
 def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 SGN_P = (-4.71, 4.2, 0.85); SGN_A = math.radians(22); SGN_L = 8.2
 def TH(x, y):
@@ -546,7 +546,7 @@ M_glow = C.materials.new("glow"); M_glow.use_nodes = True
 _nt = M_glow.node_tree; _nt.nodes.clear()
 _o = _nt.nodes.new("ShaderNodeOutputMaterial"); _mix = _nt.nodes.new("ShaderNodeMixShader")
 _tr = _nt.nodes.new("ShaderNodeBsdfTransparent"); _em = _nt.nodes.new("ShaderNodeEmission")
-_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 2.6
+_em.inputs["Color"].default_value = (0.15, 1.0, 0.3, 1); _em.inputs["Strength"].default_value = 1.8
 _tc = _nt.nodes.new("ShaderNodeTexCoord"); _gr = _nt.nodes.new("ShaderNodeTexGradient"); _gr.gradient_type = 'SPHERICAL'
 _mp = _nt.nodes.new("ShaderNodeMapping"); _mp.inputs["Scale"].default_value = (1.0, 1.0, 1.0)
 _pw = _nt.nodes.new("ShaderNodeMath"); _pw.operation = 'POWER'; _pw.inputs[1].default_value = 1.6
@@ -564,7 +564,7 @@ def bot(x, y, z, m, s=0.25, glow=True):
         p = Vector((x, y, z+s*1.02)) + cd*(s*0.7) + side*(sgn*s*0.25)
         sph("eye", p, s*0.15, M_eye, (1,1,1.4), 12)
     if glow:
-        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.6, s*2.6, 1)
+        g = cyl("glow", (x, y, z+0.012), 1.0, 0.002, M_glow, 32); g.scale = (s*2.2, s*2.2, 1)
         g.visible_shadow = False
 
 def plant(x, y, z, s=1.0, tall=False):
@@ -618,7 +618,10 @@ for i in range(NF):
     box("rtA", (cx, y0+0.03, zf+0.36), (W, 0.02, 0.015), M_white)
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
-    box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_lwall)
+    if i == 0: box("lwall", (XC+0.02, cy, zf+0.72), (0.03, D, 1.4), M_lwall)
+    else:   # lower floors: light grey walls on both closed sides, full height (ref)
+        box("lwall", (XC+0.02, cy, zf+FH/2-0.11), (0.03, D, FH-0.22), M_lwall)
+        box("bwall", (cx, YC-0.02, zf+FH/2-0.11), (W, 0.03, FH-0.22), M_lwall)
     Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else 25; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
@@ -1159,7 +1162,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -58)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -54)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
