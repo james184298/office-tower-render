@@ -533,19 +533,21 @@ for k in range(int(os.environ.get("NBOUL", 0))):
 # recess ground
 box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.17,0.17,0.175),0.9))
 # v69: ground porch in front of the floors (ref recess ground runs out in front of the lowest floor; tank sits on it)
-PORCH = float(os.environ.get("PORCH", 1.1))
+PORCH = float(os.environ.get("PORCH", 2.0))
 if PORCH > 0:
     # v74: a rock wedge (rock strata on the sides, regolith-grey top) whose front face slopes back into the block,
     # so the ground reads as a ledge of the block rather than a floating slab
-    PD = float(os.environ.get("PORCHD", 2.4)); z0p = FZ_BOT+0.04; z1p = FZ_BOT-PD
-    xl0, xr0, yf0, yb0 = XC-1.3, A, -B-PORCH, -B+0.4
+    PD = float(os.environ.get("PORCHD", 3.4)); PDROP = float(os.environ.get("PORCHDROP", 1.2)); z0p = FZ_BOT+0.04; z1p = FZ_BOT-PD
+    xl0, xr0, yf0, yb0 = XC-float(os.environ.get("PORCHL", 2.2)), A, -B-PORCH, -B+0.4
     xl1, xr1, yf1 = XC-0.6, A-0.5, -B+0.25
-    vs = [(xl0,yb0,z0p),(xr0,yb0,z0p),(xr0,yf0,z0p),(xl0,yf0,z0p),(xl1,yb0,z1p),(xr1,yb0,z1p),(xr1,yf1,z1p),(xl1,yf1,z1p)]
-    fs = [(0,3,2,1),(4,5,6,7),(3,7,6,2),(2,6,5,1),(0,4,7,3),(1,5,4,0)]
+    ym = float(os.environ.get("PORCHFLAT", -6.9))   # flat (tank, crates) to y=ym, then the apron slopes down to yf0
+    vs = [(xl0,yb0,z0p),(xr0,yb0,z0p),(xr0,ym,z0p),(xl0,ym,z0p),(xr0,yf0,z0p-PDROP),(xl0,yf0,z0p-PDROP),
+          (xl1,yb0,z1p),(xr1,yb0,z1p),(xr1,yf1,z1p),(xl1,yf1,z1p)]
+    fs = [(0,3,2,1),(3,5,4,2),(6,7,8,9),(5,9,8,4),(4,8,7,1,2),(0,6,9,5,3),(1,7,6,0)]
     pm = bpy.data.meshes.new("porch"); pm.from_pydata(vs, [], fs); pm.update()
     po = bpy.data.objects.new("porch", pm); sc.collection.objects.link(po)
-    pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.2)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
-    for f_ in pm.polygons: f_.material_index = 0 if f_.index == 0 else 1
+    pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.16)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
+    for f_ in pm.polygons: f_.material_index = 0 if f_.index in (0, 1) else 1
     if os.environ.get("PORCHSM", "1") == "1":   # v78: round + roughen the wedge so its sides don't read as flat facets
         for f_ in pm.polygons: f_.use_smooth = True
         bv = po.modifiers.new("bv", 'BEVEL'); bv.width = float(os.environ.get("PORCHBV", 0.45)); bv.segments = 5; bv.limit_method = 'ANGLE'
@@ -1157,10 +1159,10 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", 0.0)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.95))
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.3)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.12))
 tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
-tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 2.0))
+tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 1.3))
 L.new(tm.outputs["Result"], tpw.inputs[0])   # v78: AgX lifts the ramp's dim tail -> gamma it down so the fade reads wide
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
 L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tpw.outputs[0], cm.inputs["Color2"])
@@ -1196,11 +1198,11 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
         L.new(cal.outputs[0], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
         L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
-    ECL = float(os.environ.get("ECLD", 0.85))
+    ECL = float(os.environ.get("ECLD", 0.72))
     if ECL > 0:   # v77: chunky procedural clouds (the cloud texture never downloads on runners)
         ncl = N.new("ShaderNodeTexNoise"); ncl.inputs["Scale"].default_value = 2.6; ncl.inputs["Detail"].default_value = 4; ncl.inputs["Distortion"].default_value = 0.8
         L.new(tci.outputs["Object"], ncl.inputs["Vector"])
-        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.55; rcl.inputs["From Max"].default_value = 0.62
+        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.5; rcl.inputs["From Max"].default_value = 0.67
         rcl.inputs["To Max"].default_value = ECL; L.new(ncl.outputs["Fac"], rcl.inputs["Value"])
         cmx2 = N.new("ShaderNodeMixRGB"); cmx2.inputs["Color2"].default_value = (0.92,0.94,0.97,1)
         L.new(rcl.outputs["Result"], cmx2.inputs["Fac"]); L.new(land_col, cmx2.inputs["Color1"]); land_col = cmx2.outputs["Color"]
