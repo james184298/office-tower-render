@@ -534,7 +534,7 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # v69: ground porch in front of the floors (ref recess ground runs out in front of the lowest floor; tank sits on it)
 PORCH = float(os.environ.get("PORCH", 1.1))
 if PORCH > 0:
-    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.065,0.065,0.068),0.95,spec=0.1), 0.0)
+    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.11,0.11,0.113),0.95,spec=0.1), 0.0)
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
