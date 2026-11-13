@@ -531,6 +531,10 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
 box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.17,0.17,0.175),0.9))
+# v69: ground porch in front of the floors (ref recess ground runs out in front of the lowest floor; tank sits on it)
+PORCH = float(os.environ.get("PORCH", 1.1))
+if PORCH > 0:
+    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.17,0.17,0.175),0.9), 0.02)
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -738,18 +742,19 @@ zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.1, zb-FZ_BOT, M_white, 16)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-cyl("tank", (0.2, -5.25, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.55, -5.25, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+TY = float(os.environ.get("TANKY", -6.1)); TX = float(os.environ.get("TANKDX", 0.1))
+cyl("tank", (0.2+TX, TY, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.55+TX, TY, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.63, -5.25+0.26*math.cos(a), FZ_BOT+0.55+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
+    o = box("fanblade", (1.63+TX, TY+0.26*math.cos(a), FZ_BOT+0.55+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
 M_yel = mat("yellow",(0.9,0.6,0.02),0.4)
-cyl("tankband", (-1.05, -5.25, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, math.pi/2, 0))
-box("tlabel", (-0.35, -5.25-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
-for k in range(3): box("frame", (-1.75+k*0.18, -5.3, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
+cyl("tankband", (-1.05+TX, TY, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, math.pi/2, 0))
+box("tlabel", (-0.35+TX, TY-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
+for k in range(3): box("frame", (-1.75+TX+k*0.18, TY-0.05, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
 for j in range(2):
-    for k in range(3): box("crate", (4.6+j*0.62, -2.7+k*0.36, FZ_BOT+0.08), (0.58, 0.34, 0.12), M_white, 0.01)
-    for k in range(2): box("crate", (4.6+j*0.62, -2.52+k*0.36, FZ_BOT+0.2), (0.58, 0.34, 0.12), M_white, 0.01)
+    for k in range(3): box("crate", (4.0+j*0.62, -6.85+k*0.36, FZ_BOT+0.08), (0.58, 0.34, 0.12), M_white, 0.01)
+    for k in range(2): box("crate", (4.0+j*0.62, -6.67+k*0.36, FZ_BOT+0.2), (0.58, 0.34, 0.12), M_white, 0.01)
 Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 36; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
