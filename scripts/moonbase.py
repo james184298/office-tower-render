@@ -69,7 +69,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 
 # ================= materials =================
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
-M_slab = mat("slab", (0.2,0.205,0.215), 0.4)
+M_slab = mat("slab", (0.12,0.123,0.13), 0.45)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
 M_desk = mat("desk", (0.012,0.013,0.016), 0.6, spec=0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
@@ -168,8 +168,8 @@ pmr = N.new("ShaderNodeMapRange"); pmr.inputs["From Min"].default_value = 0.35; 
 pmr.inputs["To Min"].default_value = 0.75; pmr.inputs["To Max"].default_value = 1.2
 L.new(pn.outputs["Fac"], pmr.inputs["Value"])
 # dark crisp line at the base of each layer
-edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.06
-edg.inputs["To Min"].default_value = 0.55; edg.inputs["To Max"].default_value = 1.0
+edg = N.new("ShaderNodeMapRange"); edg.inputs["From Min"].default_value = 0.0; edg.inputs["From Max"].default_value = 0.08
+edg.inputs["To Min"].default_value = 0.45; edg.inputs["To Max"].default_value = 1.0
 L.new(lfr.outputs[0], edg.inputs["Value"])
 zf2 = mnode('MULTIPLY', ZQ, None, None, 11.0); zf2w = mnode('ADD', zf2.outputs[0], wsc.outputs[0])
 lid2 = mnode('FLOOR', zf2w.outputs[0]); wh2 = N.new("ShaderNodeTexWhiteNoise"); wh2.noise_dimensions = '1D'; L.new(lid2.outputs[0], wh2.inputs["W"])
@@ -186,12 +186,12 @@ m1 = mnode('MULTIPLY', m0b.outputs[0], gmr.outputs["Result"])
 m2 = mnode('MULTIPLY', m1.outputs[0], pmr.outputs["Result"])
 m3a = mnode('MULTIPLY', m2.outputs[0], edg.outputs["Result"])
 # blocky cells: horizontally elongated voronoi blocks with their own tone and dark cracks between them
-vmap = N.new("ShaderNodeMapping"); vmap.inputs["Scale"].default_value = (0.9, 0.9, 2.6)
+vmap = N.new("ShaderNodeMapping"); vmap.inputs["Scale"].default_value = (0.45, 0.45, 3.2)
 L.new(tc.outputs["Object"], vmap.inputs["Vector"])
 vor = N.new("ShaderNodeTexVoronoi"); vor.inputs["Scale"].default_value = 1.1; vor.inputs["Randomness"].default_value = 0.85
 L.new(vmap.outputs["Vector"], vor.inputs["Vector"])
 vbw = N.new("ShaderNodeRGBToBW"); L.new(vor.outputs["Color"], vbw.inputs[0])
-vmr = N.new("ShaderNodeMapRange"); vmr.inputs["To Min"].default_value = 0.82; vmr.inputs["To Max"].default_value = 1.12
+vmr = N.new("ShaderNodeMapRange"); vmr.inputs["To Min"].default_value = 0.9; vmr.inputs["To Max"].default_value = 1.08
 L.new(vbw.outputs[0], vmr.inputs["Value"])
 vor2 = N.new("ShaderNodeTexVoronoi"); vor2.feature = 'DISTANCE_TO_EDGE'; vor2.inputs["Scale"].default_value = 1.1; vor2.inputs["Randomness"].default_value = 0.85
 L.new(vmap.outputs["Vector"], vor2.inputs["Vector"])
@@ -199,7 +199,7 @@ cmr = N.new("ShaderNodeMapRange"); cmr.inputs["From Min"].default_value = 0.0; c
 cmr.inputs["To Min"].default_value = 0.6; cmr.inputs["To Max"].default_value = 1.0
 L.new(vor2.outputs["Distance"], cmr.inputs["Value"])
 m3b = mnode('MULTIPLY', m3a.outputs[0], vmr.outputs["Result"])
-m3 = mnode('MULTIPLY', m3b.outputs[0], cmr.outputs["Result"])
+m3 = m3b
 mulc = N.new("ShaderNodeMixRGB"); mulc.blend_type = 'MULTIPLY'; mulc.inputs["Fac"].default_value = 1.0
 L.new(tone.outputs["Color"], mulc.inputs["Color1"]); L.new(m3.outputs[0], mulc.inputs["Color2"])
 # lighter crust just under the surface
@@ -213,8 +213,7 @@ bh1 = mnode('MULTIPLY', lfr.outputs[0], None, None, 0.6)
 bh2 = mnode('MULTIPLY_ADD', sn.outputs["Fac"], None, None, 0.5); L.new(bh1.outputs[0], bh2.inputs[2])
 bh3 = mnode('MULTIPLY_ADD', gn.outputs["Fac"], None, None, 0.25); L.new(bh2.outputs[0], bh3.inputs[2])
 bump = N.new("ShaderNodeBump"); bump.inputs["Strength"].default_value = 0.35; bump.inputs["Distance"].default_value = 0.05
-bh4 = mnode('MULTIPLY_ADD', cmr.outputs["Result"], None, None, 0.6); L.new(bh3.outputs[0], bh4.inputs[2])
-L.new(bh4.outputs[0], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
+L.new(bh3.outputs[0], bump.inputs["Height"]); L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 
 # ---- regolith ----
 M_reg = C.materials.new("regolith"); M_reg.use_nodes = True
@@ -404,7 +403,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 0.9)
+M_conimg = imgmat("conscr", console_img(), 0.45)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -415,7 +414,7 @@ A, B = 6.5, 6.0              # half extents in x, y
 XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
 ZB, ZT = -16.9, -8.0         # rock bottom tip / start of taper
 # taper (measured off the ref silhouette): scale about a centre offset toward +x+y, so the left side tapers more
-TAPER = [(-16.9, 0.15), (-16.5, 0.25), (-15.8, 0.38), (-14.8, 0.64), (-13.5, 0.79), (-11.9, 0.9), (-10.5, 0.95), (-9.3, 0.985), (-8.0, 1.0)]
+TAPER = [(-16.9, 0.12), (-16.5, 0.22), (-15.8, 0.36), (-14.8, 0.67), (-13.5, 0.84), (-11.9, 0.925), (-10.5, 0.96), (-9.3, 0.985), (-8.0, 1.0)]
 if os.environ.get('OLDTAPER'): TAPER = [(-16.9, 0.15), (-16.5, 0.25), (-15.8, 0.42), (-14.8, 0.72), (-13.5, 0.85), (-11.9, 0.93), (-10.5, 0.96), (-9.3, 0.985), (-8.0, 1.0)]
 TCX, TCY = 2.5, 2.5
 def taper_s(z):
@@ -472,7 +471,7 @@ for v in bm.verts:
         v.co.z += h
     if z < ZT:
         s = taper_s(z)
-        ns = 1 + 0.1*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))
+        ns = 1 + 0.05*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))*smooth((ZT-z)/2.5)
         v.co.x = TCX + (v.co.x - TCX)*s*ns; v.co.y = TCY + (v.co.y - TCY)*s*ns
     if z > -5.0:
         v.co.z += TH(x, y)*smooth(1 + z/5.0)
@@ -497,7 +496,10 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
-_dg = bpy.context.evaluated_depsgraph_get(); print('BLOCK_SECONDS polys', len(blk.evaluated_get(_dg).data.polygons), 'base', len(me.polygons))
+_dg = bpy.context.evaluated_depsgraph_get(); _np = len(blk.evaluated_get(_dg).data.polygons); print('BLOCK_SECONDS polys', _np, 'base', len(me.polygons))
+if _np < 5000:   # EXACT boolean occasionally returns nothing for this mesh: retry with the FAST solver
+    for _m in blk.modifiers: _m.solver = 'FAST'
+    _dg = bpy.context.evaluated_depsgraph_get(); print('BLOCK_SECONDS fast polys', len(blk.evaluated_get(_dg).data.polygons))
 # rubble / boulders around the tapered bottom of the rock
 M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
@@ -1052,7 +1054,7 @@ box("roverwin", (RVX+0.05, RVY, 0.42), (0.5, 0.56, 0.08), M_dark)
 for dx in (-0.35, 0.35):
     for dy in (-0.26, 0.26):
         cyl("wheel", (RVX+dx, RVY+dy, 0.12), 0.12, 0.08, M_dark, 12, rot=(math.pi/2, 0, 0))
-bot(1.3, 1.25, 0.0, M_bots[6], 0.27); bot(1.85, 1.05, 0.0, M_bots[4], 0.27)
+bot(1.3, 1.25, 0.0, M_bots[6], 0.27, glow=False); bot(1.85, 1.05, 0.0, M_bots[4], 0.27, glow=False)
 _rtex = C.textures.new("rtex", 'CLOUDS'); _rtex.noise_scale = 0.12
 for k in range(190):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
@@ -1140,11 +1142,11 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -72)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -55)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 18))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 15))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
-    ROLL = math.radians(float(os.environ.get("EROLL", -25)))
+    ROLL = math.radians(float(os.environ.get("EROLL", 20)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
