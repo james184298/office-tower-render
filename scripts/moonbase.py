@@ -543,7 +543,7 @@ if PORCH > 0:
     fs = [(0,3,2,1),(4,5,6,7),(3,7,6,2),(2,6,5,1),(0,4,7,3),(1,5,4,0)]
     pm = bpy.data.meshes.new("porch"); pm.from_pydata(vs, [], fs); pm.update()
     po = bpy.data.objects.new("porch", pm); sc.collection.objects.link(po)
-    pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.15)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
+    pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.2)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
     for f_ in pm.polygons: f_.material_index = 0 if f_.index == 0 else 1
 
 # warm lights along the rock edges of the cutaway
@@ -650,7 +650,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.14,0.143,0.15),0.8,spec=0.2))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.19,0.193,0.2),0.8,spec=0.2))
         # v65: dense mission-control rows (ref ~6 rows x 2 blocks of small desks with lit monitors)
         for gy in (-1.6, -2.6, -3.6, -4.6):   # v67: 4 rows, 1.0 pitch (6 rows hid the floor and bots)
             console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85)
