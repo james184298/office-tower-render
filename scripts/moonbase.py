@@ -1186,14 +1186,14 @@ if float(os.environ.get("EHALO", 1.0)) > 0:   # v86: soft atmosphere halo shell 
     hmr = hn.new("ShaderNodeMapRange"); hmr.inputs["From Min"].default_value = -0.35; hmr.inputs["From Max"].default_value = 0.4; hl.new(hdp.outputs["Value"], hmr.inputs["Value"])
     h1 = hn.new("ShaderNodeMath"); h1.operation = 'SUBTRACT'; h1.inputs[0].default_value = 1.0; hl.new(hlw.outputs["Facing"], h1.inputs[1])
     h1b = hn.new("ShaderNodeMath"); h1b.operation = 'SUBTRACT'; h1b.inputs[0].default_value = 1.0; hl.new(h1.outputs[0], h1b.inputs[1])   # = facing
-    h2 = hn.new("ShaderNodeMath"); h2.operation = 'POWER'; h2.inputs[1].default_value = 1.5; hl.new(h1b.outputs[0], h2.inputs[0])
+    h2 = hn.new("ShaderNodeMath"); h2.operation = 'POWER'; h2.inputs[1].default_value = 4.0; hl.new(h1b.outputs[0], h2.inputs[0])
     h3 = hn.new("ShaderNodeMath"); h3.operation = 'MULTIPLY'; hl.new(h2.outputs[0], h3.inputs[0]); hl.new(hmr.outputs["Result"], h3.inputs[1])
-    h4 = hn.new("ShaderNodeMath"); h4.operation = 'MULTIPLY'; h4.inputs[1].default_value = 0.85; hl.new(h3.outputs[0], h4.inputs[0])
+    h4 = hn.new("ShaderNodeMath"); h4.operation = 'MULTIPLY'; h4.inputs[1].default_value = 0.7; hl.new(h3.outputs[0], h4.inputs[0])
     hl.new(h4.outputs[0], hmx.inputs["Fac"]); hl.new(htr.outputs[0], hmx.inputs[1]); hl.new(hem.outputs[0], hmx.inputs[2]); hl.new(hmx.outputs[0], ho.inputs["Surface"])
     try: M_halo.surface_render_method = 'BLENDED'
     except Exception: pass
     M_halo.use_backface_culling = True
-    halo = sph("halo", earth.location.copy(), 72*k*1.06, M_halo, seg=64); halo.visible_shadow = False
+    halo = sph("halo", earth.location.copy(), 72*k*1.025, M_halo, seg=64); halo.visible_shadow = False
 EARTH_IMG = os.environ.get("EARTH", "/tmp/earth_land.jpg"); CLOUD_IMG = os.environ.get("CLOUDS", "/tmp/earth_cloud.jpg")
 if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     print("EARTH texture", EARTH_IMG)
@@ -1204,7 +1204,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.55))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
