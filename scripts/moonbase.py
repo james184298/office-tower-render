@@ -440,12 +440,13 @@ def taper_s(z):
             t = (z-z0)/(z1-z0); t = t*t*(3-2*t); return s0 + (s1-s0)*t
     return 1.0
 # terrain rises toward the back-right corner (ref: the +x face's top edge reaches v~310 at the right corner)
-HH = float(os.environ.get("HILL", 2.6))
+HH = float(os.environ.get("HILL", 2.6)); BLH = float(os.environ.get("BLH", 0.95))
 def _sm(t): t = max(0.0, min(1.0, t)); return t*t*(3-2*t)
 SGN_P = (-4.71, 4.2, 0.85); SGN_A = math.radians(22); SGN_L = 8.2
 def TH(x, y):
     h = HH*_sm((x+2)/8.5)*_sm((y-3.8)/2.2)
     h *= 1.0 - _sm((x-5.0)/0.7)*(1.0 - _sm((y-4.4)/0.9))   # low terrace at the front-right (dishes, station)
+    h += BLH*math.exp(-((x+6.3)**2/2.2 + (y-3.0)**2/1.8))   # rocky rise on the back-left edge right of the rocket (ref top edge ~28 px higher there)
     # low berm under the sign so the letters stand on the ground (ref)
     ca, sa = math.cos(SGN_A), math.sin(SGN_A)
     t = (x-SGN_P[0])*ca + (y-SGN_P[1])*sa; tc_ = max(0.0, min(SGN_L, t))
@@ -529,7 +530,7 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.12,0.12,0.125),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.17,0.17,0.175),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -618,7 +619,7 @@ for i in range(NF):
     box("rtB", (x1-0.03, cy, zf+0.36), (0.02, D, 0.015), M_white)
     # side wall panels (white) on the x=XC wall
     box("lwall", (XC+0.02, cy, zf+(0.72 if i == 0 else 1.0)), (0.03, D, 1.3 if i else 1.4), M_lwall)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else 30; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else 25; Lg.shape = 'RECTANGLE'
     Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
@@ -1117,7 +1118,7 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*0.9 + up*0.1 + back*0.44).normalized()
+ldir = (-right*0.9 - up*0.12 + back*0.44).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
@@ -1158,11 +1159,11 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -58)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
-    ROLL = math.radians(float(os.environ.get("EROLL", 25)))
+    ROLL = math.radians(float(os.environ.get("EROLL", 10)))
     earth.rotation_euler = (Matrix.Rotation(ROLL, 3, back.normalized()) @ Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
 M_star = C.materials.new("stars"); M_star.use_nodes = True
