@@ -736,7 +736,7 @@ for i in range(NF):
         for p in [(0.2,-4.4,1.1,True),(1.9,-3.7,1.0,True),(3.8,-4.6,1.2,True),(5.6,-3.0,1.0,True),(XC+0.4,-3.8,0.8,False),(4.9,-5.4,0.8,False),(3.0,-4.4,0.7,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
         for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
-            box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
+            box("bcube", (p[0], p[1], zt+0.085), (0.17, 0.17, 0.17), M_dark, 0.01)
         M_opt = mat("optimus",(0.05,0.05,0.055),0.3,0.6)
         for (ox, oy) in [(5.0, -4.5), (5.55, -4.15), (0.9, -3.9)]:
             for sgn_ in (-1, 1):
@@ -756,12 +756,12 @@ for i in range(NF):
             plant(p[0], p[1], zt, p[2], True)
         box("kcol", (1.7, -4.6, zt+0.5), (0.22, 0.22, 1.0), M_dark); box("kcolb", (1.7, -4.6, zt+0.03), (0.4, 0.4, 0.06), M_dark)
         for p in [(0.0,-4.6),(2.9,-3.6),(5.6,-5.6),(4.0,-5.6)]:
-            box("bcube", (p[0], p[1], zt+0.12), (0.24, 0.24, 0.24), M_dark, 0.01)
+            box("bcube", (p[0], p[1], zt+0.085), (0.17, 0.17, 0.17), M_dark, 0.01)
         for p in [(0.6,-3.6),(3.4,-3.7)]:
             cyl("planter", (p[0], p[1], zt+0.2), 0.22, 0.4, M_white, 20)
         bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
-        bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.27)) if i == 0 else 0.3)
+        bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.27)) if i == 0 else float(os.environ.get("LBS", 0.25)))   # v85: ref lower-floor bots are small
 
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
