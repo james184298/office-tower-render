@@ -624,7 +624,7 @@ for i in range(NF):
     else:   # lower floors: light grey walls on both closed sides, full height (ref)
         box("lwall", (XC+0.02, cy, zf+FH/2-0.11), (0.03, D, FH-0.22), M_lwall)
         box("bwall", (cx, YC-0.02, zf+FH/2-0.11), (W, 0.03, FH-0.22), M_lwall)
-    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else 25; Lg.shape = 'RECTANGLE'
+    Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else (float(os.environ.get("GLE", 45)) if i == NF-1 else 25); Lg.shape = 'RECTANGLE'
     Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
     zt = zf
