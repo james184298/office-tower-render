@@ -221,9 +221,18 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.8; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.3; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.7; er[1].color = (0.28,0.28,0.29,1)
-L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
-bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
+er[0].position = 0.3; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.7; er[1].color = (0.25,0.25,0.26,1)
+L.new(n2.outputs["Fac"], r2.inputs["Fac"])
+_tcr = N.new("ShaderNodeTexCoord")
+_gs = N.new("ShaderNodeTexNoise"); _gs.inputs["Scale"].default_value = 45; _gs.inputs["Detail"].default_value = 10; _gs.inputs["Roughness"].default_value = 0.75
+L.new(_tcr.outputs["Object"], _gs.inputs["Vector"])
+_gsr = N.new("ShaderNodeMapRange"); _gsr.inputs["From Min"].default_value = 0.3; _gsr.inputs["From Max"].default_value = 0.7
+_gsr.inputs["To Min"].default_value = 0.6; _gsr.inputs["To Max"].default_value = 1.25
+L.new(_gs.outputs["Fac"], _gsr.inputs["Value"])
+_gm = N.new("ShaderNodeMixRGB"); _gm.blend_type = 'MULTIPLY'; _gm.inputs["Fac"].default_value = 1.0
+L.new(r2.outputs["Color"], _gm.inputs["Color1"]); L.new(_gsr.outputs["Result"], _gm.inputs["Color2"])
+L.new(_gm.outputs["Color"], b2.inputs["Base Color"])
+bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.4
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
 L.new(n3.outputs["Fac"], bp2.inputs["Height"]); L.new(bp2.outputs["Normal"], b2.inputs["Normal"])
 
@@ -436,7 +445,7 @@ def TH(x, y):
     d = math.hypot(x-(SGN_P[0]+ca*tc_), y-(SGN_P[1]+sa*tc_))
     h += max(0.0, SGN_P[2]-0.05-h)*math.exp(-(d/0.75)**2)
     return h
-FZ_BOT = -10.2               # recess floor
+FZ_BOT = float(os.environ.get('FZB', -9.4))   # recess floor (ref: short pillars under the lowest floor)
 NF = 4; Z0 = -1.45; FH = 2.1  # top slab level and floor pitch (measured off the ref)
 EX, EY = A - 0.6, YC + 1.65  # elevator centre (in a slot on the +x face; measured: shaft centre at ref u~556)
 CRATERS = [(-4.6,1.8,1.0),(-1.5,3.0,0.7),(-5.0,4.6,0.5),(2.0,0.6,0.45),(-0.6,0.9,0.35),(4.6,-0.0,0.3),(-3.2,5.3,0.4)]
@@ -724,8 +733,8 @@ cyl("tankband", (-1.05, -5.25, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, mat
 box("tlabel", (-0.35, -5.25-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
 for k in range(3): box("frame", (-1.75+k*0.18, -5.3, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
 for j in range(2):
-    for k in range(3): box("crate", (4.45+k*0.42, -5.45+j*0.52, FZ_BOT+0.12), (0.4, 0.5, 0.2), M_white, 0.01)
-    for k in range(2): box("crate", (4.65+k*0.42, -5.45+j*0.52, FZ_BOT+0.32), (0.4, 0.5, 0.2), M_white, 0.01)
+    for k in range(3): box("crate", (4.6+j*0.62, -2.7+k*0.36, FZ_BOT+0.08), (0.58, 0.34, 0.12), M_white, 0.01)
+    for k in range(2): box("crate", (4.6+j*0.62, -2.52+k*0.36, FZ_BOT+0.2), (0.58, 0.34, 0.12), M_white, 0.01)
 Lr = C.lights.new("recessl", 'AREA'); Lr.energy = 36; Lr.shape = 'RECTANGLE'; Lr.size = 6.0; Lr.size_y = 4.0; Lr.color = (1, 0.95, 0.88)
 lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.location = (2.6, -3.3, Z0 - (NF-1)*FH - 0.35)
 
@@ -1036,7 +1045,7 @@ text("DO NOT TOUCH", (SGX, SGY-0.045, 0.42), 0.07, M_white, rot=(math.radians(90
 xx = -A + 0.35
 while xx < XC - 1.4:
     cyl("epost", (xx, -B+0.22, 0.12), 0.012, 0.24, M_metal, 6, smooth=False); xx += 0.5
-M_srock = mat("srock",(0.07,0.07,0.075),0.95)
+M_srock = mat("srock",(0.1,0.1,0.105),0.95)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
 for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0.68,0,0),(0,0.34,0),(0.34,0.34,0),(0.68,0.34,0),(0.17,0.17,1),(0.51,0.17,1),(0.34,-0.36,0)]):
@@ -1177,12 +1186,12 @@ sp.visible_shadow = False
 # ================= lights =================
 def aim(obj, d):
     obj.rotation_euler = Vector(d).normalized().to_track_quat('Z','Y').to_euler()
-sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(3)
+sun = C.lights.new("sun", 'SUN'); sun.energy = 3.0; sun.angle = math.radians(7)
 try:
     sun.shadow_maximum_resolution = 0.0005; sun.shadow_filter_radius = 1.5
     sc.eevee.shadow_resolution_scale = 1.0
 except Exception as ex: print("shadow", ex)
-so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.18, -1.0, 0.8))
+so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, -1.0, 0.8))
 fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = False
