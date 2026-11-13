@@ -638,12 +638,12 @@ for i in range(NF):
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.14,0.143,0.15),0.8,spec=0.2))
         # v65: dense mission-control rows (ref ~6 rows x 2 blocks of small desks with lit monitors)
-        for gy in (-1.5, -2.25, -3.0, -3.75, -4.5, -5.25):
+        for gy in (-1.6, -2.6, -3.6, -4.6):   # v67: 4 rows, 1.0 pitch (6 rows hid the floor and bots)
             console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85)
             console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=0.85)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
-        bots = [(0.0,-2.7,2),(1.2,-1.95,1),(2.75,-2.4,0),(4.1,-3.45,3),(2.75,-3.9,7),(5.6,-1.95,5),(3.6,-4.95,4)]
+        bots = [(0.0,-3.15,2),(1.2,-2.15,1),(2.75,-2.6,0),(4.1,-3.15,3),(2.75,-4.0,7),(5.6,-2.15,5),(3.6,-5.2,4)]
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
         BY = -4.0
@@ -1166,7 +1166,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -40)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -50)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
