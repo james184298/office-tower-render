@@ -534,7 +534,7 @@ box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04)
 # v69: ground porch in front of the floors (ref recess ground runs out in front of the lowest floor; tank sits on it)
 PORCH = float(os.environ.get("PORCH", 1.1))
 if PORCH > 0:
-    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.17,0.17,0.175),0.9), 0.02)
+    box("porch", ((XC+A)/2, -B-PORCH/2+0.05, FZ_BOT-0.2), (A-XC-0.1, PORCH+0.1, 0.48), mat("recg2",(0.065,0.065,0.068),0.95,spec=0.1), 0.0)
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -742,7 +742,7 @@ zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.1, zb-FZ_BOT, M_white, 16)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-TY = float(os.environ.get("TANKY", -6.1)); TX = float(os.environ.get("TANKDX", 0.1))
+TY = float(os.environ.get("TANKY", -6.1)); TX = float(os.environ.get("TANKDX", 0.9))
 cyl("tank", (0.2+TX, TY, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
 cyl("tankfan", (1.55+TX, TY, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
