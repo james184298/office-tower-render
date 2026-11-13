@@ -546,6 +546,13 @@ if PORCH > 0:
     po = bpy.data.objects.new("porch", pm); sc.collection.objects.link(po)
     pm.materials.append(mat("recg2",(float(os.environ.get("PORCHC", 0.2)),)*3,0.95,spec=0.1)); pm.materials.append(M_rock)
     for f_ in pm.polygons: f_.material_index = 0 if f_.index == 0 else 1
+    if os.environ.get("PORCHSM", "1") == "1":   # v78: round + roughen the wedge so its sides don't read as flat facets
+        for f_ in pm.polygons: f_.use_smooth = True
+        bv = po.modifiers.new("bv", 'BEVEL'); bv.width = float(os.environ.get("PORCHBV", 0.45)); bv.segments = 5; bv.limit_method = 'ANGLE'
+        sd = po.modifiers.new("sd", 'SUBSURF'); sd.subdivision_type = 'SIMPLE'; sd.levels = 3; sd.render_levels = 3
+        _tx = bpy.data.textures.new("porchn", 'CLOUDS'); _tx.noise_scale = 0.6
+        dm = po.modifiers.new("dm", 'DISPLACE'); dm.texture = _tx; dm.strength = float(os.environ.get("PORCHDS", 0.12)); dm.mid_level = 0.5
+        dm.vertex_group = ""
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -1150,11 +1157,13 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.22)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.6))
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", 0.0)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.95))
 tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
+tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 2.0))
+L.new(tm.outputs["Result"], tpw.inputs[0])   # v78: AgX lifts the ramp's dim tail -> gamma it down so the fade reads wide
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
-L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tm.outputs["Result"], cm.inputs["Color2"])
+L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tpw.outputs[0], cm.inputs["Color2"])
 e1 = N.new("ShaderNodeEmission"); e1.inputs["Strength"].default_value = 1.4; L.new(cm.outputs["Color"], e1.inputs["Color"])
 lw = N.new("ShaderNodeLayerWeight"); lw.inputs["Blend"].default_value = 0.25
 rp_ = N.new("ShaderNodeMath"); rp_.operation = 'POWER'; rp_.inputs[1].default_value = 2.5
@@ -1176,7 +1185,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     land_col = li.outputs["Color"]
     hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
-    if os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:
+    if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
         ci.image.colorspace_settings.name = 'Non-Color'
         L.new(tci.outputs["Object"], ci.inputs["Vector"])
@@ -1187,11 +1196,11 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
         L.new(cal.outputs[0], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
         L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
-    ECL = float(os.environ.get("ECLD", 0.65))
+    ECL = float(os.environ.get("ECLD", 0.85))
     if ECL > 0:   # v77: chunky procedural clouds (the cloud texture never downloads on runners)
         ncl = N.new("ShaderNodeTexNoise"); ncl.inputs["Scale"].default_value = 2.6; ncl.inputs["Detail"].default_value = 4; ncl.inputs["Distortion"].default_value = 0.8
         L.new(tci.outputs["Object"], ncl.inputs["Vector"])
-        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.52; rcl.inputs["From Max"].default_value = 0.64
+        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.55; rcl.inputs["From Max"].default_value = 0.62
         rcl.inputs["To Max"].default_value = ECL; L.new(ncl.outputs["Fac"], rcl.inputs["Value"])
         cmx2 = N.new("ShaderNodeMixRGB"); cmx2.inputs["Color2"].default_value = (0.92,0.94,0.97,1)
         L.new(rcl.outputs["Result"], cmx2.inputs["Fac"]); L.new(land_col, cmx2.inputs["Color1"]); land_col = cmx2.outputs["Color"]
