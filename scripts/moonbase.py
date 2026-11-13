@@ -1160,7 +1160,7 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", 0.02)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.32))
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.03)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.4))
 tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 1.0))
@@ -1186,7 +1186,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.52)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
@@ -1199,18 +1199,18 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
         L.new(cbw.outputs[0], cal.inputs[0]); L.new(ci.outputs["Alpha"], cal.inputs[1])
         L.new(cal.outputs[0], cpow.inputs[0]); L.new(cpow.outputs[0], cmx.inputs["Fac"])
         L.new(land_col, cmx.inputs["Color1"]); land_col = cmx.outputs["Color"]
-    ECL = float(os.environ.get("ECLD", 0.72))
+    ECL = float(os.environ.get("ECLD", 0.55))
     if ECL > 0:   # v77: chunky procedural clouds (the cloud texture never downloads on runners)
         ncl = N.new("ShaderNodeTexNoise"); ncl.inputs["Scale"].default_value = 2.6; ncl.inputs["Detail"].default_value = 4; ncl.inputs["Distortion"].default_value = 0.8
         L.new(tci.outputs["Object"], ncl.inputs["Vector"])
-        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.5; rcl.inputs["From Max"].default_value = 0.67
+        rcl = N.new("ShaderNodeMapRange"); rcl.inputs["From Min"].default_value = 0.54; rcl.inputs["From Max"].default_value = 0.7
         rcl.inputs["To Max"].default_value = ECL; L.new(ncl.outputs["Fac"], rcl.inputs["Value"])
         cmx2 = N.new("ShaderNodeMixRGB"); cmx2.inputs["Color2"].default_value = (0.92,0.94,0.97,1)
         L.new(rcl.outputs["Result"], cmx2.inputs["Fac"]); L.new(land_col, cmx2.inputs["Color1"]); land_col = cmx2.outputs["Color"]
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -38)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -28)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
