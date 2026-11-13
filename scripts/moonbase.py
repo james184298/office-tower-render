@@ -508,7 +508,7 @@ for k in range(int(os.environ.get("NBOUL", 0))):
     o.scale = (rb.uniform(0.8, 1.4), rb.uniform(0.8, 1.4), rb.uniform(0.5, 0.9)); o.rotation_euler = (rb.random(), rb.random(), rb.random()*6)
     md = o.modifiers.new("d", 'DISPLACE'); tx_ = C.textures.new(f"bt{k}", 'CLOUDS'); tx_.noise_scale = 0.4; md.texture = tx_; md.strength = 0.25
 # recess ground
-box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.15,0.15,0.155),0.9))
+box("recessfloor", ((XC+A)/2, (YC-B)/2, FZ_BOT+0.02), (A-XC-0.1, B+YC-0.1, 0.04), mat("recg",(0.085,0.085,0.09),0.9))
 
 # warm lights along the rock edges of the cutaway
 for k in range(9):
@@ -707,7 +707,7 @@ for i in range(NF):
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
-    cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.06, zb-FZ_BOT, M_metal, 12)
+    cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.1, zb-FZ_BOT, M_white, 16)
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
 cyl("tank", (0.2, -5.25, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
 cyl("tankfan", (1.55, -5.25, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
@@ -1031,7 +1031,7 @@ text("DO NOT TOUCH", (SGX, SGY-0.045, 0.42), 0.07, M_white, rot=(math.radians(90
 xx = -A + 0.35
 while xx < XC - 1.4:
     cyl("epost", (xx, -B+0.22, 0.12), 0.012, 0.24, M_metal, 6, smooth=False); xx += 0.5
-M_srock = mat("srock",(0.16,0.16,0.17),0.9)
+M_srock = mat("srock",(0.07,0.07,0.075),0.95)
 # crates, rover, surface bots, rocks
 M_crate = mat("crate",(0.9,0.9,0.92),0.4)
 for k, (cx_, cy_, cz_) in enumerate([(0,0,0),(0.34,0,0),(0.68,0,0),(0,0.34,0),(0.34,0.34,0),(0.68,0.34,0),(0.17,0.17,1),(0.51,0.17,1),(0.34,-0.36,0)]):
@@ -1050,11 +1050,21 @@ for dx in (-0.35, 0.35):
     for dy in (-0.26, 0.26):
         cyl("wheel", (RVX+dx, RVY+dy, 0.12), 0.12, 0.08, M_dark, 12, rot=(math.pi/2, 0, 0))
 bot(1.3, 1.25, 0.0, M_bots[6], 0.27); bot(1.85, 1.05, 0.0, M_bots[4], 0.27)
-for k in range(140):
+_rtex = C.textures.new("rtex", 'CLOUDS'); _rtex.noise_scale = 0.12
+for k in range(190):
     x = random.uniform(-A+0.4, A-0.4); y = random.uniform(-B+0.4, B-0.4)
     if (x > XC-0.3 and y < YC+0.3) or (x > EX-0.8 and y < EY+2.5) or math.hypot(x-PX, y-PY) < 2.4: continue
-    o = ico("rock", (x, y, 0.02+TH(x, y)), random.uniform(0.04, 0.16), M_srock, 1)
-    o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.5,0.8))
+    o = ico("rock", (x, y, 0.02+TH(x, y)), random.uniform(0.04, 0.16), M_srock, 2)
+    o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.5,0.8)); o.rotation_euler = (random.random(), random.random(), random.random()*6)
+    md = o.modifiers.new("d", 'DISPLACE'); md.texture = _rtex; md.strength = 0.06
+# dark rock clusters along the back-left and left edges of the surface (ref)
+for (cx0, cy0, nn) in [(-5.6, 5.2, 9), (-5.9, 2.6, 7), (-3.6, 5.6, 7), (-6.0, -0.6, 6), (-5.2, -3.6, 5), (-0.8, 5.6, 5)]:
+    for j in range(nn):
+        x = cx0 + random.uniform(-0.6, 0.6); y = cy0 + random.uniform(-0.6, 0.6)
+        x = max(-A+0.15, min(A-0.15, x)); y = max(-B+0.15, min(B-0.15, y))
+        o = ico("crock", (x, y, 0.02+TH(x, y)), random.uniform(0.1, 0.32), M_srock, 2)
+        o.scale = (1, random.uniform(0.7,1.3), random.uniform(0.45,0.75)); o.rotation_euler = (random.random(), random.random(), random.random()*6)
+        md = o.modifiers.new("d", 'DISPLACE'); md.texture = _rtex; md.strength = 0.14
 
 # ================= camera =================
 OS = float(os.environ.get("OS", 20.0))
