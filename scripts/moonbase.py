@@ -1160,7 +1160,7 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.2)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.32))
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.32)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.5))
 tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 1.4))
@@ -1176,6 +1176,24 @@ e2 = N.new("ShaderNodeEmission"); e2.inputs["Color"].default_value = (0.55,0.9,1
 ad = N.new("ShaderNodeAddShader"); L.new(e1.outputs[0], ad.inputs[0]); L.new(e2.outputs[0], ad.inputs[1])
 L.new(ad.outputs[0], eo.inputs["Surface"])
 earth = sph("earth", target + R @ Vector((238*k, 315*k, -40)), 72*k, M_earth, seg=64)
+if float(os.environ.get("EHALO", 1.0)) > 0:   # v86: soft atmosphere halo shell (ref limb is a blurred blue glow)
+    M_halo = C.materials.new("halo"); M_halo.use_nodes = True; hn = M_halo.node_tree.nodes; hl = M_halo.node_tree.links; hn.clear()
+    ho = hn.new("ShaderNodeOutputMaterial"); hmx = hn.new("ShaderNodeMixShader"); htr = hn.new("ShaderNodeBsdfTransparent"); hem = hn.new("ShaderNodeEmission")
+    hem.inputs["Color"].default_value = (0.45,0.72,1.5,1); hem.inputs["Strength"].default_value = float(os.environ.get("EHALO", 1.0))
+    hlw = hn.new("ShaderNodeLayerWeight"); hlw.inputs["Blend"].default_value = 0.5
+    hgeo = hn.new("ShaderNodeNewGeometry"); hdp = hn.new("ShaderNodeVectorMath"); hdp.operation = 'DOT_PRODUCT'; hdp.inputs[1].default_value = ldir
+    hl.new(hgeo.outputs["Normal"], hdp.inputs[0])
+    hmr = hn.new("ShaderNodeMapRange"); hmr.inputs["From Min"].default_value = -0.35; hmr.inputs["From Max"].default_value = 0.4; hl.new(hdp.outputs["Value"], hmr.inputs["Value"])
+    h1 = hn.new("ShaderNodeMath"); h1.operation = 'SUBTRACT'; h1.inputs[0].default_value = 1.0; hl.new(hlw.outputs["Facing"], h1.inputs[1])
+    h1b = hn.new("ShaderNodeMath"); h1b.operation = 'SUBTRACT'; h1b.inputs[0].default_value = 1.0; hl.new(h1.outputs[0], h1b.inputs[1])   # = facing
+    h2 = hn.new("ShaderNodeMath"); h2.operation = 'POWER'; h2.inputs[1].default_value = 1.5; hl.new(h1b.outputs[0], h2.inputs[0])
+    h3 = hn.new("ShaderNodeMath"); h3.operation = 'MULTIPLY'; hl.new(h2.outputs[0], h3.inputs[0]); hl.new(hmr.outputs["Result"], h3.inputs[1])
+    h4 = hn.new("ShaderNodeMath"); h4.operation = 'MULTIPLY'; h4.inputs[1].default_value = 0.85; hl.new(h3.outputs[0], h4.inputs[0])
+    hl.new(h4.outputs[0], hmx.inputs["Fac"]); hl.new(htr.outputs[0], hmx.inputs[1]); hl.new(hem.outputs[0], hmx.inputs[2]); hl.new(hmx.outputs[0], ho.inputs["Surface"])
+    try: M_halo.surface_render_method = 'BLENDED'
+    except Exception: pass
+    M_halo.use_backface_culling = True
+    halo = sph("halo", earth.location.copy(), 72*k*1.06, M_halo, seg=64); halo.visible_shadow = False
 EARTH_IMG = os.environ.get("EARTH", "/tmp/earth_land.jpg"); CLOUD_IMG = os.environ.get("CLOUDS", "/tmp/earth_cloud.jpg")
 if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     print("EARTH texture", EARTH_IMG)
