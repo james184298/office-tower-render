@@ -416,6 +416,7 @@ XC, YC = -1.0, -0.6          # cutaway region: x > XC and y < YC
 ZB, ZT = -16.9, -8.0         # rock bottom tip / start of taper
 # taper (measured off the ref silhouette): scale about a centre offset toward +x+y, so the left side tapers more
 TAPER = [(-16.9, 0.15), (-16.5, 0.25), (-15.8, 0.38), (-14.8, 0.64), (-13.5, 0.79), (-11.9, 0.9), (-10.5, 0.95), (-9.3, 0.985), (-8.0, 1.0)]
+if os.environ.get('OLDTAPER'): TAPER = [(-16.9, 0.15), (-16.5, 0.25), (-15.8, 0.42), (-14.8, 0.72), (-13.5, 0.85), (-11.9, 0.93), (-10.5, 0.96), (-9.3, 0.985), (-8.0, 1.0)]
 TCX, TCY = 2.5, 2.5
 def taper_s(z):
     if z <= TAPER[0][0]: return TAPER[0][1]
@@ -448,6 +449,7 @@ for v in bm.verts:
     v.co = Vector((v.co.x*2*A, v.co.y*2*B, ZB + (v.co.z+0.5)*(0-ZB)))
 bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=70, use_grid_fill=True)
 def smooth(t): t = max(0, min(1, t)); return t*t*(3-2*t)
+LEDA = float(os.environ.get('LEDA', 0.13)); LEDB = float(os.environ.get('LEDB', 0.06)); OFF0 = float(os.environ.get('OFF0', 0.02))
 for v in bm.verts:
     x, y, z = v.co
     ontop = z > -0.001
@@ -456,8 +458,8 @@ for v in bm.verts:
         n = noise.noise(Vector((x*0.18+3, y*0.18, z*0.45)))
         n2 = noise.noise(Vector((x*0.6, y*0.6, z*1.2)))
         layer = math.floor((z+0.245*(y-x))/0.7 + 0.5*noise.noise(Vector((x*0.12, y*0.12, 7.0))))
-        led = 0.13*noise.noise(Vector((layer*1.73, 0.5, 2.0))) + 0.06*noise.noise(Vector((x*0.35+layer*0.9, y*0.35, 4.0)))
-        off = 0.2*n + 0.05*n2 + led + 0.02
+        led = LEDA*noise.noise(Vector((layer*1.73, 0.5, 2.0))) + LEDB*noise.noise(Vector((x*0.35+layer*0.9, y*0.35, 4.0)))
+        off = 0.2*n + 0.05*n2 + led + OFF0
         if z > -0.6: off *= max(0.0, -z/0.6)
         if abs(x)/A >= abs(y)/B: v.co.x += math.copysign(off, x)
         else: v.co.y += math.copysign(off, y)
@@ -495,6 +497,7 @@ for nm, cobj in [("cut", cutter("cutbox", XC, A+4, -B-4, YC, FZ_BOT, 6)),
     bb = blk.modifiers.new(nm, 'BOOLEAN'); bb.object = cobj; bb.solver = 'EXACT'
     try: bb.material_mode = 'TRANSFER'
     except Exception: pass
+_dg = bpy.context.evaluated_depsgraph_get(); print('BLOCK_SECONDS polys', len(blk.evaluated_get(_dg).data.polygons), 'base', len(me.polygons))
 # rubble / boulders around the tapered bottom of the rock
 M_boul = mat("boulder",(0.07,0.07,0.075),0.95)
 rb = random.Random(5)
