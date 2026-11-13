@@ -590,7 +590,7 @@ for i in range(NF):
         box("ldesk", (XC+0.3, -1.85, zt+0.3), (0.45, 1.8, 0.6), M_desk)
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
-        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.24,0.245,0.26),0.4))
+        box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.06,0.062,0.07),0.45))
         for gx, gy in ((0.75, 0.0), (4.15, -0.35)):
             for r_, yy in enumerate([-1.55, -2.6, -3.65, -4.7]):
                 console_row(gx, yy+gy, zt+0.04, 5, seg=0.46)
@@ -764,8 +764,8 @@ while yy < YC:
 box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC, 0.02), M_metal)
 # dark structural rim around the top of the cutaway
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
-box("rimA", ((XC+A)/2, YC+0.18, -0.15), (A-XC, 0.36, 0.34), M_rim)
-box("rimB", (XC-0.18, (YC-B)/2, -0.15), (0.36, B+YC, 0.34), M_rim)
+box("rimA", ((XC+A)/2, YC+0.18, -0.27), (A-XC, 0.36, 0.58), M_rim)
+box("rimB", (XC-0.18, (YC-B)/2, -0.27), (0.36, B+YC, 0.58), M_rim)
 box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(0.07,0.07,0.075),0.5))
 for k in range(8):
     box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
@@ -1107,7 +1107,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
     LON = float(os.environ.get("ELON", -52)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
-    TL = math.radians(float(os.environ.get("ETILT", 22))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
+    TL = math.radians(float(os.environ.get("ETILT", 12))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
     earth.rotation_euler = (Mw @ Ml.inverted()).to_euler()
 # stars on a backdrop plane facing the camera
