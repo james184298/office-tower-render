@@ -206,7 +206,7 @@ nt = M_reg.node_tree; N = nt.nodes; L = nt.links
 b2 = N["Principled BSDF"]; b2.inputs["Roughness"].default_value = 1
 n2 = N.new("ShaderNodeTexNoise"); n2.inputs["Scale"].default_value = 0.8; n2.inputs["Detail"].default_value = 8; n2.inputs["Roughness"].default_value = 0.6
 r2 = N.new("ShaderNodeValToRGB"); er = r2.color_ramp.elements
-er[0].position = 0.3; er[0].color = (0.09,0.09,0.095,1); er[1].position = 0.7; er[1].color = (0.33,0.33,0.34,1)
+er[0].position = 0.3; er[0].color = (0.075,0.075,0.08,1); er[1].position = 0.7; er[1].color = (0.28,0.28,0.29,1)
 L.new(n2.outputs["Fac"], r2.inputs["Fac"]); L.new(r2.outputs["Color"], b2.inputs["Base Color"])
 bp2 = N.new("ShaderNodeBump"); bp2.inputs["Strength"].default_value = 0.25
 n3 = N.new("ShaderNodeTexNoise"); n3.inputs["Scale"].default_value = 12; n3.inputs["Detail"].default_value = 8
@@ -347,9 +347,11 @@ def list_screen_img():
     return cv.image("list_img")
 
 def console_img():
-    cv = Canvas(64, 40, (0.01, 0.02, 0.06))
-    cv.rect(3, 30, 61, 36, (0.05, 0.15, 0.4)); cv.textbars(4, 4, 40, 26, (0.4, 0.6, 0.9), rh=2, gap=3, rnd=rr)
-    cv.rect(50, 8, 58, 14, (0.8, 0.12, 0.08))
+    cv = Canvas(64, 40, (0.01, 0.03, 0.08))
+    cv.rect(2, 2, 30, 38, (0.02, 0.1, 0.25)); cv.textbars(4, 4, 28, 36, (0.3, 1.0, 0.45), rh=2, gap=3, rnd=rr)
+    cv.rect(33, 2, 62, 20, (0.05, 0.25, 0.55)); cv.textbars(35, 4, 60, 18, (0.6, 0.9, 1.0), rh=2, gap=3, rnd=rr)
+    cv.rect(33, 23, 62, 38, (0.02, 0.15, 0.1)); cv.rect(36, 30, 58, 33, (0.2, 0.95, 0.5))
+    cv.rect(50, 8, 58, 12, (0.95, 0.5, 0.1))
     return cv.image("console_img")
 
 def dial_panel_img():
@@ -386,7 +388,7 @@ def ai_panel_img():   # black panel with large white glyph bars
 
 M_bigimg = imgmat("bigscr", big_screen_img(), 1.6)
 M_listimg = imgmat("listscr", list_screen_img(), 1.4)
-M_conimg = imgmat("conscr", console_img(), 1.3)
+M_conimg = imgmat("conscr", console_img(), 2.0)
 M_dialimg = imgmat("dialp", dial_panel_img(), 0, emissive=False)
 M_poster = imgmat("poster", poster_img(), 1.1)
 M_chartimg = imgmat("chartp", chart_panel_img(), 0, emissive=False)
@@ -825,8 +827,8 @@ M_win = emis("winw", (1.0,0.92,0.75), 1.6)
 for k in range(4):
     a = -math.pi/4 + (k-1.5)*0.17
     box("win", (PX+math.cos(a)*(RR+0.005), PY+math.sin(a)*(RR+0.005), 8.35), (0.12, 0.12, 0.085), M_win, rz=a)
-for k in range(8):
-    a = -math.pi/4 + (k-3.5)*0.36
+for k in range(3):
+    a = -math.pi/4 + (k-1)*0.75
     box("hatch", (PX+math.cos(a)*(RR+0.003), PY+math.sin(a)*(RR+0.003), 7.3), (0.17, 0.17, 0.1), M_rband, rz=a)
 # aft strakes (four tall narrow white plates) + splayed landing struts
 for k in range(4):
@@ -866,7 +868,8 @@ def swoosh(name, p0, p1, bulge, thick, m, width=0.04, frame=None, n=24):
 # vertical SPACEX on the body, facing camera (wide letter spacing like the logo)
 Xv = Vector((0,0,1)); Zv = cd.copy(); Yv = Zv.cross(Xv)
 FR = Matrix.Translation(Vector((PX, PY, 2.75)) + cd*(RR+0.012)) @ Matrix((Xv, Yv, Zv)).transposed().to_4x4()
-t = text("SPACEX", (0,0,0), 0.52, M_dark, extrude=0.004, align='LEFT', spacing=1.12)
+t = text("SPACEX", (0,0,0), 0.66, M_dark, extrude=0.004, align='LEFT', spacing=1.1)
+t.data.offset = 0.012
 t.matrix_world = FR
 t.data.align_y = 'CENTER'
 bpy.context.view_layer.update()
@@ -958,11 +961,11 @@ for k in range(6):
     t_ = 0.3 + k*(SIGN_W-0.6)/5
     base_ = SG0 + ex_*t_ + back_
     gz = 0.0
-    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+0.55), 0.016)
+    seg_((base_.x, base_.y, gz), (base_.x, base_.y, SG0.z+GH+0.25), 0.014)
     if k < 5:
         nb = SG0 + ex_*(t_+(SIGN_W-0.6)/5) + back_
         seg_((base_.x, base_.y, gz+0.1), (nb.x, nb.y, SG0.z+0.5), 0.01)
-for zz_ in (SG0.z+0.1, SG0.z+0.5):
+for zz_ in (SG0.z+0.1, SG0.z+0.5, SG0.z+GH+0.25):
     p0_ = SG0 + ex_*(0.3) + back_; p1_ = SG0 + ex_*(SIGN_W-0.3) + back_
     seg_((p0_.x, p0_.y, zz_), (p1_.x, p1_.y, zz_), 0.014)
 # LANDING ZONE 1 painted on the pad (reads along the camera's right axis)
@@ -1069,7 +1072,7 @@ ldir = (-right*0.9 + up*0.1 + back*0.44).normalized()
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.3; tm.inputs["From Max"].default_value = 0.3
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = -0.04; tm.inputs["From Max"].default_value = 0.42
 tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
