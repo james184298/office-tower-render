@@ -587,7 +587,7 @@ def chair(x, y, z, face=1, m=None, s=0.85):
 def stool(x, y, z, m=M_white):
     cyl("stool", (x, y, z+0.36), 0.1, 0.04, m, 12); cyl("sl", (x, y, z+0.18), 0.018, 0.36, M_metal, 6, smooth=False)
 
-def console_row(cx, cy, z, n, R=7.0, seg=0.5):
+def console_row(cx, cy, z, n, R=7.0, seg=0.5, dk=1.0):
     """curved row of mission-control workstations; centre of curvature toward +y (the big screen)"""
     for k in range(n):
         th = (k-(n-1)/2)*seg/R
@@ -595,12 +595,12 @@ def console_row(cx, cy, z, n, R=7.0, seg=0.5):
         rot = th
         def P(dx, dy):   # local -> world (rotated about z by rot)
             return (px + dx*math.cos(rot) - dy*math.sin(rot), py + dx*math.sin(rot) + dy*math.cos(rot))
-        o = box("cdesk", (*P(0, 0), z+0.36), (seg-0.03, 0.3, 0.04), M_desk); o.rotation_euler.z = rot
-        o = box("cbody", (*P(0, 0.05), z+0.18), (seg-0.08, 0.18, 0.34), M_dark); o.rotation_euler.z = rot
-        for dx in (-0.12, 0.12):
-            o = box("cmonb", (*P(dx, 0.11), z+0.52), (0.2, 0.02, 0.135), M_dark); o.rotation_euler.z = rot
-            o = plane("cmon", (*P(dx, 0.098), z+0.52), 0.185, 0.12, M_conimg); o.rotation_euler.z = rot
-        cx_, cy_ = P(0, -0.3); chair(cx_, cy_, z, 1, s=0.8)
+        o = box("cdesk", (*P(0, 0), z+0.36), (seg-0.03, 0.3*dk, 0.04), M_desk); o.rotation_euler.z = rot
+        o = box("cbody", (*P(0, 0.05*dk), z+0.18), (seg-0.08, 0.18*dk, 0.34), M_dark); o.rotation_euler.z = rot
+        for dx in (-0.25*seg, 0.25*seg):
+            o = box("cmonb", (*P(dx, 0.11*dk), z+0.52), (0.4*seg, 0.02, 0.135), M_dark); o.rotation_euler.z = rot
+            o = plane("cmon", (*P(dx, 0.11*dk-0.012), z+0.52), 0.37*seg, 0.12, M_conimg); o.rotation_euler.z = rot
+        cx_, cy_ = P(0, -0.3*dk); chair(cx_, cy_, z, 1, s=0.8*dk)
 
 slabs = []
 for i in range(NF):
@@ -635,11 +635,13 @@ for i in range(NF):
         plane("dialp", (XC+0.04, -3.75, zt+0.9), 1.9, 0.85, M_dialimg, '+X')
         # darker raised platform under the consoles
         box("plat", (2.6, -3.2, zt+0.02), (6.4, 4.4, 0.04), mat("plat",(0.14,0.143,0.15),0.8,spec=0.2))
-        for gx, gy, nn in ((0.55, -1.7, 6), (0.85, -3.15, 5), (0.4, -4.6, 4), (4.2, -2.0, 5), (4.5, -3.7, 4)):
-            console_row(gx, gy, zt+0.04, nn, seg=0.5)
+        # v65: dense mission-control rows (ref ~6 rows x 2 blocks of small desks with lit monitors)
+        for gy in (-1.5, -2.25, -3.0, -3.75, -4.5, -5.25):
+            console_row(1.0, gy, zt+0.04, 6, R=12.0, seg=0.42, dk=0.85)
+            console_row(4.3, gy, zt+0.04, 5, R=12.0, seg=0.42, dk=0.85)
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
-        bots = [(0.0,-2.12,2),(1.2,-1.1,1),(2.45,-2.05,0),(4.1,-3.55,3),(2.5,-3.15,7),(5.6,-2.2,5),(3.3,-5.3,4)]
+        bots = [(0.0,-2.7,2),(1.2,-1.95,1),(2.75,-2.4,0),(4.1,-3.45,3),(2.75,-3.9,7),(5.6,-1.95,5),(3.6,-4.95,4)]
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
         BY = -4.0
@@ -797,15 +799,15 @@ box("kdoor", (KX, KY-0.215, KZ+0.22), (0.2, 0.02, 0.38), M_dark)
 cyl("kpost", (KX+0.1, KY+0.05, KZ+0.65), 0.02, 0.24, M_metal, 6)
 c_ = sph("kdish", (KX+0.1, KY+0.05, KZ+0.78), 0.15, M_white, (1, 1, 0.35), 16); c_.rotation_euler = (math.radians(50), 0, math.radians(-45))
 
-# thin railing along the cutaway rim on the surface
-xx = XC + 0.1
+# thin railing along the cutaway rim on the surface (v65: off by default, ref shows none)
+xx = XC + 0.1 if os.environ.get("RRAIL") else 1e9
 while xx < EX - 0.7:
     cyl("rpost", (xx, YC+0.12, 0.17), 0.012, 0.34, M_metal, 6, smooth=False); xx += 0.45
-box("rrail", ((XC+EX-0.7)/2, YC+0.12, 0.34), (EX-0.7-XC, 0.02, 0.02), M_metal)
-yy = -B + 0.15
+if os.environ.get("RRAIL"): box("rrail", ((XC+EX-0.7)/2, YC+0.12, 0.34), (EX-0.7-XC, 0.02, 0.02), M_metal)
+yy = -B + 0.15 if os.environ.get("RRAIL") else 1e9
 while yy < YC:
     cyl("rpost", (XC-0.12, yy, 0.17), 0.012, 0.34, M_metal, 6, smooth=False); yy += 0.45
-box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC, 0.02), M_metal)
+if os.environ.get("RRAIL"): box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC, 0.02), M_metal)
 # dark structural rim around the top of the cutaway
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.27), (A-XC, 0.36, 0.58), M_rim)
@@ -1162,7 +1164,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     L.new(land_col, cm.inputs["Color1"])
     # orient: longitude -65 on the equator faces the camera, north up on screen
     # image sphere projection: u = 0.5 - atan2(x, y)/2pi, so longitude lon sits at (sin(-lon), cos(-lon))
-    LON = float(os.environ.get("ELON", -50)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
+    LON = float(os.environ.get("ELON", -40)); L1 = Vector((math.sin(math.radians(-LON)), math.cos(math.radians(-LON)), 0))
     Lz = Vector((0, 0, 1)); L3 = Lz.cross(L1)
     TL = math.radians(float(os.environ.get("ETILT", 8))); W1 = (back.normalized()*math.cos(TL) - up.normalized()*math.sin(TL)); Wz = (up.normalized()*math.cos(TL) + back.normalized()*math.sin(TL)); W3 = Wz.cross(W1)
     Mw = Matrix((W1, Wz, W3)).transposed(); Ml = Matrix((L1, Lz, L3)).transposed()
