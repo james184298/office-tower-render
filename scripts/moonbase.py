@@ -1130,7 +1130,7 @@ L.new(rc.outputs["Color"], mxe.inputs["Fac"]); L.new(re.outputs["Color"], mxe.in
 L.new(mxe.outputs["Color"], be.inputs["Base Color"])
 # self-lit earth with a terminator (night side on the right) and a thin blue atmosphere rim
 eo = N["Material Output"]
-ldir = (-right*0.9 - up*0.12 + back*0.44).normalized()
+ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normalized()   # v71: 0.44 -> 0.22 moves the terminator left (ref ~65% lit), hides Africa
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
