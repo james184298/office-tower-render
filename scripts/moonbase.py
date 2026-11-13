@@ -1144,7 +1144,7 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = 0.0; tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.38))
+tm = N.new("ShaderNodeMapRange"); tm.inputs["From Min"].default_value = 0.0; tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.65))
 tm.inputs["To Min"].default_value = 0.006; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
