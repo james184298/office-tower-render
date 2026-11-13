@@ -1160,10 +1160,10 @@ ldir = (-right*0.9 - up*0.12 + back*float(os.environ.get("ELDB", 0.22))).normali
 geo = N.new("ShaderNodeNewGeometry"); dp = N.new("ShaderNodeVectorMath"); dp.operation = 'DOT_PRODUCT'
 dp.inputs[1].default_value = ldir
 L.new(geo.outputs["Normal"], dp.inputs[0])
-tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.03)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.4))
+tm = N.new("ShaderNodeMapRange"); tm.interpolation_type = 'SMOOTHSTEP'; tm.inputs["From Min"].default_value = float(os.environ.get("ETMIN", -0.2)); tm.inputs["From Max"].default_value = float(os.environ.get("ETSOFT", 0.32))
 tm.inputs["To Min"].default_value = 0.0; tm.inputs["To Max"].default_value = 1.0
 L.new(dp.outputs["Value"], tm.inputs["Value"])
-tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 1.0))
+tpw = N.new("ShaderNodeMath"); tpw.operation = 'POWER'; tpw.inputs[1].default_value = float(os.environ.get("EPOW", 1.4))
 L.new(tm.outputs["Result"], tpw.inputs[0])   # v78: AgX lifts the ramp's dim tail -> gamma it down so the fade reads wide
 cm = N.new("ShaderNodeMixRGB"); cm.blend_type = 'MULTIPLY'; cm.inputs["Fac"].default_value = 1
 L.new(mxe.outputs["Color"], cm.inputs["Color1"]); L.new(tpw.outputs[0], cm.inputs["Color2"])
@@ -1186,7 +1186,7 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.52)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.7))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
     if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
