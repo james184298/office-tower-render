@@ -71,6 +71,7 @@ def text(body, loc, size, m, rot=(0,0,0), extrude=0.02, align='CENTER', spacing=
 M_white = mat("white", (0.82,0.83,0.85), 0.3)
 M_slab = mat("slab", (0.3,0.303,0.31), 0.45)
 M_dark = mat("dark", (0.025,0.027,0.03), 0.35)
+M_ldark = mat("ldark", (float(os.environ.get("LDC",0.12)),)*3, 0.45)   # v88: lower-floor props lighter (ref)
 M_desk = mat("desk", (0.012,0.013,0.016), 0.6, spec=0.25)
 M_chair = mat("chair", (0.015,0.015,0.018), 0.5)
 M_wall = mat("wall", (0.035,0.036,0.04), 0.6)
@@ -466,7 +467,7 @@ for v in bm.verts:
     v.co = Vector((v.co.x*2*A, v.co.y*2*B, ZB + (v.co.z+0.5)*(0-ZB)))
 bmesh.ops.subdivide_edges(bm, edges=bm.edges[:], cuts=70, use_grid_fill=True)
 def smooth(t): t = max(0, min(1, t)); return t*t*(3-2*t)
-LEDA = float(os.environ.get('LEDA', 0.13)); LEDB = float(os.environ.get('LEDB', 0.06)); OFF0 = float(os.environ.get('OFF0', 0.02))
+RNS = float(os.environ.get('RNS', 0.035)); LEDA = float(os.environ.get('LEDA', 0.13)); LEDB = float(os.environ.get('LEDB', 0.06)); OFF0 = float(os.environ.get('OFF0', 0.02))
 for v in bm.verts:
     x, y, z = v.co
     ontop = z > -0.001
@@ -489,7 +490,7 @@ for v in bm.verts:
         v.co.z += h
     if z < ZT:
         s = taper_s(z)
-        ns = 1 + 0.05*noise.noise(Vector((x*0.3, y*0.3, z*0.3)))*smooth((ZT-z)/2.5)
+        ns = 1 + (0.05*noise.noise(Vector((x*0.3, y*0.3, z*0.3))) + RNS*noise.noise(Vector((x*1.1, y*1.1, z*0.9))))*smooth((ZT-z)/2.5)   # v88: + finer noise breaks up big flat facets
         v.co.x = TCX + (v.co.x - TCX)*s*ns; v.co.y = TCY + (v.co.y - TCY)*s*ns
     if z > -5.0:
         v.co.z += TH(x, y)*smooth(1 + z/5.0)
@@ -686,13 +687,13 @@ for i in range(NF):
             chair(xx+0.1, BY-0.48, zt, -1, M_white); chair(xx-0.05, BY+0.5, zt, 1, M_white)
         for k in range(6):
             chair(4.5+ (k % 2)*0.7, -3.4 - (k//2)*0.7, zt, 1, M_white)
-        cyl("rug", (5.0, -2.9, zt+0.01), 0.85, 0.02, M_dark, 48)
+        cyl("rug", (5.0, -2.9, zt+0.01), 0.85, 0.02, M_ldark, 48)
         cyl("podium", (5.0, -2.9, zt+0.55), 0.16, 1.1, M_white, 24); cyl("podb", (5.0, -2.9, zt+0.04), 0.32, 0.05, M_white, 24)
         for a_ in range(6): stool(5.0+0.62*math.cos(a_*1.047), -2.9+0.62*math.sin(a_*1.047), zt, M_white)
         for k in range(5): box("tmon", (0.15+k*1.06, -4.38, zt+0.66), (0.3, 0.02, 0.2), M_dark); plane("tmons", (0.15+k*1.06, -4.395, zt+0.66), 0.27, 0.17, M_conimg)
         box("gpart", (4.1, -2.4, zt+0.5), (0.02, 1.6, 1.0), M_glass)
-        for dx_ in (5.2, 5.75): box("pouf", (dx_, -1.75, zt+0.15), (0.34, 0.34, 0.3), M_dark, 0.03)
-        cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_dark, 32)
+        for dx_ in (5.2, 5.75): box("pouf", (dx_, -1.75, zt+0.11), (0.24, 0.24, 0.22), M_ldark, 0.03)
+        cyl("engbase", (5.6, -1.0, zt+0.04), 0.45, 0.08, M_ldark, 32)
         plant(XC+0.3, -5.5, zt, 0.7); plant(6.0, -5.5, zt, 0.7)
         bots = [(1.1,-3.85,0),(2.7,-3.9,4),(5.2,-4.6,7),(4.4,-3.4,1),(0.2,-5.45,2)]
     elif i == 2:  # ---- lounge: purple carpet + wood bar ----
@@ -701,29 +702,29 @@ for i in range(NF):
         box("carpet", (0.5, -4.7, zt+0.01), (2.4, 2.0, 0.02), M_purple)
         box("ltable", (0.4, -4.6, zt+0.2), (1.3, 0.5, 0.04), M_wood)
         for k in range(3): box("cube", (-0.3+k*0.55, -5.3, zt+0.13), (0.28, 0.28, 0.26), M_white, 0.01)
-        M_sofa = mat("sofa",(0.03,0.03,0.035),0.8)
+        M_sofa = mat("sofa",(float(os.environ.get("SOFAC",0.09)),)*3,0.8)
         box("sofa", (-0.55, -4.4, zt+0.17), (0.4, 1.0, 0.3), M_sofa)
         box("bar", (3.4, -4.25, zt+0.42), (3.6, 0.5, 0.06), mat("lwood",(0.72,0.58,0.4),0.5), 0.01)
         box("barb", (3.4, -4.15, zt+0.2), (3.5, 0.25, 0.4), M_white)
         for k in range(9): stool(1.8+k*0.4, -4.75, zt, M_white)
         for k in range(3): box("pc", (2.6+k*0.8, -4.1, zt+0.56), (0.24, 0.04, 0.16), M_dark)
         cyl("groom", (5.4, -2.6, zt+0.75), 0.75, 1.5, M_glass, 40)
-        cyl("groomb", (5.4, -2.6, zt+0.01), 0.77, 0.02, M_dark, 40)
+        cyl("groomb", (5.4, -2.6, zt+0.01), 0.77, 0.02, M_ldark, 40)
         cyl("groomt", (5.4, -2.6, zt+0.4), 0.3, 0.04, M_white, 24)
         for a in range(5): chair(5.4+0.5*math.cos(a*1.25), -2.6+0.5*math.sin(a*1.25), zt, 1, M_white)
         box("sofa2", (4.6, -5.4, zt+0.17), (0.6, 0.35, 0.3), M_sofa)
         M_bdesk = mat("bdesk",(0.03,0.06,0.2),0.35)
         for k in range(4): chair(1.9, -3.5-k*0.5, zt, 1, M_white)
         for p in [(2.4,-5.4),(5.6,-4.4)]:
-            cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_dark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_dark, 8)
+            cyl("ctab", (p[0], p[1], zt+0.4), 0.22, 0.03, M_ldark, 20); cyl("ctl", (p[0], p[1], zt+0.2), 0.025, 0.4, M_ldark, 8)
         plant(6.0, -5.3, zt, 0.7, True)
         # extra lounge furniture (ref: dark armchairs, small round tables, more seating)
-        for p in [(1.6,-5.5),(2.0,-3.9),(5.9,-3.6),(4.9,-3.4),(-0.2,-3.7)]:
-            box("arm", (p[0], p[1], zt+0.16), (0.36, 0.36, 0.32), M_sofa, 0.04)
-            box("armb", (p[0], p[1]+0.15, zt+0.34), (0.36, 0.06, 0.3), M_sofa, 0.02)
+        for p in [(1.6,-5.5),(5.9,-3.6),(-0.2,-3.7)]:   # v88: fewer, smaller armchairs
+            box("arm", (p[0], p[1], zt+0.12), (0.27, 0.27, 0.24), M_sofa, 0.03)
+            box("armb", (p[0], p[1]+0.11, zt+0.26), (0.27, 0.05, 0.22), M_sofa, 0.02)
         for p in [(1.1,-3.6),(5.0,-1.8),(5.9,-1.2)]:
             cyl("wtab", (p[0], p[1], zt+0.36), 0.25, 0.03, M_white, 24); cyl("wtl", (p[0], p[1], zt+0.18), 0.03, 0.36, M_white, 8)
-            for a_ in range(3): stool(p[0]+0.42*math.cos(a_*2.1+0.3), p[1]+0.42*math.sin(a_*2.1+0.3), zt, M_dark)
+            for a_ in range(3): stool(p[0]+0.42*math.cos(a_*2.1+0.3), p[1]+0.42*math.sin(a_*2.1+0.3), zt, M_ldark)
         plant(-0.6, -5.5, zt, 0.6); plant(2.0, -5.6, zt, 0.6, True)
         bots = [(0.3,-4.0,5),(1.2,-5.0,4),(4.6,-5.0,3),(3.0,-5.35,0)]
     else:         # ---- garden / workshop ----
@@ -736,7 +737,7 @@ for i in range(NF):
         for p in [(0.2,-4.4,1.1,True),(1.9,-3.7,1.0,True),(3.8,-4.6,1.2,True),(5.6,-3.0,1.0,True),(XC+0.4,-3.8,0.8,False),(4.9,-5.4,0.8,False),(3.0,-4.4,0.7,False)]:
             plant(p[0], p[1], zt, p[2], p[3])
         for p in [(0.6,-5.3),(1.4,-4.2),(4.3,-5.0),(5.0,-4.0),(-0.4,-5.0)]:
-            box("bcube", (p[0], p[1], zt+0.085), (0.17, 0.17, 0.17), M_dark, 0.01)
+            box("bcube", (p[0], p[1], zt+0.06), (0.12, 0.12, 0.12), M_ldark, 0.01)
         M_opt = mat("optimus",(0.05,0.05,0.055),0.3,0.6)
         for (ox, oy) in [(5.0, -4.5), (5.55, -4.15), (0.9, -3.9)]:
             for sgn_ in (-1, 1):
@@ -750,19 +751,27 @@ for i in range(NF):
         cyl("rbench", (1.2, -5.3, zt+0.12), 0.45, 0.24, M_wood, 32)
         box("robase", (5.6, -5.2, zt+0.3), (0.4, 0.4, 0.6), M_white)
         cyl("roarm", (5.6, -5.0, zt+0.85), 0.05, 0.6, M_white, 8).rotation_euler.x = 0.6
-        for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_dark, 16)
+        for k in range(2): cyl("barrel", (5.2+k*0.45, -1.4, zt+0.3), 0.18, 0.6, M_ldark, 16)
         # extra garden density: big leafy plants, dark kiosk column, more cubes and planters
         for p in [(-0.3,-3.8,1.3),(1.5,-5.5,1.2),(4.2,-3.6,1.35),(6.0,-4.5,1.1),(5.9,-2.0,1.2),(2.2,-3.5,0.9)]:
             plant(p[0], p[1], zt, p[2], True)
-        box("kcol", (1.7, -4.6, zt+0.5), (0.22, 0.22, 1.0), M_dark); box("kcolb", (1.7, -4.6, zt+0.03), (0.4, 0.4, 0.06), M_dark)
+        box("kcol", (1.7, -4.6, zt+0.5), (0.22, 0.22, 1.0), M_ldark); box("kcolb", (1.7, -4.6, zt+0.03), (0.4, 0.4, 0.06), M_ldark)
         for p in [(0.0,-4.6),(2.9,-3.6),(5.6,-5.6),(4.0,-5.6)]:
-            box("bcube", (p[0], p[1], zt+0.085), (0.17, 0.17, 0.17), M_dark, 0.01)
+            box("bcube", (p[0], p[1], zt+0.06), (0.12, 0.12, 0.12), M_ldark, 0.01)
         for p in [(0.6,-3.6),(3.4,-3.7)]:
             cyl("planter", (p[0], p[1], zt+0.2), 0.22, 0.4, M_white, 20)
         bots = [(2.6,-4.1,0),(4.6,-5.5,5),(1.0,-5.4,6),(3.6,-5.45,0)]
     for bx, by, ci in bots:
         bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.27)) if i == 0 else float(os.environ.get("LBS", 0.25)))   # v85: ref lower-floor bots are small
 
+# v88: small rocks / pebbles on the ground apron (ref ground has scattered debris)
+import random as _rnd
+_rg = _rnd.Random(7); M_peb = mat("pebble", (0.2,0.2,0.21), 0.9)
+if os.environ.get("PEBBLES", "1") == "1":
+    for _k in range(int(os.environ.get("NPEB", 22))):
+        _x = _rg.uniform(XC-1.2, A-0.3); _y = _rg.uniform(-B-0.85, -B+0.2); _r = _rg.uniform(0.04, 0.13)
+        if abs(_y-float(os.environ.get("TANKY", -6.1))) < 0.7 and -1.0 < _x < 2.6: continue
+        _o = ico("peb", (_x, _y, FZ_BOT+0.04+_r*0.2), _r, M_peb, 1); _o.scale = (1, _rg.uniform(0.7,1.2), _rg.uniform(0.45,0.7)); _o.rotation_euler.z = _rg.uniform(0, 3)
 # under the lowest floor: tank, pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
@@ -788,7 +797,7 @@ lro = C.objects.new("recessl", Lr); sc.collection.objects.link(lro); lro.locatio
 M_efr = mat("efr",(0.04,0.04,0.045),0.4)
 eh_top = Z0
 ES = 0.8; eh = ES/2
-box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (ES, ES, eh_top-FZ_BOT), mat("eglass",(0.8,0.85,0.9),0.05, emit=(0.55,0.62,0.7), estr=0.12, alpha=0.28))
+box("elev", (EX, EY, (FZ_BOT+eh_top)/2), (ES, ES, eh_top-FZ_BOT), mat("eglass",(0.85,0.88,0.92),0.05, emit=(0.6,0.65,0.72), estr=float(os.environ.get("EGE",0.06)), alpha=float(os.environ.get("EGA",0.16))))
 for dx in (-eh, eh):
     for dy in (-eh, eh):
         box("efr", (EX+dx, EY+dy, (FZ_BOT+eh_top)/2), (0.045, 0.045, eh_top-FZ_BOT), M_efr)
@@ -800,12 +809,12 @@ for k in range(NF):
     box("ebar", (EX+eh-0.08, EY+eh-0.05, Z0-k*FH-0.9), (0.03, 0.03, 0.7), M_lamp)
 # cab: glass with white frame, pink glow and a bot inside
 cz = Z0 - 2*FH
-box("ecab", (EX, EY, cz+0.55), (0.7, 0.7, 1.0), mat("ecab",(0.95,0.7,0.85),0.05,emit=(1,0.35,0.65),estr=0.35, alpha=0.22))
+box("ecab", (EX, EY, cz+0.55), (0.7, 0.7, 1.0), mat("ecab",(0.95,0.9,0.93),0.05,emit=(1,0.6,0.8),estr=float(os.environ.get("ECE",0.12)), alpha=0.4))
 for dx in (-0.35, 0.35):
     for dy in (-0.35, 0.35):
         box("cabf", (EX+dx, EY+dy, cz+0.55), (0.035, 0.035, 1.0), M_white)
 box("cabfl", (EX, EY, cz+0.04), (0.72, 0.72, 0.06), M_white); box("cabrf", (EX, EY, cz+1.06), (0.72, 0.72, 0.06), M_white)
-pl = C.lights.new("cabl", 'POINT'); pl.energy = 25; pl.color = (1, 0.4, 0.7); pl.shadow_soft_size = 0.3
+pl = C.lights.new("cabl", 'POINT'); pl.energy = float(os.environ.get("ECL_E", 8)); pl.color = (1, 0.6, 0.8); pl.shadow_soft_size = 0.3
 plo = C.objects.new("cabl", pl); sc.collection.objects.link(plo); plo.location = (EX, EY, cz+0.85)
 box("eback", (EX, EY+0.58, (FZ_BOT+Z0)/2), (1.2, 0.04, Z0-FZ_BOT), mat("slotwall",(0.32,0.32,0.34),0.6))
 bot(EX, EY, cz+0.07, M_bots[4], 0.2, glow=False)
@@ -845,7 +854,7 @@ if os.environ.get("RRAIL"): box("rrail", (XC-0.12, (YC-B)/2, 0.34), (0.02, B+YC,
 M_rim = mat("rim", (0.05,0.05,0.055), 0.6)
 box("rimA", ((XC+A)/2, YC+0.18, -0.27), (A-XC, 0.36, 0.58), M_rim)
 box("rimB", (XC-0.18, (YC-B)/2, -0.27), (0.36, B+YC, 0.58), M_rim)
-box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(0.07,0.07,0.075),0.5))
+box("colR", (A+0.02, EY+0.62, (FZ_BOT+Z0-0.2)/2), (0.34, 0.36, Z0-0.2-FZ_BOT), mat("colr",(float(os.environ.get("COLRC",0.16)),)*3,0.5))
 for k in range(8):
     box("wlr", (A+0.02, EY+0.43, -2.2 - k*0.95), (0.1, 0.05, 0.16), M_wlamp)
 # dark structural column on the rock face left of the cutaway
@@ -1204,8 +1213,17 @@ if os.path.exists(EARTH_IMG) and os.path.getsize(EARTH_IMG) > 100000:
     li.interpolation = 'Cubic'
     L.new(tci.outputs["Object"], li.inputs["Vector"])
     land_col = li.outputs["Color"]
-    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = 1.8; hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.55))
+    hsv = N.new("ShaderNodeHueSaturation"); hsv.inputs["Hue"].default_value = float(os.environ.get("EHUE", 0.5)); hsv.inputs["Saturation"].default_value = float(os.environ.get("ESAT", 1.35)); hsv.inputs["Value"].default_value = float(os.environ.get("EVAL", 1.55))
     L.new(land_col, hsv.inputs["Color"]); land_col = hsv.outputs["Color"]
+    gm_ = N.new("ShaderNodeGamma"); gm_.inputs["Gamma"].default_value = float(os.environ.get("EGAM", 0.8))   # v88: lift dark greens (ref SA green/tan)
+    L.new(land_col, gm_.inputs["Color"]); land_col = gm_.outputs["Color"]
+    if os.environ.get("EWARM", "1") == "1":   # v88: tame orange deserts -> tan
+        cr_ = N.new("ShaderNodeHueSaturation"); cr_.inputs["Saturation"].default_value = 1.0; cr_.inputs["Hue"].default_value = 0.5
+        sep_ = N.new("ShaderNodeSeparateColor"); L.new(land_col, sep_.inputs[0])
+        sub_ = N.new("ShaderNodeMath"); sub_.operation = 'SUBTRACT'; L.new(sep_.outputs[0], sub_.inputs[0]); L.new(sep_.outputs[2], sub_.inputs[1])
+        msk_ = N.new("ShaderNodeMapRange"); msk_.inputs["From Min"].default_value = 0.15; msk_.inputs["From Max"].default_value = 0.45; msk_.inputs["To Max"].default_value = float(os.environ.get("ETAN", 0.75)); L.new(sub_.outputs[0], msk_.inputs["Value"])
+        tan_ = N.new("ShaderNodeMixRGB"); tan_.inputs["Color2"].default_value = (0.55,0.5,0.3,1)
+        L.new(msk_.outputs["Result"], tan_.inputs["Fac"]); L.new(land_col, tan_.inputs["Color1"]); land_col = tan_.outputs["Color"]
     if os.environ.get("ECTEX", "0") == "1" and os.path.exists(CLOUD_IMG) and os.path.getsize(CLOUD_IMG) > 100000:   # v78: texture clouds too wispy/dense vs ref
         ci = N.new("ShaderNodeTexImage"); ci.image = bpy.data.images.load(CLOUD_IMG); ci.projection = 'SPHERE'
         ci.image.colorspace_settings.name = 'Non-Color'
@@ -1272,6 +1290,10 @@ so = C.objects.new("sun", sun); sc.collection.objects.link(so); aim(so, (-0.34, 
 fill = C.lights.new("fill", 'SUN'); fill.energy = 1.0; fill.angle = math.radians(20)
 fo = C.objects.new("fill", fill); sc.collection.objects.link(fo); aim(fo, (1.0, -0.4, 0.6))
 fill.use_shadow = True
+UND = float(os.environ.get("UNDER", 1.2))   # v88: weak light from below-front-left: ref lights the tapered underside (ours went ~25 lum, ref ~100)
+if UND > 0:
+    ul = C.lights.new("under", 'SUN'); ul.energy = UND; ul.angle = math.radians(25); ul.color = (0.9, 0.92, 1.0)
+    uo = C.objects.new("under", ul); sc.collection.objects.link(uo); aim(uo, (-0.7, -0.8, -0.5))
 wd = C.worlds.new("w"); sc.world = wd; wd.use_nodes = True
 wd.node_tree.nodes["Background"].inputs["Color"].default_value = (0.02,0.022,0.026,1)
 wd.node_tree.nodes["Background"].inputs["Strength"].default_value = 1.0
