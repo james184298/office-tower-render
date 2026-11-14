@@ -501,10 +501,10 @@ def strata_mat():
     wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
     nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
     rp = nt.nodes.new("ShaderNodeValToRGB")
-    rp.color_ramp.elements[0].color = (0.10, 0.035, 0.03, 1); rp.color_ramp.elements[1].color = (0.40, 0.16, 0.12, 1)
+    rp.color_ramp.elements[0].color = (0.04, 0.02, 0.015, 1); rp.color_ramp.elements[1].color = (0.20, 0.10, 0.06, 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
     nt.links.new(rp.outputs["Color"], b.inputs["Base Color"])
-    nt.links.new(rp.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.7))
+    nt.links.new(rp.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
