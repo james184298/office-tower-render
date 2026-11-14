@@ -497,11 +497,11 @@ def strata_mat():
     nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
     tc = nt.nodes.new("ShaderNodeTexCoord")
     wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'Z'
-    wv.inputs["Scale"].default_value = float(os.environ.get("SWS", 3.5)); wv.inputs["Distortion"].default_value = 3.0
+    wv.inputs["Scale"].default_value = float(os.environ.get("SWS", 9)); wv.inputs["Distortion"].default_value = 1.2
     wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
     nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
     rp = nt.nodes.new("ShaderNodeValToRGB")
-    rp.color_ramp.elements[0].color = (0.04, 0.02, 0.015, 1); rp.color_ramp.elements[1].color = (0.20, 0.10, 0.06, 1)
+    rp.color_ramp.elements[0].color = (0.05, 0.025, 0.025, 1); rp.color_ramp.elements[1].color = (0.42, 0.20, 0.17, 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
     gn = nt.nodes.new("ShaderNodeNewGeometry"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
     nt.links.new(gn.outputs["Normal"], sp.inputs["Vector"])
@@ -511,7 +511,7 @@ def strata_mat():
     nt.links.new(sp.outputs["Z"], cl.inputs[0]); nt.links.new(cl.outputs[0], mx.inputs["Fac"])
     nt.links.new(rp.outputs["Color"], mx.inputs["Color1"])
     nt.links.new(mx.outputs["Color"], b.inputs["Base Color"])
-    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
+    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.5))
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
