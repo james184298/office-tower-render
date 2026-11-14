@@ -497,9 +497,9 @@ def strata_mat():
     nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
     tc = nt.nodes.new("ShaderNodeTexCoord")
     wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'Z'
-    wv.inputs["Scale"].default_value = float(os.environ.get("SWS", 0.8)); wv.inputs["Distortion"].default_value = 1.2
+    wv.inputs["Scale"].default_value = float(os.environ.get("SWS", 1.6)); wv.inputs["Distortion"].default_value = 1.2
     wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
-    nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+    _g0 = nt.nodes.new("ShaderNodeNewGeometry"); nt.links.new(_g0.outputs["Position"], wv.inputs["Vector"])
     rp = nt.nodes.new("ShaderNodeValToRGB")
     rp.color_ramp.elements[0].color = (0.05, 0.025, 0.025, 1); rp.color_ramp.elements[1].color = (0.42, 0.20, 0.17, 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
