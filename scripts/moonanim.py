@@ -20,6 +20,8 @@ _src = _src.replace("bpy.ops.render.render(write_still=True)", "pass  # moonanim
 _src = _src.replace("bpy.ops.wm.save_as_mainfile(", "(lambda **_k: None)(")
 print("MOONANIM exec moonbase.py (render calls stripped: %d)" % _n1)
 exec(compile(_src, MB, "exec"), globals())
+ALWAYS_HIDDEN = {o.name for o in bpy.data.objects if o.hide_render}   # boolean cutters etc. must never be unhidden
+print("MOONANIM always-hidden", sorted(ALWAYS_HIDDEN)[:12])
 G = globals()
 
 FPS = 30
@@ -89,7 +91,7 @@ def hide_iv(o, t0, t1): HIDE.setdefault(o.name, []).append((t0, t1))
 def apply_hides():
     for nm, ivs in HIDE.items():
         o = C.objects.get(nm)
-        if o is None: continue
+        if o is None or nm in ALWAYS_HIDDEN: continue
         ivs = sorted(ivs); merged = []
         for a, b in ivs:
             if merged and a <= merged[-1][1]: merged[-1][1] = max(merged[-1][1], b)
