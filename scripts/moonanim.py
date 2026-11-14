@@ -216,7 +216,7 @@ T_HERO = target.copy()
 T_SOLAR = target + up * float(os.environ.get("SOLAR_UP", 2.6))
 OSF = float(os.environ.get("OSF", 8.5))
 def FT(i, dz=None):
-    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", 0.7))
+    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", -0.6))
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
@@ -358,8 +358,8 @@ M_sun, E_sun = emit_mat("sundisc", (1.0, 0.98, 0.94), 30.0)
 sun_disc = sph("sundisc", (0, 0, 0), 0.95, M_sun, seg=32); sun_disc.parent = co; sun_disc.matrix_parent_inverse = Matrix.Identity(4)
 sun_disc.visible_shadow = False
 M_sh, E_sh = radial_mat("sunhalo", (1.0, 0.95, 0.85), 6.0,
-                        lambda N_, L_, d: mth(N_, L_, 'POWER', mth(N_, L_, 'SUBTRACT', 1.0, d), bv=2.6))
-sun_halo = disc_plane("sunhalo", M_sh, 4.2, sun_disc, (0, 0, -0.5))
+                        lambda N_, L_, d: mth(N_, L_, 'POWER', mth(N_, L_, 'SUBTRACT', 1.0, d), bv=float(os.environ.get("SHP", 3.6))))
+sun_halo = disc_plane("sunhalo", M_sh, float(os.environ.get("SHR", 2.6)), sun_disc, (0, 0, -0.5))
 S_A = Vector((-7.2, 10.0, -150.0)); S_E = Vector((EARTH_L.x, EARTH_L.y, -150.0)); S_X = Vector((-1.6, 10.2, -150.0))
 for t, p, s in [(0, S_A, 0.0), (33.3, S_A, 0.0), (33.8, S_A, 1.0), (36.0, S_A, 1.0), (39.0, S_E, 1.0),
                 (61.6, S_E, 1.0), (63.4, S_X, 1.0), (64.2, S_X, 0.0)]:
