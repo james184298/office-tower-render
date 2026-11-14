@@ -421,6 +421,22 @@ if _me and os.environ.get("ECITY", "1") != "0":
         for t, e in [(0, 0.0), (37.8, 0.0), (39.0, _cs), (61.4, _cs), (62.4, 0.0)]:
             ksock(_sm.inputs[1], F(t), e)
         print("MOONANIM city lights on")
+# cutaway cavity faces: ref close-ups show layered grey rock where ours were flat black
+_mw = C.materials.get("wall")
+if _mw and _mw.use_nodes and os.environ.get("ROCKWALL", "1") != "0":
+    _n = _mw.node_tree.nodes; _l = _mw.node_tree.links
+    _bs = [n for n in _n if n.type == 'BSDF_PRINCIPLED'][0]
+    _tc = _n.new("ShaderNodeTexCoord")
+    _wv = _n.new("ShaderNodeTexWave"); _wv.wave_type = 'BANDS'; _wv.bands_direction = 'Z'
+    _wv.inputs["Scale"].default_value = float(os.environ.get("RWS", 0.9)); _wv.inputs["Distortion"].default_value = 6.0; _wv.inputs["Detail"].default_value = 4.0; _wv.inputs["Detail Scale"].default_value = 1.5
+    _l.new(_tc.outputs["Generated"] if False else _tc.outputs["Object"], _wv.inputs["Vector"])
+    _rr = _n.new("ShaderNodeValToRGB"); _rr.color_ramp.elements[0].color = (0.05, 0.05, 0.055, 1); _rr.color_ramp.elements[1].color = (0.24, 0.24, 0.25, 1)
+    _l.new(_wv.outputs["Fac"], _rr.inputs["Fac"])
+    _mx = _n.new("ShaderNodeMixRGB"); _mx.inputs["Color1"].default_value = tuple(_bs.inputs["Base Color"].default_value)
+    _l.new(_rr.outputs["Color"], _mx.inputs["Color2"]); _l.new(_mx.outputs["Color"], _bs.inputs["Base Color"])
+    for t, v in [(0, 0.0), (11.0, 0.0), (12.0, 1.0), (30.6, 1.0), (31.6, 0.0), (45.0, 0.0), (46.0, 1.0), (58.4, 1.0), (58.5, 0.0)]:
+        ksock(_mx.inputs["Fac"], F(t), v)
+    print("MOONANIM rock cavity walls on")
 # red eclipse tint: rock/regolith multiplied toward rust, sun + fill + world go red
 TINT = (1.0, 0.42, 0.33, 1.0)
 def tint_socket(m):
