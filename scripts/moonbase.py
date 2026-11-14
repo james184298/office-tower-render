@@ -648,7 +648,10 @@ for i in range(NF):
     if i == 0: box("lwall", (XC+0.02, cy, zf+0.72), (0.03, D, 1.4), M_lwall)
     else:   # lower floors: light grey walls on both closed sides, full height (ref)
         box("lwall", (XC+0.02, cy, zf+FH/2-0.11), (0.03, D, FH-0.22), M_lwall)
-        box("bwall", (cx, YC-0.02, zf+FH/2-0.11), (W, 0.03, FH-0.22), M_lwall)
+        box("bwall", (cx, YC-0.02, zf+FH/2-0.11), (W, 0.03, FH-0.22), M_dark if os.environ.get("BWD", "1") == "1" else M_lwall)
+        if os.environ.get("BWD", "1") == "1":   # v91: ref back walls are dark glazing with thin mullions
+            for _k in range(int(W/0.7)+1): box("mull", (XC+0.05+_k*0.7, YC-0.045, zf+FH/2-0.11), (0.02, 0.02, FH-0.22), M_lwall)
+            box("mullh", (cx, YC-0.045, zf+FH-0.4), (W, 0.02, 0.02), M_lwall)
     Lg = C.lights.new(f"fl{i}", 'AREA'); Lg.energy = 50 if i == 0 else (float(os.environ.get("GLE", 45)) if i == NF-1 else float(os.environ.get("LFE", 38))); Lg.shape = 'RECTANGLE'
     Lg.size = W*0.6; Lg.size_y = D*0.6; Lg.color = (1, 0.94, 0.86)
     lo = C.objects.new(f"fl{i}", Lg); sc.collection.objects.link(lo); lo.location = (cx + (0 if i == 0 else 0.9), cy - (0 if i == 0 else 0.6), zf + (1.3 if i == 0 else FH - 0.25))
@@ -675,6 +678,8 @@ for i in range(NF):
         cyl("bin", (5.9, -1.3, zt+0.18), 0.14, 0.36, M_dark, 12)
         plant(XC+0.3, -0.95, zt, 0.8, True); plant(XC+0.3, -5.3, zt, 0.7); plant(6.0, -2.4, zt, 0.8, True)
         bots = [(0.0,-3.15,2),(1.2,-2.15,1),(2.75,-2.6,0),(4.1,-3.15,3),(2.75,-4.0,7),(5.6,-2.15,5),(3.6,-5.2,4)]
+    elif os.environ.get("FL2", "1") == "1":   # v91: lower floors rebuilt from the ref close-ups
+        exec(open(os.path.join(os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else "scripts", "floors_v2.py")).read())
     elif i == 1:  # ---- engineering: long workbench ----
         plane("poster", (XC+0.04, -5.0, zt+1.0), 0.6, 1.0, M_poster, '+X')
         BY = -4.0
