@@ -503,8 +503,15 @@ def strata_mat():
     rp = nt.nodes.new("ShaderNodeValToRGB")
     rp.color_ramp.elements[0].color = (0.04, 0.02, 0.015, 1); rp.color_ramp.elements[1].color = (0.20, 0.10, 0.06, 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
-    nt.links.new(rp.outputs["Color"], b.inputs["Base Color"])
-    nt.links.new(rp.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
+    gn = nt.nodes.new("ShaderNodeNewGeometry"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
+    nt.links.new(gn.outputs["Normal"], sp.inputs["Vector"])
+    mx = nt.nodes.new("ShaderNodeMixRGB"); mx.blend_type = 'MIX'
+    mx.inputs["Color2"].default_value = (0.012, 0.008, 0.008, 1)
+    cl = nt.nodes.new("ShaderNodeMath"); cl.operation = 'MULTIPLY'; cl.use_clamp = True; cl.inputs[1].default_value = 3.0
+    nt.links.new(sp.outputs["Z"], cl.inputs[0]); nt.links.new(cl.outputs[0], mx.inputs["Fac"])
+    nt.links.new(rp.outputs["Color"], mx.inputs["Color1"])
+    nt.links.new(mx.outputs["Color"], b.inputs["Base Color"])
+    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
