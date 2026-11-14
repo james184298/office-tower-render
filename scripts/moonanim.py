@@ -371,10 +371,11 @@ hide_iv(sun_disc, 38.95, 61.55); hide_iv(sun_halo, 38.95, 61.55)
 hide_iv(sun_disc, -1, 33.3); hide_iv(sun_halo, -1, 33.3); hide_iv(sun_disc, 64.25, 99); hide_iv(sun_halo, 64.25, 99)
 # corona ring behind the darkened earth
 rp = ER * 1.3
+RSTR = float(os.environ.get('RSTR', 4.0))
 M_ring, E_ring = radial_mat("corona", (1.0, 0.42, 0.1), 0.0,
-                            lambda N_, L_, d: mth(N_, L_, 'ADD', gauss(N_, L_, d, ER * 1.02 / rp, 0.025, 1.0), gauss(N_, L_, d, ER * 1.05 / rp, 0.11, 0.45)))
+                            lambda N_, L_, d: mth(N_, L_, 'ADD', gauss(N_, L_, d, ER * 1.01 / rp, float(os.environ.get('RW1', 0.012)), 1.0), gauss(N_, L_, d, ER * 1.03 / rp, float(os.environ.get('RW2', 0.05)), float(os.environ.get('RG2', 0.25)))))
 ring = disc_plane("corona", M_ring, rp, co, Vector((EARTH_L.x, EARTH_L.y, EARTH_L.z - ER - 2.0)))
-for t, e in [(0, 0), (38.7, 0), (39.3, 7.0), (61.3, 7.0), (61.9, 0)]:
+for t, e in [(0, 0), (38.7, 0), (39.3, RSTR), (61.3, RSTR), (61.9, 0)]:
     ksock(E_ring.inputs["Strength"], F(t), e)
 hide_iv(ring, -1, 38.6); hide_iv(ring, 62.0, 99)
 # earth terminator follows the sun behind it (light direction animated in the earth + halo shaders)
