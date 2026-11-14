@@ -214,9 +214,9 @@ print("MOONANIM cab parts", sorted(set(o.name.split('.')[0] for o in cab_parts))
 OS0 = cam.ortho_scale
 T_HERO = target.copy()
 T_SOLAR = target + up * float(os.environ.get("SOLAR_UP", 2.6))
-OSF = float(os.environ.get("OSF", 8.5))
+OSF = float(os.environ.get("OSF", 6.8)); OSF0 = float(os.environ.get("OSF0", 8.5))
 def FT(i, dz=None):
-    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", -0.6))
+    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", 0.3))
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
@@ -225,7 +225,7 @@ T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
     (0.0, T_HERO, OS0), (10.3, T_HERO, OS0),
-    (12.0, FT(0), OSF), (15.9, FT(0) + dr, OSF),
+    (12.0, FT(0), OSF0), (15.9, FT(0) + dr, OSF0),
     (16.5, FT(1), OSF), (19.9, FT(1) + dr, OSF),
     (20.5, FT(2), OSF), (23.9, FT(2) + dr, OSF),
     (24.5, FT(3), OSF), (30.4, FT(3) + dr, OSF),
