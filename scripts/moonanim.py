@@ -365,6 +365,9 @@ for t, p, s in [(0, S_A, 0.0), (33.3, S_A, 0.0), (33.8, S_A, 1.0), (36.0, S_A, 1
                 (61.6, S_E, 1.0), (63.4, S_X, 1.0), (64.2, S_X, 0.0)]:
     sun_disc.location = p; sun_disc.keyframe_insert("location", frame=F(t))
     sun_disc.scale = (max(s, 0.001),) * 3; sun_disc.keyframe_insert("scale", frame=F(t))
+for t, e in [(0, 6.0), (38.3, 6.0), (38.9, 0.0), (61.6, 0.0), (62.3, 6.0)]:   # ref: no white glow while the sun is behind the earth, only the thin red ring
+    ksock(E_sh.inputs["Strength"], F(t), e)
+hide_iv(sun_disc, 38.95, 61.55); hide_iv(sun_halo, 38.95, 61.55)
 hide_iv(sun_disc, -1, 33.3); hide_iv(sun_halo, -1, 33.3); hide_iv(sun_disc, 64.25, 99); hide_iv(sun_halo, 64.25, 99)
 # corona ring behind the darkened earth
 rp = ER * 1.3
@@ -386,6 +389,38 @@ for n in dot_nodes("earth") + dot_nodes("halo"):
     for t, v in [(0, LD0), (36.2, LD0), (38.2, LD1), (38.9, LD2), (61.6, LD2), (62.4, LD1), (63.6, LD0)]:
         ksock(n.inputs[1], F(t), v)
 
+# city lights on the night side during the eclipse (ref: dark earth speckled with warm lights)
+_me = C.materials.get("earth")
+if _me and os.environ.get("ECITY", "1") != "0":
+    _n = _me.node_tree.nodes; _l = _me.node_tree.links
+    _img = [n for n in _n if n.type == 'TEX_IMAGE']
+    _tm = [n for n in _n if n.type == 'MAP_RANGE' and getattr(n, 'interpolation_type', '') == 'SMOOTHSTEP']
+    _out = [n for n in _n if n.type == 'OUTPUT_MATERIAL'][0]
+    if _img and _tm and _out.inputs["Surface"].is_linked:
+        _tc = _n.new("ShaderNodeTexCoord")
+        _vo = _n.new("ShaderNodeTexVoronoi"); _vo.inputs["Scale"].default_value = float(os.environ.get("ECSC", 70)); _l.new(_tc.outputs["Object"], _vo.inputs["Vector"])
+        _dot = _n.new("ShaderNodeMapRange"); _dot.inputs["From Min"].default_value = 0.0; _dot.inputs["From Max"].default_value = 0.22; _dot.inputs["To Min"].default_value = 1.0; _dot.inputs["To Max"].default_value = 0.0
+        _l.new(_vo.outputs["Distance"], _dot.inputs["Value"])
+        _cl = _n.new("ShaderNodeTexNoise"); _cl.inputs["Scale"].default_value = 9.0; _l.new(_tc.outputs["Object"], _cl.inputs["Vector"])
+        _clr = _n.new("ShaderNodeMapRange"); _clr.inputs["From Min"].default_value = 0.45; _clr.inputs["From Max"].default_value = 0.65; _l.new(_cl.outputs["Fac"], _clr.inputs["Value"])
+        _sep = _n.new("ShaderNodeSeparateColor"); _l.new(_img[0].outputs["Color"], _sep.inputs[0])
+        _a = _n.new("ShaderNodeMath"); _a.operation = 'ADD'; _l.new(_sep.outputs[0], _a.inputs[0]); _l.new(_sep.outputs[1], _a.inputs[1])
+        _b = _n.new("ShaderNodeMath"); _b.operation = 'MULTIPLY_ADD'; _b.inputs[1].default_value = 0.5; _l.new(_a.outputs[0], _b.inputs[0])
+        _nb = _n.new("ShaderNodeMath"); _nb.operation = 'MULTIPLY'; _nb.inputs[1].default_value = -1; _l.new(_sep.outputs[2], _nb.inputs[0]); _l.new(_nb.outputs[0], _b.inputs[2])
+        _land = _n.new("ShaderNodeMapRange"); _land.inputs["From Min"].default_value = 0.0; _land.inputs["From Max"].default_value = 0.1; _l.new(_b.outputs[0], _land.inputs["Value"])
+        _night = _n.new("ShaderNodeMath"); _night.operation = 'SUBTRACT'; _night.inputs[0].default_value = 1.0; _l.new(_tm[0].outputs["Result"], _night.inputs[1])
+        _m1 = _n.new("ShaderNodeMath"); _m1.operation = 'MULTIPLY'; _l.new(_dot.outputs["Result"], _m1.inputs[0]); _l.new(_clr.outputs["Result"], _m1.inputs[1])
+        _m2 = _n.new("ShaderNodeMath"); _m2.operation = 'MULTIPLY'; _l.new(_m1.outputs[0], _m2.inputs[0]); _l.new(_land.outputs["Result"], _m2.inputs[1])
+        _m3 = _n.new("ShaderNodeMath"); _m3.operation = 'MULTIPLY'; _l.new(_m2.outputs[0], _m3.inputs[0]); _l.new(_night.outputs[0], _m3.inputs[1])
+        _ce = _n.new("ShaderNodeEmission"); _ce.inputs["Color"].default_value = (1.0, 0.72, 0.35, 1); _l.new(_m3.outputs[0], _ce.inputs["Strength"])
+        _sm = _n.new("ShaderNodeMath"); _sm.operation = 'MULTIPLY'; _l.new(_m3.outputs[0], _sm.inputs[0])
+        _l.new(_sm.outputs[0], _ce.inputs["Strength"])
+        _prev = _out.inputs["Surface"].links[0].from_socket
+        _ad = _n.new("ShaderNodeAddShader"); _l.new(_prev, _ad.inputs[0]); _l.new(_ce.outputs[0], _ad.inputs[1]); _l.new(_ad.outputs[0], _out.inputs["Surface"])
+        _cs = float(os.environ.get("ECITYS", 6.0))
+        for t, e in [(0, 0.0), (37.8, 0.0), (39.0, _cs), (61.4, _cs), (62.4, 0.0)]:
+            ksock(_sm.inputs[1], F(t), e)
+        print("MOONANIM city lights on")
 # red eclipse tint: rock/regolith multiplied toward rust, sun + fill + world go red
 TINT = (1.0, 0.42, 0.33, 1.0)
 def tint_socket(m):
