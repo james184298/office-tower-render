@@ -492,13 +492,29 @@ pre = set(C.objects.keys())
 def rockbox(name, x0, x1, y0, y1, z0, z1, m=None):
     o = box(name, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), (x1 - x0, y1 - y0, z1 - z0), m or M_rock); return o
 CH = 6.0
-rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4)
+def strata_mat():
+    m = C.materials.new("strata"); m.use_nodes = True
+    nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
+    tc = nt.nodes.new("ShaderNodeTexCoord")
+    wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'Z'
+    wv.inputs["Scale"].default_value = float(os.environ.get("SWS", 3.5)); wv.inputs["Distortion"].default_value = 3.0
+    wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
+    nt.links.new(tc.outputs["Object"], wv.inputs["Vector"])
+    rp = nt.nodes.new("ShaderNodeValToRGB")
+    rp.color_ramp.elements[0].color = (0.10, 0.035, 0.03, 1); rp.color_ramp.elements[1].color = (0.40, 0.16, 0.12, 1)
+    nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
+    nt.links.new(rp.outputs["Color"], b.inputs["Base Color"])
+    nt.links.new(rp.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.7))
+    b.inputs["Roughness"].default_value = 0.95
+    return m
+M_strata = strata_mat()
+rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata)
 _W = float(os.environ.get("RWIDE", 3.0))
-rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4)
+rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)
 rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
 rockbox("cavewb", XC - 0.5, A, 0.5, B, CZ, CZ + CH)
 M_cfl = mat("cavefloor", (0.36, 0.3, 0.29), 0.95, spec=0.2)
-rockbox("cavebase", -A, A, -B, B, CZ - 16, CZ)
+rockbox("cavebase", -A, A, -B, B, CZ - 16, CZ, M_strata)
 rockbox("cavefl", XC - 0.5, A, -B, 0.5, CZ - 0.05, CZ + 0.02, M_cfl)
 M_crock = mat("caverock", (0.11, 0.095, 0.095), 0.95)
 for i in range(70):
