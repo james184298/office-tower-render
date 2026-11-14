@@ -493,6 +493,8 @@ def rockbox(name, x0, x1, y0, y1, z0, z1, m=None):
     o = box(name, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), (x1 - x0, y1 - y0, z1 - z0), m or M_rock); return o
 CH = 6.0
 rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4)
+_W = float(os.environ.get("RWIDE", 3.0))
+rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4)
 rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
 rockbox("cavewb", XC - 0.5, A, 0.5, B, CZ, CZ + CH)
 M_cfl = mat("cavefloor", (0.36, 0.3, 0.29), 0.95, spec=0.2)
