@@ -1070,7 +1070,7 @@ for i in range(5):
         x = 0.7 + j*0.6; y = 1.95 + i*0.58
         if x > 4.9 and y < 3.3: continue
         h0 = TH(x, y)
-        o = box("panel", (x, y, h0+0.36), (0.55, 0.5, 0.025), M_solar); o.rotation_euler.x = 0.22
+        o = box("panel", (x, y, h0+0.36), (float(os.environ.get("SOLW", 0.47)), float(os.environ.get("SOLD", 0.43)), 0.025), M_solar); o.rotation_euler.x = 0.22   # v90: ref panels have clear grey gaps
         box("pframe", (x, y-0.22, h0+0.3), (0.48, 0.02, 0.02), M_metal)
         cyl("post", (x, y, h0+0.1), 0.018, 0.55, M_metal, 6, smooth=False)
 # satellite dishes on the right edge
