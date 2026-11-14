@@ -220,7 +220,7 @@ def FT(i, dz=None):
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
-T_CAVE = Vector((2.7, -3.0, CZ + 2.0)); OS_CAVE = 9.0
+T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 4.5)))); OS_CAVE = float(os.environ.get("OSCAVE", 12.5))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
