@@ -507,7 +507,7 @@ def strata_mat():
     nt.links.new(gn.outputs["Normal"], sp.inputs["Vector"])
     mx = nt.nodes.new("ShaderNodeMixRGB"); mx.blend_type = 'MIX'
     mx.inputs["Color2"].default_value = (0.012, 0.008, 0.008, 1)
-    cl = nt.nodes.new("ShaderNodeMath"); cl.operation = 'MULTIPLY'; cl.use_clamp = True; cl.inputs[1].default_value = float(os.environ.get("STOP", 0.55))
+    cl = nt.nodes.new("ShaderNodeMath"); cl.operation = 'MULTIPLY'; cl.use_clamp = True; cl.inputs[1].default_value = float(os.environ.get("STOP", 0.97))
     nt.links.new(sp.outputs["Z"], cl.inputs[0]); nt.links.new(cl.outputs[0], mx.inputs["Fac"])
     nt.links.new(rp.outputs["Color"], mx.inputs["Color1"])
     nt.links.new(mx.outputs["Color"], b.inputs["Base Color"])
