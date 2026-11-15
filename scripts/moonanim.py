@@ -221,7 +221,7 @@ def FT(i, dz=None):
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
 T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 8)))) - right * float(os.environ.get("CAVEDR", 6)); OS_CAVE = float(os.environ.get("OSCAVE", 14))
-T_CAVE2 = Vector((float(os.environ.get("C2X", 2.4)), float(os.environ.get("C2Y", -2.6)), CZ + float(os.environ.get("C2DZ", 1.6)))); OS_CAVE2 = float(os.environ.get("OSC2", 9.0))
+T_CAVE2 = Vector((float(os.environ.get("C2X", 1.8)), float(os.environ.get("C2Y", -2.2)), CZ + float(os.environ.get("C2DZ", 2.4)))); OS_CAVE2 = float(os.environ.get("OSC2", 10.0))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
@@ -520,7 +520,7 @@ hide_iv(tlo, -1, 45.5); hide_iv(tlo, 50.8, 99)
 pre = set(C.objects.keys())
 def rockbox(name, x0, x1, y0, y1, z0, z1, m=None):
     o = box(name, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), (x1 - x0, y1 - y0, z1 - z0), m or M_rock); return o
-CH = float(os.environ.get("CAVECH", 6.0))
+CH = float(os.environ.get("CAVECH", 12.0))
 def strata_mat():
     m = C.materials.new("strata"); m.use_nodes = True
     nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
@@ -563,7 +563,7 @@ for i in range(70):
 M_mono = mat("monolith", (0.006, 0.006, 0.007), 0.22, 0.2, emit=(0.08, 1.0, 0.3), estr=0.0)
 mono = box("monolith", (2.9, -2.6, CZ + 2.0), (1.8, 0.45, 4.05), M_mono)
 ms = M_mono.node_tree.nodes["Principled BSDF"].inputs["Emission Strength"]
-for t, v in [(0, 0), (56.3, 0), (56.9, 0.5), (58.4, 0.6)]: ksock(ms, F(t), v)
+for t, v in [(0, 0), (56.3, 0), (56.9, 0.2), (58.4, 0.25)]: ksock(ms, F(t), v)
 box("mnote", (3.45, -2.6 - 0.235, CZ + 3.1), (0.32, 0.01, 0.32), mat("note", (0.95, 0.75, 0.1), 0.6, emit=(1, 0.75, 0.1), estr=0.4))
 eyes = [sph("monoeye", (2.9 + dx, -2.6 - 0.24, CZ + 1.35), 0.13, emit_mat("monoeye", (1, 1, 1), 5.0)[0], (1, 0.35, 1.35), 16) for dx in (-0.28, 0.28)]
 for e in eyes: hide_iv(e, -1, 56.6)
