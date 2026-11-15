@@ -220,7 +220,7 @@ def FT(i, dz=None):
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
-T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 0)))); OS_CAVE = float(os.environ.get("OSCAVE", 16))
+T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 6)))); OS_CAVE = float(os.environ.get("OSCAVE", 16))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
@@ -501,7 +501,7 @@ def strata_mat():
     wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
     _g0 = nt.nodes.new("ShaderNodeNewGeometry"); nt.links.new(_g0.outputs["Position"], wv.inputs["Vector"])
     rp = nt.nodes.new("ShaderNodeValToRGB")
-    rp.color_ramp.elements[0].color = (0.05, 0.028, 0.025, 1); rp.color_ramp.elements[1].color = (0.15, 0.08, 0.065, 1)
+    rp.color_ramp.elements[0].color = (0.035, 0.018, 0.017, 1); rp.color_ramp.elements[1].color = (0.085, 0.042, 0.036, 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
     gn = nt.nodes.new("ShaderNodeNewGeometry"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
     nt.links.new(gn.outputs["Normal"], sp.inputs["Vector"])
@@ -511,12 +511,12 @@ def strata_mat():
     nt.links.new(sp.outputs["Z"], cl.inputs[0]); nt.links.new(cl.outputs[0], mx.inputs["Fac"])
     nt.links.new(rp.outputs["Color"], mx.inputs["Color1"])
     nt.links.new(mx.outputs["Color"], b.inputs["Base Color"])
-    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.35))
+    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
 rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata)
-_W = float(os.environ.get("RWIDE", 3.0))
+_W = float(os.environ.get("RWIDE", 1.0))
 rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)
 rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
 rockbox("cavewb", XC - 0.5, A, 0.5, B, CZ, CZ + CH)
