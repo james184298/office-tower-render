@@ -354,6 +354,25 @@ for t, e in [(0, 0), (7.0, 0), (7.6, 6.0), (8.8, 4.0), (9.9, 0.0), (60.4, 0.0), 
     ksock(cb, F(t), e)
 hide_iv(crat, -1, 7.0); hide_iv(crat, 63.35, 99)
 
+# landing ejecta: thin white streaks radiating from the pad (ref 63-64.6 s)
+M_ray, E_ray = emit_mat("dustray", (0.92, 0.95, 1.0), 0.0)
+import random as _random
+_rr = _random.Random(7)
+NRAY = int(os.environ.get("NRAY", 110)); RLEN = float(os.environ.get("RLEN", 7.0))
+for k in range(NRAY):
+    az = _rr.uniform(0, 2 * math.pi); el = _rr.uniform(0.02, 0.5)
+    L = RLEN * _rr.uniform(0.45, 1.0); r0 = _rr.uniform(1.2, 2.2)
+    piv = empty("rayp", Vector((PX, PY, 0.25)))
+    piv.rotation_euler = (0, -el, az)
+    rb = box("dustray", (r0 + L / 2, 0, 0), (L, 0.03, 0.03), M_ray); rb.visible_shadow = False
+    rb.parent = piv
+    t0 = 62.95 + _rr.uniform(0, 0.4)
+    for t, sc_ in [(t0 - 0.05, 0.001), (t0 + 0.7, 1.0), (64.7, 1.0)]:
+        piv.scale = (max(sc_, 0.001), 1, 1); piv.keyframe_insert("scale", frame=F(t))
+    hide_iv(rb, -1, t0 - 0.05); hide_iv(rb, 64.75, 99)
+for t, e in [(0, 0), (62.9, 0), (63.4, 14.0), (64.0, 10.0), (64.7, 0)]:
+    ksock(E_ray.inputs["Strength"], F(t), e)
+
 # ================= sun, eclipse =================
 M_sun, E_sun = emit_mat("sundisc", (1.0, 0.98, 0.94), 30.0)
 sun_disc = sph("sundisc", (0, 0, 0), 0.95, M_sun, seg=32); sun_disc.parent = co; sun_disc.matrix_parent_inverse = Matrix.Identity(4)
