@@ -214,25 +214,26 @@ print("MOONANIM cab parts", sorted(set(o.name.split('.')[0] for o in cab_parts))
 OS0 = cam.ortho_scale
 T_HERO = target.copy()
 T_SOLAR = target + up * float(os.environ.get("SOLAR_UP", 2.6))
-OSF = float(os.environ.get("OSF", 6.8)); OSF0 = float(os.environ.get("OSF0", 8.5))
+OSF = float(os.environ.get("OSF", 8.2)); OSF0 = float(os.environ.get("OSF0", 8.5))
 def FT(i, dz=None):
-    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", 0.3))
+    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", -0.5))
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
 T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 8)))) - right * float(os.environ.get("CAVEDR", 6)); OS_CAVE = float(os.environ.get("OSCAVE", 14))
 T_CAVE2 = Vector((float(os.environ.get("C2X", 1.8)), float(os.environ.get("C2Y", -2.2)), CZ + float(os.environ.get("C2DZ", 2.4)))); OS_CAVE2 = float(os.environ.get("OSC2", 10.0))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
+T_STACK = Vector((2.7, -3.3, Z0 - float(os.environ.get("STKF", 1.8)) * FH)); OS_STACK = float(os.environ.get("OSSTK", 11.5))
 dr = right * 0.35
 CAM_KEYS = [
     (0.0, T_HERO, OS0), (10.3, T_HERO, OS0),
     (12.0, FT(0), OSF0), (15.9, FT(0) + dr, OSF0),
     (16.5, FT(1), OSF), (19.9, FT(1) + dr, OSF),
-    (20.5, FT(2), OSF), (23.9, FT(2) + dr, OSF),
-    (24.5, FT(3), OSF), (30.4, FT(3) + dr, OSF),
+    (20.4, FT(2), OSF), (22.8, FT(2) + dr, OSF),
+    (23.7, FT(3), OSF), (30.4, FT(3) + dr, OSF),
     (32.0, T_HERO, OS0), (33.0, T_HERO, OS0),
-    (33.6, T_SOLAR, OS0), (44.4, T_SOLAR, OS0),
-    (46.5, T_TBM, OS_TBM), (49.9, T_TBM + dr * 0.6, OS_TBM),
+    (33.6, T_SOLAR, OS0), (45.3, T_SOLAR, OS0),
+    (46.4, T_STACK, OS_STACK), (47.6, T_TBM, OS_TBM), (49.9, T_TBM + dr * 0.6, OS_TBM),
     (51.2, T_CAVE, OS_CAVE), (51.8, T_CAVE, OS_CAVE), (53.2, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
     (58.4, T_INT, OS_INT), (59.6, T_INT + up * 0.6, OS_INT * 1.05),
     (62.0, T_HERO, OS0), (67.1, T_HERO, OS0),
