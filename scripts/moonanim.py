@@ -220,7 +220,7 @@ def FT(i, dz=None):
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
-T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 6)))) - right * float(os.environ.get("CAVEDR", 0)); OS_CAVE = float(os.environ.get("OSCAVE", 16))
+T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 8)))) - right * float(os.environ.get("CAVEDR", 6)); OS_CAVE = float(os.environ.get("OSCAVE", 14))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
@@ -480,8 +480,17 @@ tbm = empty("TBMRig", TB)
 for o in base_objs:
     if o.name.split('.')[0] in ('tankfan', 'fanblade'): parent_keep(o, tbm)
 tbm.rotation_euler = (0, 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(47.0))
-tbm.rotation_euler = (math.radians(360 * 5), 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(50.6))
+tbm.rotation_euler = (math.radians(360 * 14), 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(58.4))
 set_interp(tbm, 'LINEAR')
+# forward motion: the whole machine (body, band, label, fan) creeps +x (toward the fan / rock face) while it digs
+tmv = empty("TBMMove", Vector((0, 0, 0)))
+for o in base_objs:
+    if o.name.split('.')[0] in ('tank', 'tankband', 'tlabel'): parent_keep(o, tmv)
+parent_keep(tbm, tmv)
+TBM_FWD = float(os.environ.get("TBMFWD", 1.1))
+tmv.location = (0, 0, 0); tmv.keyframe_insert("location", frame=F(46.5))
+tmv.location = (TBM_FWD, 0, 0); tmv.keyframe_insert("location", frame=F(58.4))
+set_interp(tmv, 'LINEAR')
 tl = C.lights.new("tbmlight", 'SPOT'); tl.energy = 900; tl.color = (1, 0.97, 0.9); tl.spot_size = math.radians(70); tl.spot_blend = 0.6
 tlo = C.objects.new("tbmlight", tl); sc.collection.objects.link(tlo); tlo.location = TB + Vector((0.5, -0.9, 0.5))
 tlo.rotation_euler = Vector((0.3, -1.0, -0.15)).normalized().to_track_quat('-Z', 'Y').to_euler()
