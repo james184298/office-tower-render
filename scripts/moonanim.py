@@ -221,6 +221,7 @@ def FT(i, dz=None):
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
 T_CAVE = Vector((2.7, -3.0, CZ + float(os.environ.get("CAVEDZ", 8)))) - right * float(os.environ.get("CAVEDR", 6)); OS_CAVE = float(os.environ.get("OSCAVE", 14))
+T_CAVE2 = Vector((float(os.environ.get("C2X", 2.4)), float(os.environ.get("C2Y", -2.6)), CZ + float(os.environ.get("C2DZ", 1.6)))); OS_CAVE2 = float(os.environ.get("OSC2", 9.0))
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 dr = right * 0.35
 CAM_KEYS = [
@@ -232,7 +233,7 @@ CAM_KEYS = [
     (32.0, T_HERO, OS0), (33.0, T_HERO, OS0),
     (33.6, T_SOLAR, OS0), (44.4, T_SOLAR, OS0),
     (46.5, T_TBM, OS_TBM), (49.9, T_TBM + dr * 0.6, OS_TBM),
-    (52.4, T_CAVE, OS_CAVE), (58.36, T_CAVE + dr * 0.5, OS_CAVE * 0.95),
+    (51.2, T_CAVE, OS_CAVE), (51.8, T_CAVE, OS_CAVE), (53.2, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
     (58.4, T_INT, OS_INT), (59.6, T_INT + up * 0.6, OS_INT * 1.05),
     (62.0, T_HERO, OS0), (67.1, T_HERO, OS0),
 ]
