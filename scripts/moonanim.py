@@ -296,7 +296,7 @@ for t0, t1, fl in FOCUS:
 rig = empty("RocketRig", (PX, PY, 0.0))
 for o in rocket_parts: parent_keep(o, rig)
 # engine plume (cone pointing down) + light, children of the rig
-M_plume, E_plume = emit_mat("plume", (0.78, 0.86, 1.0), 40.0)
+M_plume, E_plume = emit_mat("plume", (0.35, 0.4, 1.0), 40.0)
 bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.05, radius2=0.85, depth=2.6, location=(PX, PY, RB - 1.3 - 0.15))
 plume = bpy.context.object; plume.name = "plume"; plume.data.materials.append(M_plume); plume.visible_shadow = False
 parent_keep(plume, rig)
@@ -320,7 +320,7 @@ kv(rig, "location", 1, 0.0, 2); kv(rig, "location", F(9.1), 40.0, 2); kv(rig, "l
 set_interp(rig, 'LINEAR')
 for o in rocket_parts + [plume]: hide_iv(o, 9.3, 60.5)
 # plume size / strength and light energy
-for t, s, e, en in [(0, 0, 0, 0), (6.0, 0.0, 0, 0), (6.15, 0.6, 30, 1500), (6.5, 1.0, 45, 4000), (8.8, 1.2, 45, 4000), (9.1, 1.2, 0, 0),
+for t, s, e, en in [(0, 0, 0, 0), (6.0, 0.0, 0, 0), (6.15, 0.6, 12, 1500), (6.5, 1.0, 16, 4000), (8.8, 1.2, 16, 4000), (9.1, 1.2, 0, 0),
                     (60.5, 0.0, 0, 0), (60.7, 1.0, 45, 3000), (62.6, 1.0, 45, 4000), (63.2, 0.7, 30, 2000), (63.6, 0.0, 0, 0)]:
     plume.scale = (max(s, 0.001),) * 3; plume.keyframe_insert("scale", frame=F(t))
     ksock(E_plume.inputs["Strength"], F(t), e)
@@ -333,7 +333,7 @@ me = C.meshes.new("trail"); bm.to_mesh(me); bm.free()
 trail = C.objects.new("trail", me); sc.collection.objects.link(trail); trail.location = (PX, PY, 0.15); trail.visible_shadow = False
 M_trail = C.materials.new("trail"); M_trail.use_nodes = True; nt = M_trail.node_tree; nt.nodes.clear()
 _o = nt.nodes.new("ShaderNodeOutputMaterial"); _mx = nt.nodes.new("ShaderNodeMixShader"); _tr = nt.nodes.new("ShaderNodeBsdfTransparent")
-E_trail = nt.nodes.new("ShaderNodeEmission"); E_trail.inputs["Color"].default_value = (0.35, 0.55, 1.0, 1)
+E_trail = nt.nodes.new("ShaderNodeEmission"); E_trail.inputs["Color"].default_value = (0.25, 0.3, 1.0, 1)
 _mx.inputs["Fac"].default_value = 0.45
 nt.links.new(_tr.outputs[0], _mx.inputs[1]); nt.links.new(E_trail.outputs[0], _mx.inputs[2]); nt.links.new(_mx.outputs[0], _o.inputs[0])
 try: M_trail.surface_render_method = 'BLENDED'
@@ -343,7 +343,7 @@ for f in range(F(6.5), F(9.2) + 1, 2):
     t = (f - 1) / FPS
     trail.scale = (1, 1, max(0.01, rocket_z(t) + RB - 0.3)); trail.keyframe_insert("scale", frame=f)
 trail.scale = (1, 1, 40); trail.keyframe_insert("scale", frame=F(9.3))
-for t, e in [(0, 0), (6.6, 0), (7.2, 3.0), (8.8, 3.0), (9.9, 0)]:
+for t, e in [(0, 0), (6.6, 0), (7.2, 1.2), (8.0, 1.2), (9.5, 0.3), (9.9, 0)]:
     ksock(E_trail.inputs["Strength"], F(t), e)
 hide_iv(trail, -1, 6.5); hide_iv(trail, 10.0, 99)
 
