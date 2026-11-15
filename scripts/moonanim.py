@@ -275,13 +275,14 @@ def lid_layer(name, z0, z1, top):
     for p in me.polygons:
         p.material_index = 1 if (top and p.normal.z > 0.5) else 0
     return o
+LID_Y = float(os.environ.get("LIDY", "24.0"))
 LZ = [(-2.2, 0.0), (-4.3, -2.2), (-6.4, -4.3), (FZ_BOT, -6.4)]
 lids = []
 for L_i, (z0, z1) in enumerate(LZ):
     o = lid_layer(f"lid{L_i}", z0, z1, L_i == 0); lids.append(o)
     c0 = 2.3 + (3 - L_i) * 0.12; c1 = c0 + 1.3
     o0 = 6.3 + L_i * 0.12; o1 = o0 + 1.2
-    for t, y in [(0.0, OPEN_Y), (c0, OPEN_Y), (c1, 0.0), (o0, 0.0), (o1, OPEN_Y)]:
+    for t, y in [(0.0, LID_Y), (c0, LID_Y), (c1, 0.0), (o0, 0.0), (o1, LID_Y)]:
         kv(o, "location", F(t), y, 1)
     hide_iv(o, -1, c0 - 0.05); hide_iv(o, o1 + 0.05, 99)
 for o in lid_hidden: hide_iv(o, 4.0, 6.3)
