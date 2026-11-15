@@ -276,7 +276,7 @@ def lid_layer(name, z0, z1, top):
         p.material_index = 1 if (top and p.normal.z > 0.5) else 0
     return o
 LID_Y = float(os.environ.get("LIDY", "0.0"))
-LID_X = float(os.environ.get("LIDX", "10.0"))
+LID_X = float(os.environ.get("LIDX", "-10.0"))
 LZ = [(-2.2, 0.0), (-4.3, -2.2), (-6.4, -4.3), (FZ_BOT, -6.4)]
 lids = []
 for L_i, (z0, z1) in enumerate(LZ):
