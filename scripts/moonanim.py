@@ -520,7 +520,7 @@ hide_iv(tlo, -1, 45.5); hide_iv(tlo, 50.8, 99)
 pre = set(C.objects.keys())
 def rockbox(name, x0, x1, y0, y1, z0, z1, m=None):
     o = box(name, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), (x1 - x0, y1 - y0, z1 - z0), m or M_rock); return o
-CH = 6.0
+CH = float(os.environ.get("CAVECH", 6.0))
 def strata_mat():
     m = C.materials.new("strata"); m.use_nodes = True
     nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
