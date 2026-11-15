@@ -810,8 +810,10 @@ zz = FZ_BOT + 0.05
 while zz < eh_top:
     box("eh1", (EX, EY-eh, zz), (ES, 0.035, 0.035), M_efr); box("eh2", (EX+eh, EY, zz), (0.035, ES, 0.035), M_efr)
     zz += 1.05
-for k in range(NF):
-    box("ebar", (EX+eh-0.08, EY+eh-0.05, Z0-k*FH-0.9), (0.03, 0.03, 0.7), M_lamp)
+# v-ebar: ref shaft has no white light bars; thin emissive bars shimmered/flickered frame to frame -> off by default
+if os.environ.get("EBAR", "0") == "1":
+    for k in range(NF):
+        box("ebar", (EX+eh-0.08, EY+eh-0.05, Z0-k*FH-0.9), (0.03, 0.03, 0.7), M_lamp)
 # cab: glass with white frame, pink glow and a bot inside
 cz = Z0 - 2*FH
 box("ecab", (EX, EY, cz+0.55), (0.7, 0.7, 1.0), mat("ecab",(0.95,0.9,0.93),0.05,emit=(1,0.6,0.8),estr=float(os.environ.get("ECE",0.12)), alpha=0.4))
