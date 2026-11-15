@@ -449,9 +449,9 @@ if _mw and _mw.use_nodes and os.environ.get("ROCKWALL", "1") != "0":
     _bs = [n for n in _n if n.type == 'BSDF_PRINCIPLED'][0]
     _tc = _n.new("ShaderNodeTexCoord")
     _wv = _n.new("ShaderNodeTexWave"); _wv.wave_type = 'BANDS'; _wv.bands_direction = 'Z'
-    _wv.inputs["Scale"].default_value = float(os.environ.get("RWS", 0.9)); _wv.inputs["Distortion"].default_value = 6.0; _wv.inputs["Detail"].default_value = 4.0; _wv.inputs["Detail Scale"].default_value = 1.5
+    _wv.inputs["Scale"].default_value = float(os.environ.get("RWS", 2.5)); _wv.inputs["Distortion"].default_value = float(os.environ.get("RWD", 0.5)); _wv.inputs["Detail"].default_value = 1.0; _wv.inputs["Detail Scale"].default_value = 1.5
     _l.new(_tc.outputs["Generated"] if False else _tc.outputs["Object"], _wv.inputs["Vector"])
-    _rr = _n.new("ShaderNodeValToRGB"); _rr.color_ramp.elements[0].color = (0.05, 0.05, 0.055, 1); _rr.color_ramp.elements[1].color = (0.24, 0.24, 0.25, 1)
+    _rr = _n.new("ShaderNodeValToRGB"); _rr.color_ramp.elements[0].color = (0.07, 0.07, 0.075, 1); _rr.color_ramp.elements[1].color = (0.15, 0.15, 0.16, 1)
     _l.new(_wv.outputs["Fac"], _rr.inputs["Fac"])
     _mx = _n.new("ShaderNodeMixRGB"); _mx.inputs["Color1"].default_value = tuple(_bs.inputs["Base Color"].default_value)
     _l.new(_rr.outputs["Color"], _mx.inputs["Color2"]); _l.new(_mx.outputs["Color"], _bs.inputs["Base Color"])
