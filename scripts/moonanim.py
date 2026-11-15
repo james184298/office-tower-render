@@ -546,7 +546,7 @@ def strata_mat():
 M_strata = strata_mat()
 rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata)
 _W = float(os.environ.get("RWIDE", 1.0))
-rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)
+if _W > 1.0: rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)   # RWIDE 1: it filled the cave volume solid
 rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
 rockbox("cavewb", XC - 0.5, A, 0.5, B, CZ, CZ + CH)
 M_cfl = mat("cavefloor", (0.36, 0.3, 0.29), 0.95, spec=0.2)
