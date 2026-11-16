@@ -257,3 +257,4 @@ Helpers: `jd.sh CMD` dispatches and prints run id; `jw.sh RUN` polls ~100 s, the
 - 18:01 CST JAMES: do NOT fix only D/E/F. FIRST do a complete frame-by-frame comparison of the whole 67 s vs src (at least 10 fps sheets, plus full-size frame pairs at every shot change/transition), and write EVERY difference as items G1.. (geometry, layout, which side things overhang, object presence/absence, how floors appear/disappear, camera framing/timing, lighting, colour, effects, UI). Then fix D/E/F and all G items. James says there are many differences; be exhaustive.
 - 18:52 CST run: backup pushed; G list still not written.
 - 19:52 CST run: no new work possible this run (budget); G list still unwritten; backup current.
+- 20:52 CST run: budget-limited, no new work; backup current (repo clean).
