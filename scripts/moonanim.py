@@ -493,8 +493,8 @@ for t, v in TT:
     sunL.color = (1, 1, 1) if v == 0 else (1.0, 0.36, 0.24); sunL.keyframe_insert("color", frame=F(t))
     fillL.color = (1, 1, 1) if v == 0 else (1.0, 0.45, 0.35); fillL.keyframe_insert("color", frame=F(t))
 # sun/fill energy: dim red during the eclipse, off while the camera is in the cave (cave is lamp-lit only)
-for t, se, fe in [(0, 3.0, 1.0), (39.0, 3.0, 1.0), (39.8, 1.6, 0.7), (51.4, 1.6, 0.7), (52.3, 0.0, 0.0), (58.37, 0.0, 0.0),
-                  (58.4, 1.6, 0.7), (61.4, 1.6, 0.7), (62.2, 3.0, 1.0)]:
+for t, se, fe in [(0, 3.0, 1.0), (39.0, 3.0, 1.0), (39.8, 1.25, 0.6), (51.4, 1.25, 0.6), (52.3, 0.0, 0.0), (58.37, 0.0, 0.0),
+                  (58.4, 1.25, 0.6), (61.4, 1.25, 0.6), (62.2, 3.0, 1.0)]:
     kv(sunL, "energy", F(t), se); kv(fillL, "energy", F(t), fe)
 bg = wd.node_tree.nodes["Background"].inputs["Color"]
 for t, v in TT: ksock(bg, F(t), (0.02, 0.022, 0.026, 1) if v == 0 else (0.035, 0.01, 0.008, 1))
