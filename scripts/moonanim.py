@@ -592,7 +592,7 @@ spot.spot_size = math.radians(60); so_.rotation_euler = Vector((1.0, -0.6, -0.25
 for t, a, g in [(0, 1400, 0), (56.3, 1400, 0), (56.9, 250, 1800), (58.4, 250, 1800)]:
     kv(lamp, "energy", F(t), a); kv(glamp, "energy", F(t), g)
 # surrounding rock so the descent view has no black void beside the column
-for _nm, _a in [("rsl", (-A - 40, -A, -B - 40, B + 40)), ("rsr", (A, A + 40, -B - 40, B + 40)), ("rsf", (-A, A, -B - 40, -B)), ("rsb", (-A, A, B, B + 40))]:
+for _nm, _a in ([] if os.environ.get("RSLAB", "0") == "0" else []) + ([("rsl", (-A - 40, -A, -B - 40, B + 40)), ("rsr", (A, A + 40, -B - 40, B + 40)), ("rsf", (-A, A, -B - 40, -B)), ("rsb", (-A, A, B, B + 40))] if os.environ.get("RSLAB", "0") != "0" else []):
     rockbox(_nm, _a[0], _a[1], _a[2], _a[3], CZ - 16, FZ_BOT - 0.4, M_strata2)
 # digging debris: specks thrown from the TBM face while it bores (47.6-50.4 s)
 M_spk = emit_mat("debris", (1.0, 0.95, 0.9), 2.0)[0]; M_dk = mat("debrisd", (0.04, 0.035, 0.035), 0.9)
