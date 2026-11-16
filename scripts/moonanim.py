@@ -548,15 +548,16 @@ def strata_mat(k=1.0, name="strata"):
     nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25)) * (float(os.environ.get("SEM2X", 4.0)) if k > 1 else 1.0)
     b.inputs["Roughness"].default_value = 0.95
     return m
+LX = float(os.environ.get("LEXT", 30))   # extend rock to screen-left so no black void beside the descent
 M_strata = strata_mat()
 M_strata2 = strata_mat(float(os.environ.get("STRK", 2.5)), "strata2")
-rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata2)
+rockbox("deep", -A - LX, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata2)
 _W = float(os.environ.get("RWIDE", 1.0))
 if _W > 1.0: rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)   # RWIDE 1: it filled the cave volume solid
-rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
+rockbox("cavewl", -A - LX, XC - 0.5, -B, B, CZ, CZ + CH)
 rockbox("cavewb", XC - 0.5, A, 0.5, B, CZ, CZ + CH)
 M_cfl = mat("cavefloor", (0.36, 0.3, 0.29), 0.95, spec=0.2)
-rockbox("cavebase", -A, A, -B, B, CZ - 16, CZ, M_strata)
+rockbox("cavebase", -A - LX, A, -B, B, CZ - 16, CZ, M_strata)
 rockbox("cavefl", XC - 0.5, A, -B, 0.5, CZ - 0.05, CZ + 0.02, M_cfl)
 M_crock = mat("caverock", (0.11, 0.095, 0.095), 0.95)
 for i in range(70):
