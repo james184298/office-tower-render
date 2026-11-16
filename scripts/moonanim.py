@@ -575,11 +575,11 @@ box("mnote", (3.45, -2.6 - 0.235, CZ + 3.1), (0.32, 0.01, 0.32), mat("note", (0.
 eyes = [sph("monoeye", (2.9 + dx, -2.6 - 0.24, CZ + 1.35), 0.13, emit_mat("monoeye", (1, 1, 1), 5.0)[0], (1, 0.35, 1.35), 16) for dx in (-0.28, 0.28)]
 for e in eyes: hide_iv(e, -1, 56.6)
 # rover pod with a headlight (top-left of the cave)
-pod = sph("pod", (0.1, -0.6, CZ + 0.55), 0.6, mat("podm", (0.05, 0.05, 0.055), 0.35, 0.4), (1.2, 1, 0.9), 24)
-sph("podlamp", (0.75, -0.95, CZ + 0.6), 0.14, emit_mat("podlamp", (1, 0.97, 0.9), 12.0)[0], (1, 1, 1), 12)
+pod = sph("pod", (-0.6, -2.0, CZ + 0.7), 0.75, mat("podm", (0.05, 0.05, 0.055), 0.35, 0.4), (1.2, 1, 0.9), 24)
+sph("podlamp", (0.35, -2.15, CZ + 0.75), 0.16, emit_mat("podlamp", (1, 0.97, 0.9), 12.0)[0], (1, 1, 1), 12)
 # bots in the cave
 bot(3.75, -3.45, CZ, M_bots[4], 0.3)
-bot(1.7, -3.9, CZ, M_bots[6], 0.26)
+bot(2.5, -3.35, CZ, mat("botyel", (0.9, 0.65, 0.05), 0.5, emit=(1, 0.7, 0.05), estr=0.3), 0.26)
 # lights
 def plight(name, loc, col, en, r=0.4, kind='POINT'):
     l = C.lights.new(name, kind); l.color = col; l.energy = en
@@ -588,8 +588,8 @@ def plight(name, loc, col, en, r=0.4, kind='POINT'):
 lo_, lamp = plight("cavelamp", (3.3, -4.3, CZ + 0.5), (1.0, 0.5, 0.13), 1400, 0.5)
 go_, glamp = plight("cavegreen", (2.9, -3.6, CZ + 0.6), (0.15, 1.0, 0.35), 0.0, 0.8)
 plight("caveamb", (2.0, -2.5, CZ + CH - 0.4), (1.0, 0.75, 0.6), 250, 3.0)
-so_, spot = plight("podspot", (0.8, -1.0, CZ + 0.7), (1, 0.97, 0.9), 600, kind='SPOT')
-spot.spot_size = math.radians(60); so_.rotation_euler = Vector((1.0, -0.6, -0.25)).normalized().to_track_quat('-Z', 'Y').to_euler()
+so_, spot = plight("podspot", (0.4, -2.2, CZ + 0.8), (1, 0.97, 0.9), 600, kind='SPOT')
+spot.spot_size = math.radians(60); so_.rotation_euler = Vector((1.0, -0.15, -0.25)).normalized().to_track_quat('-Z', 'Y').to_euler()
 for t, a, g in [(0, 1400, 0), (56.3, 1400, 0), (56.9, 250, 1800), (58.4, 250, 1800)]:
     kv(lamp, "energy", F(t), a); kv(glamp, "energy", F(t), g)
 # surrounding rock so the descent view has no black void beside the column
