@@ -386,23 +386,23 @@ M_sh, E_sh = radial_mat("sunhalo", (1.0, 0.95, 0.85), 6.0,
                         lambda N_, L_, d: mth(N_, L_, 'POWER', mth(N_, L_, 'SUBTRACT', 1.0, d), bv=float(os.environ.get("SHP", 3.6))))
 sun_halo = disc_plane("sunhalo", M_sh, float(os.environ.get("SHR", 2.6)), sun_disc, (0, 0, -0.5))
 S_A = Vector((-7.2, 10.0, -150.0)); S_E = Vector((EARTH_L.x, EARTH_L.y, -150.0)); S_X = Vector((-1.6, 10.2, -150.0))
-for t, p, s in [(0, S_A, 0.0), (33.3, S_A, 0.0), (33.8, S_A, 1.0), (36.0, S_A, 1.0), (39.0, S_E, 1.0),
+for t, p, s in [(0, S_A, 0.0), (33.3, S_A, 0.0), (33.8, S_A, 1.0), (36.0, S_A, 1.0), (39.4, S_E, 1.0),
                 (61.6, S_E, 1.0), (63.4, S_X, 1.0), (64.2, S_X, 0.0)]:
     sun_disc.location = p; sun_disc.keyframe_insert("location", frame=F(t))
     sun_disc.scale = (max(s, 0.001),) * 3; sun_disc.keyframe_insert("scale", frame=F(t))
-for t, e in [(0, 6.0), (38.3, 6.0), (38.9, 0.0), (61.6, 0.0), (62.3, 6.0)]:   # ref: no white glow while the sun is behind the earth, only the thin red ring
+for t, e in [(0, 6.0), (38.7, 6.0), (39.3, 0.0), (61.6, 0.0), (62.3, 6.0)]:   # ref: no white glow while the sun is behind the earth, only the thin red ring
     ksock(E_sh.inputs["Strength"], F(t), e)
-hide_iv(sun_disc, 38.95, 61.55); hide_iv(sun_halo, 38.95, 61.55)
+hide_iv(sun_disc, 39.35, 61.55); hide_iv(sun_halo, 39.35, 61.55)
 hide_iv(sun_disc, -1, 33.3); hide_iv(sun_halo, -1, 33.3); hide_iv(sun_disc, 64.25, 99); hide_iv(sun_halo, 64.25, 99)
 # corona ring behind the darkened earth
 rp = ER * 1.3
-RSTR = float(os.environ.get('RSTR', 4.0))
-M_ring, E_ring = radial_mat("corona", (1.0, 0.42, 0.1), 0.0,
-                            lambda N_, L_, d: mth(N_, L_, 'ADD', gauss(N_, L_, d, ER * 1.01 / rp, float(os.environ.get('RW1', 0.012)), 1.0), gauss(N_, L_, d, ER * 1.03 / rp, float(os.environ.get('RW2', 0.05)), float(os.environ.get('RG2', 0.25)))))
+RSTR = float(os.environ.get('RSTR', 3.0))
+M_ring, E_ring = radial_mat("corona", (1.0, 0.27, 0.07), 0.0,
+                            lambda N_, L_, d: mth(N_, L_, 'ADD', gauss(N_, L_, d, ER * 1.01 / rp, float(os.environ.get('RW1', 0.009)), 1.0), gauss(N_, L_, d, ER * 1.03 / rp, float(os.environ.get('RW2', 0.05)), float(os.environ.get('RG2', 0.12)))))
 ring = disc_plane("corona", M_ring, rp, co, Vector((EARTH_L.x, EARTH_L.y, EARTH_L.z - ER - 2.0)))
-for t, e in [(0, 0), (38.7, 0), (39.3, RSTR), (61.3, RSTR), (61.9, 0)]:
+for t, e in [(0, 0), (39.1, 0), (39.7, RSTR), (61.3, RSTR), (61.9, 0)]:
     ksock(E_ring.inputs["Strength"], F(t), e)
-hide_iv(ring, -1, 38.6); hide_iv(ring, 62.0, 99)
+hide_iv(ring, -1, 39.0); hide_iv(ring, 62.0, 99)
 # earth terminator follows the sun behind it (light direction animated in the earth + halo shaders)
 def dot_nodes(mname):
     m = C.materials.get(mname)
@@ -412,7 +412,7 @@ def dot_nodes(mname):
 LD0 = Vector(dot_nodes("earth")[0].inputs[1].default_value) if dot_nodes("earth") else (-right)
 LD1 = (-right * 0.3 - back * 0.95).normalized(); LD2 = (-back).normalized()
 for n in dot_nodes("earth") + dot_nodes("halo"):
-    for t, v in [(0, LD0), (36.2, LD0), (38.2, LD1), (38.9, LD2), (61.6, LD2), (62.4, LD1), (63.6, LD0)]:
+    for t, v in [(0, LD0), (36.6, LD0), (38.6, LD1), (39.3, LD2), (61.6, LD2), (62.4, LD1), (63.6, LD0)]:
         ksock(n.inputs[1], F(t), v)
 
 # city lights on the night side during the eclipse (ref: dark earth speckled with warm lights)
@@ -464,7 +464,7 @@ if _mw and _mw.use_nodes and os.environ.get("ROCKWALL", "1") != "0":
         ksock(_mx.inputs["Fac"], F(t), v)
     print("MOONANIM rock cavity walls on")
 # red eclipse tint: rock/regolith multiplied toward rust, sun + fill + world go red
-TINT = (1.0, 0.42, 0.33, 1.0)
+TINT = (0.85, 0.4, 0.36, 1.0)
 def tint_socket(m):
     if m is None or not m.use_nodes: return None
     nt = m.node_tree; b = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
@@ -475,7 +475,7 @@ def tint_socket(m):
     else:
         mx.inputs[1].default_value = s.default_value
     mx.inputs[2].default_value = TINT; nt.links.new(mx.outputs[0], s); return mx.inputs[0]
-TT = [(0, 0.0), (38.6, 0.0), (39.4, 1.0), (61.4, 1.0), (62.2, 0.0)]
+TT = [(0, 0.0), (39.0, 0.0), (39.8, 1.0), (61.4, 1.0), (62.2, 0.0)]
 tinted = set()
 for o in base_objs:
     if o.type != 'MESH' or o in rocket_parts: continue
@@ -493,7 +493,7 @@ for t, v in TT:
     sunL.color = (1, 1, 1) if v == 0 else (1.0, 0.36, 0.24); sunL.keyframe_insert("color", frame=F(t))
     fillL.color = (1, 1, 1) if v == 0 else (1.0, 0.45, 0.35); fillL.keyframe_insert("color", frame=F(t))
 # sun/fill energy: dim red during the eclipse, off while the camera is in the cave (cave is lamp-lit only)
-for t, se, fe in [(0, 3.0, 1.0), (38.6, 3.0, 1.0), (39.4, 1.6, 0.7), (51.4, 1.6, 0.7), (52.3, 0.0, 0.0), (58.37, 0.0, 0.0),
+for t, se, fe in [(0, 3.0, 1.0), (39.0, 3.0, 1.0), (39.8, 1.6, 0.7), (51.4, 1.6, 0.7), (52.3, 0.0, 0.0), (58.37, 0.0, 0.0),
                   (58.4, 1.6, 0.7), (61.4, 1.6, 0.7), (62.2, 3.0, 1.0)]:
     kv(sunL, "energy", F(t), se); kv(fillL, "energy", F(t), fe)
 bg = wd.node_tree.nodes["Background"].inputs["Color"]
@@ -579,7 +579,7 @@ pod = sph("pod", (-0.6, -2.0, CZ + 0.7), 0.75, mat("podm", (0.05, 0.05, 0.055), 
 sph("podlamp", (0.35, -2.15, CZ + 0.75), 0.16, emit_mat("podlamp", (1, 0.97, 0.9), 12.0)[0], (1, 1, 1), 12)
 # bots in the cave
 bot(3.75, -3.45, CZ, M_bots[4], 0.3)
-bot(2.5, -3.35, CZ, mat("botyel", (0.9, 0.65, 0.05), 0.5, emit=(1, 0.7, 0.05), estr=0.3), 0.26)
+bot(2.5, -3.35, CZ, mat("botyel", (0.9, 0.65, 0.05), 0.5), 0.26)
 # lights
 def plight(name, loc, col, en, r=0.4, kind='POINT'):
     l = C.lights.new(name, kind); l.color = col; l.energy = en
