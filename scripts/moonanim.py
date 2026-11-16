@@ -545,11 +545,11 @@ def strata_mat(k=1.0, name="strata"):
     nt.links.new(sp.outputs["Z"], cl.inputs[0]); nt.links.new(cl.outputs[0], mx.inputs["Fac"])
     nt.links.new(rp.outputs["Color"], mx.inputs["Color1"])
     nt.links.new(mx.outputs["Color"], b.inputs["Base Color"])
-    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25))
+    nt.links.new(mx.outputs["Color"], b.inputs["Emission Color"]); b.inputs["Emission Strength"].default_value = float(os.environ.get("SEM", 0.25)) * (float(os.environ.get("SEM2X", 4.0)) if k > 1 else 1.0)
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
-M_strata2 = strata_mat(float(os.environ.get("STRK", 3.5)), "strata2")
+M_strata2 = strata_mat(float(os.environ.get("STRK", 2.5)), "strata2")
 rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata2)
 _W = float(os.environ.get("RWIDE", 1.0))
 if _W > 1.0: rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)   # RWIDE 1: it filled the cave volume solid
