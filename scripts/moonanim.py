@@ -233,8 +233,8 @@ CAM_KEYS = [
     (23.7, FT(3), OSF), (30.4, FT(3) + dr, OSF),
     (32.0, T_HERO, OS0), (33.0, T_HERO, OS0),
     (33.6, T_SOLAR, OS0), (45.3, T_SOLAR, OS0),
-    (46.4, T_STACK, OS_STACK), (47.6, T_TBM, OS_TBM), (49.9, T_TBM + dr * 0.6, OS_TBM),
-    (51.2, T_CAVE, OS_CAVE), (51.8, T_CAVE, OS_CAVE), (53.2, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
+    (46.4, T_STACK, OS_STACK), (48.0, Vector((2.7, -3.3, -6.8)), OS_STACK), (49.0, Vector((2.7, -3.3, -10.5)), OS_STACK),
+    (50.0, Vector((2.7, -3.3, -15.5)), OS_STACK), (51.2, T_CAVE, OS_CAVE), (52.3, T_CAVE, OS_CAVE), (53.4, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
     (58.4, T_INT, OS_INT), (59.6, T_INT + up * 0.6, OS_INT * 1.05),
     (62.0, T_HERO, OS0), (67.1, T_HERO, OS0),
 ]
@@ -590,8 +590,24 @@ so_, spot = plight("podspot", (0.8, -1.0, CZ + 0.7), (1, 0.97, 0.9), 600, kind='
 spot.spot_size = math.radians(60); so_.rotation_euler = Vector((1.0, -0.6, -0.25)).normalized().to_track_quat('-Z', 'Y').to_euler()
 for t, a, g in [(0, 1400, 0), (56.3, 1400, 0), (56.9, 250, 1800), (58.4, 250, 1800)]:
     kv(lamp, "energy", F(t), a); kv(glamp, "energy", F(t), g)
-cave_objs = [C.objects[n] for n in C.objects.keys() if n not in pre]
-for o in cave_objs: hide_iv(o, -1, 49.8); hide_iv(o, 58.4, 99)
+# surrounding rock so the descent view has no black void beside the column
+for _nm, _a in [("rsl", (-A - 40, -A, -B - 40, B + 40)), ("rsr", (A, A + 40, -B - 40, B + 40)), ("rsf", (-A, A, -B - 40, -B)), ("rsb", (-A, A, B, B + 40))]:
+    rockbox(_nm, _a[0], _a[1], _a[2], _a[3], CZ - 16, FZ_BOT - 0.4, M_strata)
+# digging debris: specks thrown from the TBM face while it bores (47.6-50.4 s)
+M_spk = emit_mat("debris", (1.0, 0.95, 0.9), 2.0)[0]; M_dk = mat("debrisd", (0.04, 0.035, 0.035), 0.9)
+_dr = random.Random(11)
+for i in range(70):
+    r_ = _dr.uniform(0.025, 0.07)
+    p0 = Vector((TB.x + 0.9 + _dr.uniform(-0.2, 0.9), TB.y + _dr.uniform(-0.6, 0.6), TB.z + _dr.uniform(-0.5, 0.6)))
+    o = ico("debris", p0, r_, M_spk if i % 2 else M_dk, 1)
+    t0 = 47.8 + _dr.uniform(0, 1.8); t1 = t0 + _dr.uniform(0.5, 1.0)
+    o.location = p0; o.keyframe_insert("location", frame=F(t0))
+    o.location = p0 + Vector((_dr.uniform(0.2, 1.0), _dr.uniform(-0.8, 0.8), -_dr.uniform(0.6, 2.0))); o.keyframe_insert("location", frame=F(t1))
+    hide_iv(o, -1, t0); hide_iv(o, t1, 99)
+cave_objs = [C.objects[n] for n in C.objects.keys() if n not in pre and not n.startswith("debris")]
+for o in cave_objs:
+    _early = o.name.split('.')[0] in ("deep", "deepwide", "rsl", "rsr", "rsf", "rsb", "cavewl", "cavewb", "cavebase")
+    hide_iv(o, -1, 46.0 if _early else 49.8); hide_iv(o, 58.4, 99)
 print("MOONANIM cave objects", len(cave_objs))
 
 # ================= bots: bob + wander =================
