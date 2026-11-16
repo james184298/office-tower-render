@@ -291,7 +291,7 @@ for L_i, (z0, z1) in enumerate(LZ):
 for o in lid_hidden: hide_iv(o, 4.0, 6.3)
 
 # ================= floors hidden above the focused floor =================
-FOCUS = [(16.2, 20.2, {0}), (20.2, 24.2, {0, 1}), (24.2, 30.6, {0, 1, 2}), (45.6, 58.39, {0, 1, 2})]
+FOCUS = [(16.2, 20.2, {0}), (20.2, 24.2, {0, 1}), (24.2, 30.6, {0, 1, 2}), (49.7, 58.39, {0, 1, 2})]
 for t0, t1, fl in FOCUS:
     for i in fl:
         for o in floor_objs[i]: hide_iv(o, t0, t1)
@@ -526,8 +526,8 @@ pre = set(C.objects.keys())
 def rockbox(name, x0, x1, y0, y1, z0, z1, m=None):
     o = box(name, ((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2), (x1 - x0, y1 - y0, z1 - z0), m or M_rock); return o
 CH = float(os.environ.get("CAVECH", 12.0))
-def strata_mat():
-    m = C.materials.new("strata"); m.use_nodes = True
+def strata_mat(k=1.0, name="strata"):
+    m = C.materials.new(name); m.use_nodes = True
     nt = m.node_tree; b = [n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'][0]
     tc = nt.nodes.new("ShaderNodeTexCoord")
     wv = nt.nodes.new("ShaderNodeTexWave"); wv.wave_type = 'BANDS'; wv.bands_direction = 'Z'
@@ -535,7 +535,7 @@ def strata_mat():
     wv.inputs["Detail"].default_value = 5.0; wv.inputs["Detail Scale"].default_value = 2.0
     _g0 = nt.nodes.new("ShaderNodeNewGeometry"); nt.links.new(_g0.outputs["Position"], wv.inputs["Vector"])
     rp = nt.nodes.new("ShaderNodeValToRGB")
-    rp.color_ramp.elements[0].color = (0.022, 0.011, 0.011, 1); rp.color_ramp.elements[1].color = (0.06, 0.03, 0.026, 1)
+    rp.color_ramp.elements[0].color = (0.022 * k, 0.011 * k * (0.8 if k > 1 else 1), 0.011 * k * (0.8 if k > 1 else 1), 1); rp.color_ramp.elements[1].color = (0.06 * k, 0.03 * k * (0.7 if k > 1 else 1), 0.026 * k * (0.7 if k > 1 else 1), 1)
     nt.links.new(wv.outputs["Fac"], rp.inputs["Fac"])
     gn = nt.nodes.new("ShaderNodeNewGeometry"); sp = nt.nodes.new("ShaderNodeSeparateXYZ")
     nt.links.new(gn.outputs["Normal"], sp.inputs["Vector"])
@@ -549,7 +549,8 @@ def strata_mat():
     b.inputs["Roughness"].default_value = 0.95
     return m
 M_strata = strata_mat()
-rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata)
+M_strata2 = strata_mat(float(os.environ.get("STRK", 3.5)), "strata2")
+rockbox("deep", -A, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata2)
 _W = float(os.environ.get("RWIDE", 1.0))
 if _W > 1.0: rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)   # RWIDE 1: it filled the cave volume solid
 rockbox("cavewl", -A, XC - 0.5, -B, B, CZ, CZ + CH)
@@ -592,7 +593,7 @@ for t, a, g in [(0, 1400, 0), (56.3, 1400, 0), (56.9, 250, 1800), (58.4, 250, 18
     kv(lamp, "energy", F(t), a); kv(glamp, "energy", F(t), g)
 # surrounding rock so the descent view has no black void beside the column
 for _nm, _a in [("rsl", (-A - 40, -A, -B - 40, B + 40)), ("rsr", (A, A + 40, -B - 40, B + 40)), ("rsf", (-A, A, -B - 40, -B)), ("rsb", (-A, A, B, B + 40))]:
-    rockbox(_nm, _a[0], _a[1], _a[2], _a[3], CZ - 16, FZ_BOT - 0.4, M_strata)
+    rockbox(_nm, _a[0], _a[1], _a[2], _a[3], CZ - 16, FZ_BOT - 0.4, M_strata2)
 # digging debris: specks thrown from the TBM face while it bores (47.6-50.4 s)
 M_spk = emit_mat("debris", (1.0, 0.95, 0.9), 2.0)[0]; M_dk = mat("debrisd", (0.04, 0.035, 0.035), 0.9)
 _dr = random.Random(11)
