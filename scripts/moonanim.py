@@ -234,7 +234,7 @@ CAM_KEYS = [
     (32.0, T_HERO, OS0), (33.0, T_HERO, OS0),
     (33.6, T_SOLAR, OS0), (45.3, T_SOLAR, OS0),
     (46.4, T_STACK, OS_STACK), (48.0, Vector((2.7, -3.3, -6.8)), OS_STACK), (49.0, Vector((2.7, -3.3, -10.5)), OS_STACK),
-    (50.0, Vector((2.7, -3.3, -15.5)), OS_STACK), (51.2, T_CAVE, OS_CAVE), (52.3, T_CAVE, OS_CAVE), (53.4, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
+    (50.0, Vector((2.7, -3.3, -13.0)), OS_STACK), (50.9, Vector((2.7, -3.3, -15.5)), OS_STACK), (52.0, T_CAVE, OS_CAVE), (52.9, T_CAVE, OS_CAVE), (53.4, T_CAVE2, OS_CAVE2), (58.36, T_CAVE2 + dr * 0.3, OS_CAVE2 * 0.97),
     (58.4, T_INT, OS_INT), (59.6, T_INT + up * 0.6, OS_INT * 1.05),
     (62.0, T_HERO, OS0), (67.1, T_HERO, OS0),
 ]
@@ -550,7 +550,7 @@ def strata_mat(k=1.0, name="strata"):
     return m
 LX = float(os.environ.get("LEXT", 30))   # extend rock to screen-left so no black void beside the descent
 M_strata = strata_mat()
-M_strata2 = strata_mat(float(os.environ.get("STRK", 2.5)), "strata2")
+M_strata2 = strata_mat(float(os.environ.get("STRK", 1.7)), "strata2")
 rockbox("deep", -A - LX, A, -B, B, CZ + CH, FZ_BOT - 0.4, M_strata2)
 _W = float(os.environ.get("RWIDE", 1.0))
 if _W > 1.0: rockbox("deepwide", -A * _W, A * _W, -B * _W, B * _W, CZ - 16, FZ_BOT - 0.4, M_strata)   # RWIDE 1: it filled the cave volume solid
