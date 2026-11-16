@@ -363,19 +363,19 @@ hide_iv(crat, -1, 7.0); hide_iv(crat, 63.35, 99)
 M_ray, E_ray = emit_mat("dustray", (0.92, 0.95, 1.0), 0.0)
 import random as _random
 _rr = _random.Random(7)
-NRAY = int(os.environ.get("NRAY", 160)); RLEN = float(os.environ.get("RLEN", 7.0))
+NRAY = int(os.environ.get("NRAY", 280)); RLEN = float(os.environ.get("RLEN", 7.0))
 for k in range(NRAY):
     az = _rr.uniform(0, 2 * math.pi); el = _rr.uniform(0.0, 0.3)
     L = RLEN * _rr.uniform(0.45, 1.0); r0 = _rr.uniform(1.2, 2.2)
     piv = empty("rayp", Vector((PX, PY, 0.25)))
     piv.rotation_euler = (0, -el, az)
-    rb = box("dustray", (r0 + L / 2, 0, 0), (L, 0.012, 0.012), M_ray); rb.visible_shadow = False
+    rb = box("dustray", (r0 + L / 2, 0, 0), (L, 0.008, 0.008), M_ray); rb.visible_shadow = False
     rb.parent = piv
     t0 = 62.95 + _rr.uniform(0, 0.4)
     for t, sc_ in [(t0 - 0.05, 0.001), (t0 + 0.7, 1.0), (64.7, 1.0)]:
         piv.scale = (max(sc_, 0.001), 1, 1); piv.keyframe_insert("scale", frame=F(t))
     hide_iv(rb, -1, t0 - 0.05); hide_iv(rb, 64.75, 99)
-for t, e in [(0, 0), (62.9, 0), (63.4, 5.0), (64.0, 3.5), (64.7, 0)]:
+for t, e in [(0, 0), (62.9, 0), (63.4, 1.8), (64.0, 1.4), (64.7, 0)]:
     ksock(E_ray.inputs["Strength"], F(t), e)
 
 # ================= sun, eclipse =================
