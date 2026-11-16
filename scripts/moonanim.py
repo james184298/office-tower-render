@@ -211,7 +211,7 @@ for o in base_objs:
 print("MOONANIM cab parts", sorted(set(o.name.split('.')[0] for o in cab_parts)))
 
 # ================= camera =================
-OS0 = cam.ortho_scale
+OS0 = cam.ortho_scale * float(os.environ.get("OS0K", 0.94))
 T_HERO = target.copy()
 T_SOLAR = target + up * float(os.environ.get("SOLAR_UP", 2.6))
 OSF = float(os.environ.get("OSF", 8.2)); OSF0 = float(os.environ.get("OSF0", 8.5))
@@ -314,7 +314,7 @@ def rocket_z(t):
         a = 2 * ROCK_TOP / (2.3 ** 2); return 0.5 * a * (t - 6.5) ** 2
     if t < 60.6: return 40.0
     if t < 63.3:  # landing: decelerating to touchdown
-        u = (t - 60.6) / 2.7; return (ROCK_TOP + 2.0) * (1 - u) ** 2.2
+        u = min((t - 60.6) / 2.3, 1.0); return (ROCK_TOP + 2.0) * (1 - u) ** 2.2
     return 0.0
 for f in range(F(6.4), F(63.5) + 1, 2):
     t = (f - 1) / FPS
@@ -325,7 +325,7 @@ set_interp(rig, 'LINEAR')
 for o in rocket_parts + [plume]: hide_iv(o, 9.3, 60.5)
 # plume size / strength and light energy
 for t, s, e, en in [(0, 0, 0, 0), (6.0, 0.0, 0, 0), (6.15, 0.6, 12, 1500), (6.5, 1.0, 16, 4000), (8.8, 1.2, 16, 4000), (9.1, 1.2, 0, 0),
-                    (60.5, 0.0, 0, 0), (60.7, 1.0, 45, 3000), (62.6, 1.0, 45, 4000), (63.2, 0.7, 30, 2000), (63.6, 0.0, 0, 0)]:
+                    (60.5, 0.0, 0, 0), (60.7, 1.0, 45, 3000), (62.3, 1.0, 45, 4000), (62.9, 0.7, 30, 2000), (63.3, 0.0, 0, 0)]:
     plume.scale = (max(s, 0.001),) * 3; plume.keyframe_insert("scale", frame=F(t))
     ksock(E_plume.inputs["Strength"], F(t), e)
     kv(eL, "energy", F(t), en)
@@ -363,7 +363,7 @@ hide_iv(crat, -1, 7.0); hide_iv(crat, 63.35, 99)
 M_ray, E_ray = emit_mat("dustray", (0.92, 0.95, 1.0), 0.0)
 import random as _random
 _rr = _random.Random(7)
-NRAY = int(os.environ.get("NRAY", 280)); RLEN = float(os.environ.get("RLEN", 7.0))
+NRAY = int(os.environ.get("NRAY", 280)); RLEN = float(os.environ.get("RLEN", 5.5))
 for k in range(NRAY):
     az = _rr.uniform(0, 2 * math.pi); el = _rr.uniform(0.0, 0.3)
     L = RLEN * _rr.uniform(0.45, 1.0); r0 = _rr.uniform(1.2, 2.2)
@@ -375,7 +375,7 @@ for k in range(NRAY):
     for t, sc_ in [(t0 - 0.05, 0.001), (t0 + 0.7, 1.0), (64.7, 1.0)]:
         piv.scale = (max(sc_, 0.001), 1, 1); piv.keyframe_insert("scale", frame=F(t))
     hide_iv(rb, -1, t0 - 0.05); hide_iv(rb, 64.75, 99)
-for t, e in [(0, 0), (62.9, 0), (63.4, 1.8), (64.0, 1.4), (64.7, 0)]:
+for t, e in [(0, 0), (62.9, 0), (63.4, 0.7), (64.0, 0.5), (64.7, 0)]:
     ksock(E_ray.inputs["Strength"], F(t), e)
 
 # ================= sun, eclipse =================
