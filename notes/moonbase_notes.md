@@ -324,3 +324,4 @@ Helpers: `jd.sh CMD` dispatches and prints run id; `jw.sh RUN` polls ~100 s, the
 - 13:52 CST (11-19) run: budget-limited (resets Dec 7); no new work; backup current (repo clean).
 - 14:52 CST (11-19) run: budget-limited (resets Dec 7); no new work; backup current (repo clean).
 - 15:52 CST (11-19) run: budget-limited (resets Dec 7); no new work; backup current.
+- 16:52 CST (11-19) run: budget-limited (resets Dec 7); no new work; backup current (repo clean).
