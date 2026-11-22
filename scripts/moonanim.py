@@ -178,7 +178,7 @@ for o in base_objs:
             if nm in (f"fl{i}", f"flb{i}"): floor_objs[i].append(o)
         continue
     if o.parent is not None or o.type not in ('MESH', 'FONT', 'CURVE'): continue
-    if nm in ('block',): continue
+    if nm in ('block', 'lcheek'): continue
     c = ctr(o)
     if not (c.x > XC - 0.1 and c.y < YC + 0.05 and c.x < A + 0.2 and c.y > -B - 0.2): continue
     for i in range(NF):
@@ -214,9 +214,10 @@ print("MOONANIM cab parts", sorted(set(o.name.split('.')[0] for o in cab_parts))
 OS0 = cam.ortho_scale * float(os.environ.get("OS0K", 0.94))
 T_HERO = target.copy()
 T_SOLAR = target + up * float(os.environ.get("SOLAR_UP", 2.6))
-OSF = float(os.environ.get("OSF", 8.2)); OSF0 = float(os.environ.get("OSF0", 8.5))
+# v7 (E/G1): close-ups wider and a little higher so the floor above stays in frame as a ceiling plate (ref 16.5/20.2/24.2 s)
+OSF = float(os.environ.get("OSF", 9.8)); OSF0 = float(os.environ.get("OSF0", 9.2))
 def FT(i, dz=None):
-    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", -0.5))
+    if dz is None: dz = float(os.environ.get("FTDZ0", 0.7)) if i == 0 else float(os.environ.get("FTDZ", 0.4))
     return Vector((2.9, -3.3, Z0 - i * FH + dz))
 CZ = float(os.environ.get("CAVEZ", -30.0))
 T_TBM = Vector((2.2, -4.6, FZ_BOT + 1.7)); OS_TBM = 8.0
@@ -225,12 +226,13 @@ T_CAVE2 = Vector((float(os.environ.get("C2X", 1.8)), float(os.environ.get("C2Y",
 T_INT = Vector((2.6, -3.4, Z0 - 2.0 * FH)); OS_INT = 11.0
 T_STACK = Vector((2.7, -3.3, Z0 - float(os.environ.get("STKF", 1.8)) * FH)); OS_STACK = float(os.environ.get("OSSTK", 11.5))
 dr = right * 0.35
+FT3L = right * float(os.environ.get("FT3L", 0.6))   # lobby close-up shifted left: the TBM on the ledge stays in frame (ref 24-30 s)
 CAM_KEYS = [
     (0.0, T_HERO, OS0), (10.3, T_HERO, OS0),
     (12.0, FT(0), OSF0), (15.9, FT(0) + dr, OSF0),
     (16.5, FT(1), OSF), (19.9, FT(1) + dr, OSF),
     (20.4, FT(2), OSF), (22.8, FT(2) + dr, OSF),
-    (23.7, FT(3), OSF), (30.4, FT(3) + dr, OSF),
+    (23.7, FT(3) - FT3L, OSF), (30.4, FT(3) - FT3L + dr, OSF),
     (32.0, T_HERO, OS0), (33.0, T_HERO, OS0),
     (33.6, T_SOLAR, OS0), (45.3, T_SOLAR, OS0),
     (46.4, T_STACK, OS_STACK), (48.0, Vector((2.7, -3.3, -6.8)), OS_STACK), (49.0, Vector((2.7, -3.3, -10.5)), OS_STACK),
@@ -290,8 +292,11 @@ for L_i, (z0, z1) in enumerate(LZ):
     hide_iv(o, -1, c0 - 0.05); hide_iv(o, o1 + 0.05, 99)
 for o in lid_hidden: hide_iv(o, 4.0, 6.3)
 
-# ================= floors hidden above the focused floor =================
-FOCUS = [(16.2, 20.2, {0}), (20.2, 24.2, {0, 1}), (24.2, 30.6, {0, 1, 2}), (49.7, 58.39, {0, 1, 2})]
+# ================= upper floors: never hidden during the close-ups =================
+# v7 (E): the ref keeps the floor above in view as a plate with furniture at 16.5 / 20.2 / 24.2 s; nothing pops away.
+# Floors 0-2 are only hidden in the cave section, from 52 s (camera far below them, out of frame) to the 58.4 s cut;
+# the lobby (3) is never hidden. FOCUSHIDE=0 keeps every floor visible all the time.
+FOCUS = [(float(os.environ.get("FOCUST0", 52.0)), 58.39, {0, 1, 2})] if os.environ.get("FOCUSHIDE", "1") != "0" else []
 for t0, t1, fl in FOCUS:
     for i in fl:
         for o in floor_objs[i]: hide_iv(o, t0, t1)
@@ -499,27 +504,43 @@ for t, se, fe in [(0, 3.0, 1.0), (39.0, 3.0, 1.0), (39.8, 1.25, 0.6), (51.4, 1.2
 bg = wd.node_tree.nodes["Background"].inputs["Color"]
 for t, v in TT: ksock(bg, F(t), (0.02, 0.022, 0.026, 1) if v == 0 else (0.035, 0.01, 0.008, 1))
 
-# ================= TBM (the tank under the lowest floor) =================
-TB = Vector((1.55 + TX, TY, FZ_BOT + 0.55))
+# ================= TBM: exterior ledge below the lobby; tilts nose-down and bores in (ref 26 s, 46-50.6 s) =================
+# TBMMove (world offset) > TBMPitch (nose-down tilt about the cutter's lower lip) > body parts + TBMRig (cutter spin) + headlight
+TB = Vector((1.55 + TX, TY, TZ))              # cutter-face centre (moonbase 'tankfan')
+TBP = Vector((TB.x + 0.08, TY, TZ - 0.53))   # pivot: front lower lip of the cutter, resting on the ledge
+TILT = math.radians(float(os.environ.get("TBMTILT", 32))); TBM_DIG = float(os.environ.get("TBMDIG", 2.4)); TBM_FWD = float(os.environ.get("TBMFWD", 0.3))
+TBM_OUT = float(os.environ.get("TBMOUT", 52.0))   # hidden from here on: buried, and the camera is down in the cave
 tbm = empty("TBMRig", TB)
-for o in base_objs:
-    if o.name.split('.')[0] in ('tankfan', 'fanblade'): parent_keep(o, tbm)
-tbm.rotation_euler = (0, 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(47.0))
-tbm.rotation_euler = (math.radians(360 * 14), 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(58.4))
+fan_parts = [o for o in base_objs if o.name.split('.')[0] in ('tankfan', 'fanblade')]
+for o in fan_parts: parent_keep(o, tbm)
+tmv = empty("TBMMove", TBP.copy())
+tpi = empty("TBMPitch", TBP.copy()); parent_keep(tpi, tmv)
+tbm_parts = [o for o in base_objs if o.name.split('.')[0] in ('tank', 'tankband', 'tlabel', 'ttext', 'tlamp')]
+for o in tbm_parts: parent_keep(o, tpi)
+parent_keep(tbm, tpi)
+tbm.rotation_euler = (0, 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(46.8))
+tbm.rotation_euler = (math.radians(360 * 8), 0, 0); tbm.keyframe_insert("rotation_euler", index=0, frame=F(TBM_OUT))
 set_interp(tbm, 'LINEAR')
-# forward motion: the whole machine (body, band, label, fan) creeps +x (toward the fan / rock face) while it digs
-tmv = empty("TBMMove", Vector((0, 0, 0)))
-for o in base_objs:
-    if o.name.split('.')[0] in ('tank', 'tankband', 'tlabel'): parent_keep(o, tmv)
-parent_keep(tbm, tmv)
-TBM_FWD = float(os.environ.get("TBMFWD", 1.1))
-tmv.location = (0, 0, 0); tmv.keyframe_insert("location", frame=F(46.5))
-tmv.location = (TBM_FWD, 0, 0); tmv.keyframe_insert("location", frame=F(58.4))
-set_interp(tmv, 'LINEAR')
-tl = C.lights.new("tbmlight", 'SPOT'); tl.energy = 900; tl.color = (1, 0.97, 0.9); tl.spot_size = math.radians(70); tl.spot_blend = 0.6
-tlo = C.objects.new("tbmlight", tl); sc.collection.objects.link(tlo); tlo.location = TB + Vector((0.5, -0.9, 0.5))
-tlo.rotation_euler = Vector((0.3, -1.0, -0.15)).normalized().to_track_quat('-Z', 'Y').to_euler()
-hide_iv(tlo, -1, 45.5); hide_iv(tlo, 50.8, 99)
+def _lin(t, a, b): return max(0.0, min(1.0, (t - a) / (b - a)))
+def tbm_state(t):
+    """(pitch, TBMMove offset): creep +x 46.5-47.0, tilt nose-down 47.0-48.2, bore along the tilted axis 48.2-50.6"""
+    off = Vector((TBM_FWD * _lin(t, 46.5, 47.0), 0, 0)) + Vector((math.cos(TILT), 0, -math.sin(TILT))) * (TBM_DIG * _lin(t, 48.2, 50.6))
+    return TILT * _lin(t, 47.0, 48.2), off
+for t in (46.5, 47.0, 48.2, 50.6):
+    th, off = tbm_state(t)
+    tpi.rotation_euler = (0, th, 0); tpi.keyframe_insert("rotation_euler", index=1, frame=F(t))
+    tmv.location = TBP + off; tmv.keyframe_insert("location", frame=F(t))
+set_interp(tpi, 'LINEAR'); set_interp(tmv, 'LINEAR')
+def tbm_face(t):
+    th, off = tbm_state(t)
+    return TBP + off + Matrix.Rotation(th, 3, 'Y') @ (TB - TBP + Vector((0.1, 0, 0)))
+tl = C.lights.new("tbmlight", 'SPOT'); tl.energy = 900; tl.color = (1, 0.97, 0.9); tl.spot_size = math.radians(60); tl.spot_blend = 0.6
+tlo = C.objects.new("tbmlight", tl); sc.collection.objects.link(tlo); tlo.location = TB + Vector((-0.1, -0.42, 0.42))
+tlo.rotation_euler = Vector((1.0, -0.2, -0.35)).normalized().to_track_quat('-Z', 'Y').to_euler()
+parent_keep(tlo, tpi)
+hide_iv(tlo, -1, 45.5); hide_iv(tlo, TBM_OUT, 99)
+for o in tbm_parts + fan_parts:
+    hide_iv(o, TBM_OUT, 99)
 
 # ================= deep rock column + cave + monolith (visible 49.8-58.4 s) =================
 pre = set(C.objects.keys())
@@ -597,14 +618,14 @@ for t, a, g in [(0, 1400, 0), (56.3, 1400, 0), (56.9, 250, 1800), (58.4, 250, 18
 # surrounding rock so the descent view has no black void beside the column
 for _nm, _a in ([] if os.environ.get("RSLAB", "0") == "0" else []) + ([("rsl", (-A - 40, -A, -B - 40, B + 40)), ("rsr", (A, A + 40, -B - 40, B + 40)), ("rsf", (-A, A, -B - 40, -B)), ("rsb", (-A, A, B, B + 40))] if os.environ.get("RSLAB", "0") != "0" else []):
     rockbox(_nm, _a[0], _a[1], _a[2], _a[3], CZ - 16, FZ_BOT - 0.4, M_strata2)
-# digging debris: specks thrown from the TBM face while it bores (47.6-50.4 s)
+# digging debris: specks thrown from the TBM cutter face while it bores (47.6-50.6 s)
 M_spk = emit_mat("debris", (1.0, 0.95, 0.9), 2.0)[0]; M_dk = mat("debrisd", (0.04, 0.035, 0.035), 0.9)
 _dr = random.Random(11)
 for i in range(70):
     r_ = _dr.uniform(0.025, 0.07)
-    p0 = Vector((TB.x + 0.9 + _dr.uniform(-0.2, 0.9), TB.y + _dr.uniform(-0.6, 0.6), TB.z + _dr.uniform(-0.5, 0.6)))
+    t0 = 47.8 + _dr.uniform(0, 1.8); t1 = min(t0 + _dr.uniform(0.5, 1.0), 50.8)
+    p0 = tbm_face(t0) + Vector((_dr.uniform(-0.15, 0.25), _dr.uniform(-0.55, 0.55), _dr.uniform(-0.25, 0.25)))
     o = ico("debris", p0, r_, M_spk if i % 2 else M_dk, 1)
-    t0 = 47.8 + _dr.uniform(0, 1.8); t1 = t0 + _dr.uniform(0.5, 1.0)
     o.location = p0; o.keyframe_insert("location", frame=F(t0))
     o.location = p0 + Vector((_dr.uniform(0.2, 1.0), _dr.uniform(-0.8, 0.8), -_dr.uniform(0.6, 2.0))); o.keyframe_insert("location", frame=F(t1))
     hide_iv(o, -1, t0); hide_iv(o, t1, 99)

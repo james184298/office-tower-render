@@ -628,11 +628,12 @@ def console_row(cx, cy, z, n, R=7.0, seg=0.5, dk=1.0, h=1.0):
         cx_, cy_ = P(0, -0.3*dk); chair(cx_, cy_, z, 1, s=0.8*dk*h)
 
 slabs = []
+SLF = float(os.environ.get("SLABF", 0.25))   # v7 (D): slab front edge set back behind the rock-face line (was 0.15): no plate cantilevers on the cliff side
 for i in range(NF):
     zf = Z0 - i*FH
     d = 0.15
     x0, x1 = XC, A - d
-    y0, y1 = -B + d, YC
+    y0, y1 = -B + SLF, YC
     W, D = x1-x0, y1-y0
     cx, cy = (x0+x1)/2, (y0+y1)/2
     ST_ = float(os.environ.get("SLABT", 0.16))
@@ -769,29 +770,38 @@ for i in range(NF):
     for bx, by, ci in bots:
         bot(bx, by, zt + (0.04 if i == 0 else 0), M_bots[ci % len(M_bots)], float(os.environ.get("MCBS", 0.27)) if i == 0 else float(os.environ.get("LBS", 0.25)))   # v85: ref lower-floor bots are small
 
+# v7 (D): rock return at the rocket-side (front-left) end of the floor stack, so the slab edges end in the rock cut
+# instead of reading as white plates cantilevered past the cliff (ref hero + close-ups); LCHEEK=0 disables
+if os.environ.get("LCHEEK", "1") == "1":
+    box("lcheek", (XC+0.115, -B+SLF/2, (FZ_BOT-0.35)/2), (0.33, SLF+0.16, -0.35-FZ_BOT), M_rock)
+# v7 (F): TBM body centre x / y / axis height: on the exterior ledge left-front of the stack, below the lobby (ref 26 s, 48 s)
+TBX = float(os.environ.get("TANKX", -0.75)); TY = float(os.environ.get("TANKY", -6.75)); TZ = FZ_BOT + float(os.environ.get("TANKZ", 0.6))
 # v88: small rocks / pebbles on the ground apron (ref ground has scattered debris)
 import random as _rnd
 _rg = _rnd.Random(7); M_peb = mat("pebble", (0.12,0.12,0.125), 0.9)
 if os.environ.get("PEBBLES", "1") == "1":
     for _k in range(int(os.environ.get("NPEB", 30))):
         _x = _rg.uniform(XC-1.2, A-0.3); _y = _rg.uniform(-B-0.85, -B+0.2); _r = _rg.uniform(0.05, 0.16)
-        if abs(_y-float(os.environ.get("TANKY", -6.1))) < 0.7 and -1.0 < _x < 2.6: continue
+        if abs(_y-TY) < 0.7 and TBX-1.5 < _x < TBX+1.6: continue
         _o = ico("peb", (_x, _y, FZ_BOT+0.04+_r*0.2), _r, M_peb, 1); _o.scale = (1, _rg.uniform(0.7,1.2), _rg.uniform(0.45,0.7)); _o.rotation_euler.z = _rg.uniform(0, 3)
-# under the lowest floor: tank, pillars, crates
+# under the lowest floor: pillars, crates
 zb = Z0 - (NF-1)*FH - 0.14
 for px, py in [(XC+0.4,-B+0.6),(1.6,-B+0.6),(3.6,-B+0.6),(A-0.6,-B+0.6),(A-0.6,-3.0),(A-0.6,YC-0.3)]:
     cyl("pillar", (px, py, (zb+FZ_BOT)/2), 0.1, zb-FZ_BOT, M_white, 16)
+# v7 (F): tunnel boring machine (dark body, cutter face toward +x, headlamp, label) parked on the ledge; moonanim tilts it nose-down and bores
 M_tank = mat("tank",(0.02,0.02,0.025),0.25,0.3)
-TY = float(os.environ.get("TANKY", -6.1)); TX = float(os.environ.get("TANKDX", 0.9))
-cyl("tank", (0.2+TX, TY, FZ_BOT+0.55), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
-cyl("tankfan", (1.55+TX, TY, FZ_BOT+0.55), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
+TX = TBX - 0.2   # legacy offset (moonanim: cutter centre = 1.55+TX)
+cyl("tank", (0.2+TX, TY, TZ), 0.53, 2.6, M_tank, 40, rot=(0, math.pi/2, 0))
+cyl("tankfan", (1.55+TX, TY, TZ), 0.55, 0.12, M_dark, 24, rot=(0, math.pi/2, 0))
 for k in range(8):
     a = k*math.pi/4
-    o = box("fanblade", (1.63+TX, TY+0.26*math.cos(a), FZ_BOT+0.55+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
+    o = box("fanblade", (1.63+TX, TY+0.26*math.cos(a), TZ+0.26*math.sin(a)), (0.02, 0.07, 0.46), M_metal); o.rotation_euler.x = a - math.pi/2
 M_yel = mat("yellow",(0.9,0.6,0.02),0.4)
-cyl("tankband", (-1.05+TX, TY, FZ_BOT+0.55), 0.535, 0.08, M_yel, 40, rot=(0, math.pi/2, 0))
-box("tlabel", (-0.35+TX, TY-0.5, FZ_BOT+0.3), (0.4, 0.06, 0.16), M_yel)
-for k in range(3): box("frame", (-1.75+TX+k*0.18, TY-0.05, FZ_BOT+0.45), (0.035, 0.7, 0.9), M_metal)
+cyl("tankband", (-1.05+TX, TY, TZ), 0.535, 0.08, M_yel, 40, rot=(0, math.pi/2, 0))
+box("tlabel", (-0.35+TX, TY-0.5, TZ-0.25), (0.4, 0.06, 0.16), M_yel)
+_tt = text("TUNNEL BORING MACHINE", (0.05+TX, TY-0.54, TZ-0.04), 0.085, M_white, rot=(math.radians(90), 0, 0), extrude=0.0); _tt.name = "ttext"
+sph("tlamp", (1.42+TX, TY-0.4, TZ+0.38), 0.065, emis("tlampm", (1.0,0.97,0.9), 8.0), (1,1,1), 12)
+for k in range(3): box("frame", (TBX-0.9+k*0.9, TY, FZ_BOT+0.15), (0.06, 0.8, 0.22), M_metal)   # low cradle saddles; stay on the ledge when the TBM tilts
 for j in range(2):
     for k in range(3): box("crate", (4.0+j*0.62, -6.85+k*0.36, FZ_BOT+0.08), (0.58, 0.34, 0.12), M_white, 0.01)
     for k in range(2): box("crate", (4.0+j*0.62, -6.67+k*0.36, FZ_BOT+0.2), (0.58, 0.34, 0.12), M_white, 0.01)
